@@ -1,0 +1,3 @@
+# local diagnostic scratch (CI monitoring html etc.)
+.diag/
+.work/

@@ -66,13 +66,20 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             git zip unzip curl bc bison flex libssl-dev make \
-            libncurses-dev python3 python3-pip \
-            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
-          # clang (4.9 supports CC=clang; assembler/linker come from the
-          # aarch64 binutils above)
-          sudo apt-get install -y -qq clang llvm lld
-          clang --version | head -1
-          which aarch64-linux-gnu-gcc arm-linux-gnueabihf-gcc arm-linux-gnueabihf-ld
+            libncurses-dev python3 python3-pip
+          # 4.9 (2016) compiles cleanly with GCC 10; GCC 12+ trips new
+          # -Werror diagnostics on this old tree. Install the gcc-10 cross
+          # toolchains and make them the default via update-alternatives.
+          sudo apt-get install -y -qq \
+            gcc-10-aarch64-linux-gnu gcc-10-arm-linux-gnueabihf \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf || true
+          sudo update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc aarch64-linux-gnu-gcc \
+            /usr/bin/aarch64-linux-gnu-gcc-10 100 2>/dev/null || true
+          sudo update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc arm-linux-gnueabihf-gcc \
+            /usr/bin/arm-linux-gnueabihf-gcc-10 100 2>/dev/null || true
+          # if gcc-10 cross pkg is unavailable fall back to distro default
+          aarch64-linux-gnu-gcc --version | head -1 || true
+          arm-linux-gnueabihf-gcc --version | head -1 || true
 
       - name: Clone kernel source (not part of this repo)
         run: |
@@ -130,13 +137,15 @@ jobs:
       - name: Build kernel Image.gz-dtb
         run: |
           set -o pipefail
-          bash scripts/build-kernel.sh "$KROOT" "$RUNNER_TEMP/out" 2>&1 | tee /tmp/build.log
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          bash scripts/build-kernel.sh "$KROOT" "$RUNNER_TEMP/out" 2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
           rc=${PIPESTATUS[0]}
+          cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
           if [ "$rc" != 0 ]; then
-            { echo "### build kernel FAILED (rc=$rc)"; tail -80 /tmp/build.log; } >> "$GITHUB_STEP_SUMMARY" || true
+            { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
             exit "$rc"
           fi
-          { echo "### build kernel OK"; tail -20 /tmp/build.log; } >> "$GITHUB_STEP_SUMMARY" || true
+          { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Package AnyKernel3 zip
         run: |
@@ -158,7 +167,21 @@ jobs:
           cp "$RUNNER_TEMP/out/Image.gz-dtb" "$RUNNER_TEMP/ak3/"
           ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/polaris-kernel.zip" . -x "*.git*" >/dev/null )
 
+      # Always upload the build log + final config so failures are fully
+      # diagnosable from the artifact (public repos allow anonymous download).
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ github.run_id }}
+          path: |
+            ${{ github.workspace }}/logs/build.log
+            ${{ github.workspace }}/logs/final.config
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: polaris-kernel-${{ env.KERNEL_REF }}
