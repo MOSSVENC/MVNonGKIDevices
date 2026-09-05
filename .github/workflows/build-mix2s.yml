@@ -127,7 +127,14 @@ jobs:
 
       - name: Build kernel Image.gz-dtb
         run: |
-          bash scripts/build-kernel.sh "$KROOT" "$RUNNER_TEMP/out"
+          set -o pipefail
+          bash scripts/build-kernel.sh "$KROOT" "$RUNNER_TEMP/out" 2>&1 | tee /tmp/build.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" != 0 ]; then
+            { echo "### build kernel FAILED (rc=$rc)"; tail -80 /tmp/build.log; } >> "$GITHUB_STEP_SUMMARY" || true
+            exit "$rc"
+          fi
+          { echo "### build kernel OK"; tail -20 /tmp/build.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Package AnyKernel3 zip
         run: |
