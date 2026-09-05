@@ -25,23 +25,28 @@ JOBS="$(nproc)"
 echo "==> building kernel with -j${JOBS}"
 
 # toolchain strategy for a 4.9 (2016-era) tree:
-#   - honor external CC / CROSS_COMPILE / CLANG_TRIPLE if set
-#   - else prefer clang if present (needs aarch64 binutils for as/ld on 4.9)
-#   - else fall back to aarch64-linux-gnu- gcc
+#   - default: aarch64 gcc (the era-correct, maximally compatible choice)
+#   - set USE_CLANG=1 (or export CC=clang) to build with clang instead
 # Note: LLVM_IAS is NOT used — 4.9 predates the Android integrated assembler
 # path; the assembler/linker come from CROSS_COMPILE binutils.
+# CROSS_COMPILE_ARM32 is mandatory on 4.9 arm64 when CONFIG_COMPAT=y (the
+# arch Makefile hard-errors without it — "compat vDSO will not be built").
 CROSS="${CROSS_COMPILE:-aarch64-linux-gnu-}"
+CROSS32="${CROSS_COMPILE_ARM32:-arm-linux-gnueabihf-}"
 if [ -n "${CC:-}" ]; then
-  echo "==> using CC=$CC CROSS_COMPILE=$CROSS"
-  make O="$OUT" ARCH=arm64 CC="$CC" CROSS_COMPILE="$CROSS" -j"$JOBS" "$IMAGE_NAME"
-elif command -v clang >/dev/null 2>&1; then
+  echo "==> using CC=$CC CROSS_COMPILE=$CROSS CROSS_COMPILE_ARM32=$CROSS32"
+  make O="$OUT" ARCH=arm64 CC="$CC" CROSS_COMPILE="$CROSS" \
+       CROSS_COMPILE_ARM32="$CROSS32" -j"$JOBS" "$IMAGE_NAME"
+elif [ "${USE_CLANG:-0}" = "1" ] && command -v clang >/dev/null 2>&1; then
   TRIPLE="${CLANG_TRIPLE:-aarch64-linux-gnu-}"
-  echo "==> using clang (CLANG_TRIPLE=$TRIPLE, CROSS_COMPILE=$CROSS)"
+  echo "==> using clang (CLANG_TRIPLE=$TRIPLE, CROSS_COMPILE=$CROSS, CROSS_COMPILE_ARM32=$CROSS32)"
   make O="$OUT" ARCH=arm64 CC=clang CLANG_TRIPLE="$TRIPLE" \
-       CROSS_COMPILE="$CROSS" -j"$JOBS" "$IMAGE_NAME"
+       CROSS_COMPILE="$CROSS" CROSS_COMPILE_ARM32="$CROSS32" \
+       -j"$JOBS" "$IMAGE_NAME"
 else
-  echo "==> using gcc (CROSS_COMPILE=$CROSS)"
-  make O="$OUT" ARCH=arm64 CROSS_COMPILE="$CROSS" -j"$JOBS" "$IMAGE_NAME"
+  echo "==> using gcc (CROSS_COMPILE=$CROSS, CROSS_COMPILE_ARM32=$CROSS32)"
+  make O="$OUT" ARCH=arm64 CROSS_COMPILE="$CROSS" \
+       CROSS_COMPILE_ARM32="$CROSS32" -j"$JOBS" "$IMAGE_NAME"
 fi
 
 IMG="$OUT/arch/arm64/boot/$IMAGE_NAME"
