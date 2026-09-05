@@ -94,25 +94,6 @@ ENABLE_RESUKISU=true ENABLE_BBG=true ENABLE_DROIDSPACE=true \
 bash scripts/build-kernel.sh "$KROOT" /tmp/out
 ```
 
-## 参照实现（已跑通的同类工程）
-
-`Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium`（本地镜像：
-`kernel_xiaomi_sdm845_tejas101k_beryllium`，分支 `thirteen`）是一个已在
-4.9.337 sdm845 上完整集成 **ReSukiSU(manual hook) + LXC/Docker/DroidSpace**
-并编译出可刷内核的参照：
-
-- fs/stat、fs/exec、fs/open、kernel/reboot 的 manual hook —— 与本仓库
-  `patches/resukisu-manual-hook/common/` 内容一致（交叉验证通过）
-- `security/selinux/selinuxfs.c` 导出 `write_op`/`sel_handle_status_ops`
-  —— 本仓库 `0005-security-selinux-export-for-ksu.patch`
-- `kernel/cgroup.c` noprefix runc 兼容 —— 本仓库
-  `patches/droidspace/polaris/0001-cgroup-noprefix-4.9-port.patch`
-- defconfig 的 LXC/DroidSpace 追加块 —— 用于校正
-  `patches/droidspace/common/droidspace.config` 的 4.9 符号
-
-该项目的 `INTEGRATION_NOTES.md` 记录了 ReSukiSU 上游对 4.x 的条件编译
-适配结论（无需额外头文件 shim 等），可作事实参考。
-
 ## 已知取舍 / 边界
 
 - **susfs inline hook**：ReSukiSU Kconfig 在 4.9 上可选（arm64 满足
