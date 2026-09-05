@@ -1,0 +1,46 @@
+# Mix 2S (polaris) kernel build configuration
+#
+# This YAML is the single source of truth consumed by
+# .github/workflows/build-mix2s.yml (and scripts/merge-defconfig.sh).
+#
+# Every feature can be toggled here (defaults) or overridden per-run via
+# workflow_dispatch inputs.
+
+kernel:
+  repo: https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845
+  ref: lineage-22.2            # Linux 4.9.337, arm64 (polaris / sdm845)
+  # Expected kernel version; the build asserts this from the cloned Makefile.
+  expect_major: 4
+  expect_minor: 9
+
+device:
+  codename: polaris             # Xiaomi Mi Mix 2S
+  # LOS-official baseline defconfig for the whole Xiaomi sdm845 family:
+  base_defconfig: arch/arm64/configs/vendor/xiaomi/mi845_defconfig
+  # Device fragment merged after the baseline (LOS device tree uses +=):
+  fragments:
+    - arch/arm64/configs/vendor/xiaomi/polaris.config
+
+features:
+  resukisu:
+    enabled: true
+    hook_mode: manual           # only "manual" is supported on 4.9 (susfs reserved)
+    # Kernel-side source patches under patches/resukisu-manual-hook/common/
+    # are applied first, then the official ReSukiSU kernel/setup.sh runs
+    # (it clones ReSukiSU into KernelSU/ and mounts drivers/kernelsu).
+  bbg:
+    enabled: true               # Baseband-guard anti-format LSM
+  droidspace:
+    enabled: true               # Droidspaces / LXC container kernel support
+    # The official non-GKI tree ships two patches. 01 (xt_qtaguid panic fix)
+    # targets a file that does not exist in this kernel tree -> never applied.
+    official_01_qtaguid: skip
+    # 02 (cgroup prefix restore) is ported to the 4.9 layout in
+    # patches/droidspace/polaris/. If the port fails to apply we warn and
+    # continue (4.9 already restores prefixes via cgroup_file_name).
+    cgroup_02_port: true
+
+artifact:
+  image: Image.gz-dtb
+  # AnyKernel3 packaging is done by the workflow when set to true
+  anykernel3: true

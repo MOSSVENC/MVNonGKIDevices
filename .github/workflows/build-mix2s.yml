@@ -1,0 +1,145 @@
+name: build-mix2s-polaris
+
+# Builds a Xiaomi Mi Mix 2S (polaris, sdm845) kernel with selectable
+# features (ReSukiSU manual hook / BBG / Droidspace) and packages it as an
+# AnyKernel3 zip.
+#
+# Feature defaults mirror configs/mix2s.yaml; toggle them per-run here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_ref:
+        description: kernel branch/ref to build
+        required: false
+        default: lineage-22.2
+      enable_resukisu:
+        description: integrate ReSukiSU (manual hook)
+        type: boolean
+        default: true
+      enable_bbg:
+        description: integrate Baseband-guard (BBG)
+        type: boolean
+        default: true
+      enable_droidspace:
+        description: enable Droidspaces/LXC kernel support
+        type: boolean
+        default: true
+      cgroup_port:
+        description: apply 4.9 cgroup prefix port (droidspace)
+        type: boolean
+        default: true
+  push:
+    paths:
+      - "patches/**"
+      - "scripts/**"
+      - "configs/**"
+      - ".github/workflows/build-mix2s.yml"
+
+concurrency:
+  group: mix2s-kernel
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout action repo
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h / | tail -1
+
+      - name: Install toolchain & tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            git zip unzip curl bc bison flex libssl-dev make \
+            libncurses-dev python3 python3-pip \
+            gcc-aarch64-linux-gnu
+          # clang from android-ndk r21e (matches 4.9-era builds) — or use distro clang
+          sudo apt-get install -y -qq clang llvm lld
+          clang --version | head -1
+
+      - name: Clone kernel source (not part of this repo)
+        run: |
+          git clone --depth=1 --branch="${{ inputs.kernel_ref }}" \
+            https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845.git \
+            "$RUNNER_TEMP/kernel"
+          echo "KROOT=$RUNNER_TEMP/kernel" >> "$GITHUB_ENV"
+          head -6 "$RUNNER_TEMP/kernel/Makefile"
+
+      - name: Apply ReSukiSU manual-hook source patches
+        if: inputs.enable_resukisu
+        run: |
+          bash scripts/apply-patches.sh "$KROOT" \
+            patches/resukisu-manual-hook/common
+
+      - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
+        if: inputs.enable_resukisu
+        run: |
+          bash scripts/integrate-resukisu.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/resukisu.config.fragment"
+
+      - name: Integrate Baseband-guard (BBG)
+        if: inputs.enable_bbg
+        run: |
+          bash scripts/integrate-bbg.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/bbg.config.fragment"
+
+      - name: Integrate Droidspace (config fragment + cgroup port)
+        if: inputs.enable_droidspace
+        run: |
+          PORT=""
+          if [ "${{ inputs.cgroup_port }}" = "true" ]; then
+            PORT="$GITHUB_WORKSPACE/patches/droidspace/polaris/0001-cgroup-noprefix-4.9-port.patch"
+          fi
+          bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
+
+      - name: Assemble defconfig (mi845 + polaris + feature fragments)
+        run: |
+          FRAGS=""
+          [ "${{ inputs.enable_resukisu }}" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          [ "${{ inputs.enable_bbg }}" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
+          [ "${{ inputs.enable_droidspace }}" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/common/droidspace.config"
+          ENABLE_RESUKISU=${{ inputs.enable_resukisu }} \
+          ENABLE_BBG=${{ inputs.enable_bbg }} \
+          ENABLE_DROIDSPACE=${{ inputs.enable_droidspace }} \
+          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
+
+      - name: Build kernel Image.gz-dtb
+        run: |
+          bash scripts/build-kernel.sh "$KROOT" "$RUNNER_TEMP/out"
+
+      - name: Package AnyKernel3 zip
+        run: |
+          rm -rf "$RUNNER_TEMP/ak3"
+          # full AnyKernel3 template (anykernel.sh + tools/ak3-core.sh,
+          # magiskboot, META-INF ...) — not a hand-rolled minimal layout
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git \
+            "$RUNNER_TEMP/ak3"
+          rm -rf "$RUNNER_TEMP/ak3/.git"
+          # --- polaris (Mi Mix 2S) settings ---
+          # device props inside properties() are indented; boot vars at top
+          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=Mix2S ResukiSU+BBG+Droidspace Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=polaris/"           "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name3=.*/\1device.name3=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name4=.*/\1device.name4=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s|^BLOCK=.*|BLOCK=/dev/block/bootdevice/by-name/boot;|"     "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/"                    "$RUNNER_TEMP/ak3/anykernel.sh"
+          cp "$RUNNER_TEMP/out/Image.gz-dtb" "$RUNNER_TEMP/ak3/"
+          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/polaris-kernel.zip" . -x "*.git*" >/dev/null )
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: polaris-kernel-${{ inputs.kernel_ref }}
+          path: |
+            ${{ runner.temp }}/out/Image.gz-dtb
+            ${{ runner.temp }}/polaris-kernel.zip
+            ${{ runner.temp }}/out/.config
+          retention-days: 14

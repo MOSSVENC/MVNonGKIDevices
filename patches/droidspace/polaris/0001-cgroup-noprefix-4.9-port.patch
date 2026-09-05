@@ -1,0 +1,25 @@
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 930e5ae..83d25a2 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -3846,6 +3846,20 @@ static int cgroup_add_file(struct cgroup_subsys_state *css, struct cgroup *cgrp,
+ 		spin_unlock_irq(&cgroup_file_kn_lock);
+ 	}
+ 
++	/*
++	 * Droidspaces/LXC compatibility (4.9 port of the official non-GKI
++	 * patch): when a cgroup is mounted with the NOPREFIX option the
++	 * per-subsystem files are created without their "subsys." prefix.
++	 * Some container tooling still looks up the prefixed name, so
++	 * restore it as a symlink for every cft that normally carries one.
++	 */
++	if (cft->ss && (cgrp->root->flags & CGRP_ROOT_NOPREFIX) &&
++	    !(cft->flags & CFTYPE_NO_PREFIX)) {
++		snprintf(name, CGROUP_FILE_NAME_MAX, "%s.%s",
++			 cft->ss->name, cft->name);
++		kernfs_create_link(cgrp->kn, name, kn);
++	}
++
+ 	return 0;
+ }
+ 
