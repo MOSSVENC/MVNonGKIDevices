@@ -17,6 +17,29 @@ GitHub Actions 在 CI 中拉取内核源码后按特性开关集成并编译。
 
 `workflow_dispatch` 里同名布尔输入可单次覆盖；`configs/mix2s.yaml` 是默认值。
 
+### ReSukiSU 的 7 类 hook 与覆盖方式
+
+按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)，
+manual hook 共 7 类；4 类必须改内核源码，3 类可选：
+
+| hook | 内核文件 | 是否必打 | 本仓库做法 |
+|---|---|---|---|
+| stat | fs/stat.c | 必 | `common/0001` |
+| execve | fs/exec.c | 必 | `common/0002` |
+| faccessat | fs/open.c | 必 | `common/0003` |
+| sys_reboot | kernel/reboot.c | 必 | `common/0004` |
+| input | drivers/input/input.c | 可选 | `hook_extra: lsm` → input_handler AUTO；`manual` → `alt-hooks/0010` |
+| setuid | kernel/sys.c | 可选 | `hook_extra: lsm` → LSM AUTO；`manual` → `alt-hooks/0011` |
+| sys_read(initrc) | fs/read_write.c | 可选 | `hook_extra: lsm` → LSM AUTO；`manual` → `alt-hooks/0012` |
+
+- `hook_extra: lsm`（默认，4.9 < 6.8 官方推荐）—— 3 个可选 hook 由 ReSukiSU 的
+  LSM / input_handler AUTO 机制接管，fragment 置 `CONFIG_KSU_MANUAL_HOOK_AUTO_*=y`，
+  不打源码补丁。
+- `hook_extra: manual` —— 打 `patches/resukisu-manual-hook/alt-hooks/0010~0012`
+  源码补丁，fragment 关掉三个 AUTO（`# ... is not set`），编译期
+  `manual_hook_check.mk` 会改为校验手动符号。
+- workflow_dispatch 输入 `hook_extra`（choice lsm/manual）可单次切换。
+
 ## 最终 .config 合并顺序
 
 ```
