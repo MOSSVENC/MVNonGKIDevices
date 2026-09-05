@@ -100,6 +100,26 @@ rc=0
 if [ "${ENABLE_RESUKISU:-true}" = "true" ]; then
   assert_cfg CONFIG_KSU || rc=1
   assert_cfg CONFIG_KSU_MANUAL_HOOK || rc=1
+  # hook_extra: lsm (default) -> three AUTO_* options must be ON;
+  #             manual -> the alt source patches are used, AUTO_* must be OFF.
+  if [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then
+    for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
+             CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
+             CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
+      if grep -qE "^# ${s} is not set$" "$CFG"; then
+        echo "   OK   $s is not set"
+      else
+        echo "   FAIL $s (manual hook mode wants it off)" >&2
+        rc=1
+      fi
+    done
+  else
+    for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
+             CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
+             CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
+      assert_cfg "$s" || rc=1
+    done
+  fi
 fi
 if [ "${ENABLE_BBG:-true}" = "true" ]; then
   assert_cfg CONFIG_BBG || rc=1

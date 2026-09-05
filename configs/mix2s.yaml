@@ -25,9 +25,16 @@ features:
   resukisu:
     enabled: true
     hook_mode: manual           # only "manual" is supported on 4.9 (susfs reserved)
-    # Kernel-side source patches under patches/resukisu-manual-hook/common/
+    # "manual" = the 4 mandatory source patches (stat/exec/faccessat/reboot)
     # are applied first, then the official ReSukiSU kernel/setup.sh runs
     # (it clones ReSukiSU into KernelSU/ and mounts drivers/kernelsu).
+    # hook_extra selects how the 3 OPTIONAL hooks are handled:
+    #   lsm    (default) — setuid/initrc/input via ReSukiSU LSM + input_handler
+    #                       AUTO machinery (4.9 < 6.8). No extra source patches.
+    #   manual           — the 3 optional hooks applied as source patches from
+    #                       patches/resukisu-manual-hook/alt-hooks/ (0010..0012)
+    #                       and the AUTO options are turned off.
+    hook_extra: lsm
   bbg:
     enabled: true               # Baseband-guard anti-format LSM
   droidspace:

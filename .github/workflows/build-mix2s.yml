@@ -29,6 +29,13 @@ on:
         description: apply 4.9 cgroup prefix port (droidspace)
         type: boolean
         default: true
+      hook_extra:
+        description: "resukisu extra hooks: lsm (AUTO, default) | manual (source patches 0010-0012)"
+        type: choice
+        options:
+          - lsm
+          - manual
+        default: lsm
   push:
     paths:
       - "patches/**"
@@ -52,6 +59,7 @@ jobs:
       ENABLE_BBG: ${{ inputs.enable_bbg || true }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
+      HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
@@ -97,16 +105,22 @@ jobs:
       - name: Apply ReSukiSU manual-hook source patches
         if: env.ENABLE_RESUKISU == 'true'
         run: |
-          # NOTE: pass ABSOLUTE patch-dir path — apply-patches.sh cd's into
-          # the kernel root, so a relative path would not resolve.
-          bash scripts/apply-patches.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/patches/resukisu-manual-hook/common"
+          # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
+          # the kernel root, so relative paths would not resolve.
+          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu-manual-hook/common"
+          if [ "$HOOK_EXTRA" = "manual" ]; then
+            echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
+            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu-manual-hook/alt-hooks"
+          else
+            echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
+          fi
+          bash scripts/apply-patches.sh "$KROOT" $PATCH_DIRS
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
         if: env.ENABLE_RESUKISU == 'true'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment"
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -132,6 +146,7 @@ jobs:
           ENABLE_RESUKISU="$ENABLE_RESUKISU" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
+          HOOK_EXTRA="$HOOK_EXTRA" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
 
       - name: Build kernel Image.gz-dtb
