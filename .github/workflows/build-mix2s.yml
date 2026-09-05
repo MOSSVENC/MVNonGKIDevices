@@ -97,8 +97,10 @@ jobs:
       - name: Apply ReSukiSU manual-hook source patches
         if: env.ENABLE_RESUKISU == 'true'
         run: |
+          # NOTE: pass ABSOLUTE patch-dir path — apply-patches.sh cd's into
+          # the kernel root, so a relative path would not resolve.
           bash scripts/apply-patches.sh "$KROOT" \
-            patches/resukisu-manual-hook/common
+            "$GITHUB_WORKSPACE/patches/resukisu-manual-hook/common"
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
         if: env.ENABLE_RESUKISU == 'true'
