@@ -154,7 +154,9 @@ jobs:
           # magiskboot, META-INF ...) — not a hand-rolled minimal layout
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git \
             "$RUNNER_TEMP/ak3"
-          rm -rf "$RUNNER_TEMP/ak3/.git"
+          # strip VCS/CI cruft so the zip holds only flash-relevant files
+          rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
+                 "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
           # --- polaris (Mi Mix 2S) settings ---
           # device props inside properties() are indented; boot vars at top
           sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=Mix2S ResukiSU+BBG+Droidspace Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
@@ -165,28 +167,35 @@ jobs:
           sed -i "s|^BLOCK=.*|BLOCK=/dev/block/bootdevice/by-name/boot;|"     "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/"                    "$RUNNER_TEMP/ak3/anykernel.sh"
           cp "$RUNNER_TEMP/out/Image.gz-dtb" "$RUNNER_TEMP/ak3/"
-          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/polaris-kernel.zip" . -x "*.git*" >/dev/null )
+          # zip INSIDE ak3/ so the zip root is anykernel.sh/META-INF/tools/
+          # (standard AnyKernel3 layout, no extra wrapper directory)
+          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/polaris-kernel.zip" . >/dev/null )
 
-      # Always upload the build log + final config so failures are fully
-      # diagnosable from the artifact (public repos allow anonymous download).
-      - name: Upload build diagnostics
+      # --- three SEPARATE artifacts, never nested/repacked into each other ---
+      # 1) raw build log  2) raw kernel image  3) standard AnyKernel3 zip
+      - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log-${{ github.run_id }}
-          path: |
-            ${{ github.workspace }}/logs/build.log
-            ${{ github.workspace }}/logs/final.config
+          name: build.log
+          path: ${{ github.workspace }}/logs/build.log
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload artifacts
+      - name: Upload kernel image
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: polaris-kernel-${{ env.KERNEL_REF }}
-          path: |
-            ${{ runner.temp }}/out/Image.gz-dtb
-            ${{ runner.temp }}/polaris-kernel.zip
-            ${{ runner.temp }}/out/.config
+          name: Image.gz-dtb
+          path: ${{ runner.temp }}/out/Image.gz-dtb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload AnyKernel3 package
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polaris-kernel.zip
+          path: ${{ runner.temp }}/polaris-kernel.zip
+          if-no-files-found: error
           retention-days: 14
