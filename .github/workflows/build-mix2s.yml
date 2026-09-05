@@ -59,7 +59,7 @@ jobs:
       ENABLE_BBG: ${{ inputs.enable_bbg || true }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
-      HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
+      HOOK_EXTRA: ${{ inputs.hook_extra || 'manual' }}  # TEMP: verify manual mode, revert to 'lsm' after
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
