@@ -66,11 +66,18 @@ jobs:
 
       - name: Clone kernel source (not part of this repo)
         run: |
-          git clone --depth=1 --branch="${{ inputs.kernel_ref }}" \
+          set -o pipefail
+          git config --global http.postBuffer 524288000
+          # partial clone: fetch commit+tree first, blobs fetched lazily in
+          # batches — avoids GitHub's single-pack transfer limit on 1.5GB repos
+          git clone --depth=1 --filter=blob:none \
+            --branch="${{ inputs.kernel_ref }}" \
             https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845.git \
-            "$RUNNER_TEMP/kernel"
+            "$RUNNER_TEMP/kernel" 2>&1 | tee /tmp/clone.log
           echo "KROOT=$RUNNER_TEMP/kernel" >> "$GITHUB_ENV"
           head -6 "$RUNNER_TEMP/kernel/Makefile"
+          # surface errors via step summary (readable through the API)
+          { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Apply ReSukiSU manual-hook source patches
         if: inputs.enable_resukisu
