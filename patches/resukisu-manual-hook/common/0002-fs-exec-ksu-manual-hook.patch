@@ -1,5 +1,5 @@
 diff --git a/fs/exec.c b/fs/exec.c
-index 5addf3b..c2dedb0 100644
+index 5addf3b..0d98daf 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -67,6 +67,12 @@
@@ -15,13 +15,13 @@ index 5addf3b..c2dedb0 100644
  int suid_dumpable = 0;
  
  static LIST_HEAD(formats);
-@@ -1681,6 +1687,9 @@ static int do_execveat_common(int fd, struct filename *filename,
- 			      struct user_arg_ptr envp,
- 			      int flags)
- {
+@@ -1687,6 +1693,9 @@ static int do_execveat_common(int fd, struct filename *filename,
+ 	struct files_struct *displaced;
+ 	int retval;
+ 
 +#ifdef CONFIG_KSU_MANUAL_HOOK
 +	ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
 +#endif
- 	char *pathbuf = NULL;
- 	struct linux_binprm *bprm;
- 	struct file *file;
+ 	if (IS_ERR(filename))
+ 		return PTR_ERR(filename);
+ 
