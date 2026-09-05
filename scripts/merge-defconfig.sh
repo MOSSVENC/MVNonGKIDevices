@@ -57,6 +57,12 @@ append_cfg "$BASE"                       # baseline (LOS common)
 append_cfg arch/arm64/configs/vendor/xiaomi/polaris.config   # device fragment
 for f in "$@"; do append_cfg "$f"; done  # feature fragments (later wins)
 
+# --- build-hardening override (always): this 4.9 tree predates GCC 10+ and
+# trips -Werror=format etc. on modern cross compilers. CC_WERROR must stay
+# off for a clean build regardless of feature selection.
+echo "# CONFIG_CC_WERROR is not set" >> "$RAW"
+echo "# CONFIG_CC_WERROR_STRICT is not set" >> "$RAW"   # harmless if absent
+
 # --- de-dup: keep the LAST occurrence of each symbol ---
 ALLCONFIG="$OUT/.allconfig"
 dedupe() {
