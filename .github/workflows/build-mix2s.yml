@@ -44,6 +44,14 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 180
+    env:
+      # workflow_dispatch inputs are empty on push-triggered runs, so every
+      # option falls back to a default (lineage-22.2 + all features on).
+      KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-22.2' }}
+      ENABLE_RESUKISU: ${{ inputs.enable_resukisu || true }}
+      ENABLE_BBG: ${{ inputs.enable_bbg || true }}
+      ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
+      CGROUP_PORT: ${{ inputs.cgroup_port || true }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
@@ -71,7 +79,7 @@ jobs:
           # partial clone: fetch commit+tree first, blobs fetched lazily in
           # batches — avoids GitHub's single-pack transfer limit on 1.5GB repos
           git clone --depth=1 --filter=blob:none \
-            --branch="${{ inputs.kernel_ref }}" \
+            --branch="$KERNEL_REF" \
             https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845.git \
             "$RUNNER_TEMP/kernel" 2>&1 | tee /tmp/clone.log
           echo "KROOT=$RUNNER_TEMP/kernel" >> "$GITHUB_ENV"
@@ -80,28 +88,28 @@ jobs:
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Apply ReSukiSU manual-hook source patches
-        if: inputs.enable_resukisu
+        if: env.ENABLE_RESUKISU == 'true'
         run: |
           bash scripts/apply-patches.sh "$KROOT" \
             patches/resukisu-manual-hook/common
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
-        if: inputs.enable_resukisu
+        if: env.ENABLE_RESUKISU == 'true'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment"
 
       - name: Integrate Baseband-guard (BBG)
-        if: inputs.enable_bbg
+        if: env.ENABLE_BBG == 'true'
         run: |
           bash scripts/integrate-bbg.sh "$KROOT" \
             "$GITHUB_WORKSPACE/bbg.config.fragment"
 
       - name: Integrate Droidspace (config fragment + cgroup port)
-        if: inputs.enable_droidspace
+        if: env.ENABLE_DROIDSPACE == 'true'
         run: |
           PORT=""
-          if [ "${{ inputs.cgroup_port }}" = "true" ]; then
+          if [ "$CGROUP_PORT" = "true" ]; then
             PORT="$GITHUB_WORKSPACE/patches/droidspace/polaris/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
@@ -109,12 +117,12 @@ jobs:
       - name: Assemble defconfig (mi845 + polaris + feature fragments)
         run: |
           FRAGS=""
-          [ "${{ inputs.enable_resukisu }}" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
-          [ "${{ inputs.enable_bbg }}" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
-          [ "${{ inputs.enable_droidspace }}" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/common/droidspace.config"
-          ENABLE_RESUKISU=${{ inputs.enable_resukisu }} \
-          ENABLE_BBG=${{ inputs.enable_bbg }} \
-          ENABLE_DROIDSPACE=${{ inputs.enable_droidspace }} \
+          [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
+          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/common/droidspace.config"
+          ENABLE_RESUKISU="$ENABLE_RESUKISU" \
+          ENABLE_BBG="$ENABLE_BBG" \
+          ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
 
       - name: Build kernel Image.gz-dtb
@@ -144,7 +152,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: polaris-kernel-${{ inputs.kernel_ref }}
+          name: polaris-kernel-${{ env.KERNEL_REF }}
           path: |
             ${{ runner.temp }}/out/Image.gz-dtb
             ${{ runner.temp }}/polaris-kernel.zip
