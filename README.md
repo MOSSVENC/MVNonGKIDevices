@@ -23,11 +23,11 @@ GitHub Actions 在 CI 中拉取内核源码后按特性开关集成并编译。
 | Droidspace | `features.droidspace.enabled` | 容器/LXC/Docker 内核支持 | on |
 | Android/data 隔离 | `features.data_isolation.enabled` | sdcardfs per-uid 隔离 `Android/data/<pkg>`：非 owner app lookup/getattr 得 ENOENT | 仅 polaris on，其余 off |
 
-### 工具链（统一 clang，勿换回 gcc）
+### 工具链
 
-所有设备统一用 **AOSP clang 14（clang-r450784d，android13-release）+ Android
-GCC 4.9 prebuilts**（aarch64-linux-android-4.9 / arm-linux-androideabi-4.9，
-仅作 binutils：as/ld 由 clang 外部汇编/链接发现用），编译命令：
+所有设备统一用 **AOSP clang 14（clang-r450784d）+ Android GCC 4.9
+prebuilts**（aarch64-linux-android-4.9 / arm-linux-androideabi-4.9，作
+binutils 用），编译命令：
 
 ```bash
 make -j$(nproc) O=out ARCH=arm64 \
@@ -38,32 +38,16 @@ make -j$(nproc) O=out ARCH=arm64 \
   LD=ld.lld LLVM=1 LLVM_IAS=1
 ```
 
-踩坑记录（4.9 非 GKI + clang 组合的硬约束）：
-- **不能只 `CC=clang` 不带 `LLVM_IAS=1`**：clang 走外部 as 时，stackprotector
-  的 `cc-option` 测试（`-no-integrated-as` 调 aosp-4.9 as）会失败 →
-  `CC_STACKPROTECTOR_STRONG not supported`。`LLVM_IAS=1` 让主内核全走 clang
-  内置汇编器才过。
-- **`CROSS_COMPILE_ARM32` 必须给（绝对路径前缀）**：4.9 arm64 Makefile 在
-  `CONFIG_COMPAT_VDSO=y` 时硬检查它（`which $(CROSS_COMPILE_ARM32)ld` 需命中），
-  否则 `compat vDSO will not be built` 直接 Stop。
-- **`LD=ld.lld` 必须给**：AArch32 vDSO 链接（`vdso.so.raw`）若让 clang 找外部
-  arm ld 会 fallback 到 host `/usr/bin/ld` → `unrecognised emulation mode:
-  armelf_linux_eabi`。lld 原生支持该 emulation。
-- gcc（gcc-10/gcc-12）在 Flyme66 系树上会挂 prepare-compiler-check 或
-  `-Werror`，只对 MOSSVENC LOS 树可用——统一 clang 后不再区分。
+参数为 4.9 + clang 的必需组合：`LLVM_IAS=1`（stackprotector cc-option
+检测走内置汇编器）、`CROSS_COMPILE_ARM32` 绝对路径前缀（compat vDSO
+硬检查）、`LD=ld.lld`（AArch32 vDSO 链接）。
 
 ### Android/data 隔离（sdcardfs per-uid ENOENT）
 
-背景：4.9 非 GKI 机器上 `/storage/emulated/0/Android/{data,obb}` 是 **sdcardfs
-bind-mount**（`/dev/fuse` 只服务到 `/storage/emulated` 上层），MediaProvider
-FUSE daemon 的 data-isolation 判权（`isUidAllowedAccessToDataOrObbPath`）**永远
-看不到这些 lookup**——它在 AOSP 里是为 GKI 5.10+ FUSE daemon 设计的，且 4.9
-无 FUSE BPF。sdcardfs 自身只把顶层 mask 成 0711：挡住 readdir 枚举，但
-**已知包路径的 stat/open 仍成功**，于是任何 app 都能探测任意已装应用的
-`Android/data/<pkg>` 是否存在（包名泄漏）。
-
-补丁 `patches/sdcardfs/0001-sdcardfs-android-data-isolation.patch` 把 AOSP
-语义搬进 sdcardfs：
+该设备上 `/storage/emulated/0/Android/{data,obb}` 由 sdcardfs 服务：顶层
+mask 挡 readdir 枚举，但已知包路径的 stat/open 仍可探测任意已装应用的
+`Android/data/<pkg>`。补丁 `patches/sdcardfs/0001-sdcardfs-android-data-isolation.patch`
+把 AOSP data-isolation 语义搬进 sdcardfs：
 - `uid < AID_APP_START`（root/系统/媒体/shell）→ 放行
 - 包 owner（或该包 `Android/data/<pkg>` 子树内任意节点）→ 放行
 - 其它 app 访问 `Android/data/<pkg>` → lookup/getattr 返回 **ENOENT**（干净
@@ -97,28 +81,9 @@ manual hook 共 7 类；4 类必须改内核源码，3 类可选：
   `manual_hook_check.mk` 会改为校验手动符号。
 - workflow_dispatch 输入 `hook_extra`（choice lsm/manual）可单次切换。
 
-### 静态符号：由 CONFIG_KALLSYMS_ALL 代替手动导出
+### 静态符号
 
-manual-integrate 文档的 [static-symbol-export](https://resukisu.org/zh-Hans/guide/manual-integrate.html#static-symbol-export)
-章节要求对部分 selinux 静态符号去 static（write_op / sel_handle_status_ops /
-selinux_status_page / selinux_status_lock / sel_mutex / policy_rwlock / selinux_ops /
-security_dump_masked_av / context_struct_compute_av），但这只在
-`CONFIG_KALLSYMS_ALL` **关闭**时才是必须的：
-
-- 官方 `kernel/Kbuild`：`ifneq ($(CONFIG_KALLSYMS_ALL),y) → include static_export_check.mk`
-  —— 开了 KALLSYMS_ALL 连导出检查都跳过；
-- ReSukiSU 源码对所有符号都是 `#ifdef CONFIG_KALLSYMS_ALL` → kallsyms 查表 /
-  `#else` → `extern` 直接引用的双路径；KALLSYMS_ALL=y 恒走查表，static 与否无关；
-- `merge-defconfig.sh` **无条件强制** `CONFIG_DEBUG_KERNEL=y` +
-  `CONFIG_KALLSYMS=y` + `CONFIG_KALLSYMS_ALL=y`（含断言）——不依赖各设备
-  基线自带与否（beryllium/daisy 自带；vince 不自带，靠强制）；
-  4.9 内核导出 `kallsyms_lookup_name`/`kallsyms_on_each_symbol`
-  （EXPORT_SYMBOL_GPL），查表链路完整可用。
-
-因此**本仓库不打去 static 的导出补丁**：selinux 静态符号全部由
-KALLSYMS_ALL 的 kallsyms 查表解析，导出检查由官方 static_export_check.mk
-在 KALLSYMS_ALL 关闭时才启用（见上）；本仓库合并阶段无条件强制
-KALLSYMS_ALL，该路径恒不触发。
+selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 查表解析（合并阶段无条件强制），不提供去 static 导出补丁。
 
 ## 最终 .config 合并顺序
 
@@ -144,16 +109,6 @@ beryllium 用自带 `beryllium_defconfig`（自包含，`CLEAR_LOCALVERSION=true
 `-Helios™`）；daisy 用 `msm8953-perf_defconfig`（xiaomi/daisy.config 已核实
 完全冗余——每行都在基线里）；vince 用 `vince-perf_defconfig`（自包含）。
 
-## 为什么 polaris 用 mi845_defconfig 而不是 sdm845-perf_defconfig
-
-- LOS 官方钦定：`android_device_xiaomi_sdm845-common` 的
-  `TARGET_KERNEL_CONFIG := vendor/xiaomi/mi845_defconfig`；
-  `android_device_xiaomi_polaris` 再 `+= vendor/xiaomi/polaris.config`。
-- `arch/arm64/configs/sdm845(-perf)_defconfig` 是 CAF 高通参考板配置：缺
-  小米量产必需项（`QCA_CLD_WLAN`/WiFi、`MSM_QDSP6_*`/音频、指纹等 51 项），
-  却带一堆评估板/调试项（`IOMMU_DEBUG`、`CORESIGHT_*`、板载网卡、强制模块
-  签名等）。名字里的 "-perf" 只是高通 flavor 标签，不代表更优。
-
 ## 目录结构
 
 ```
@@ -169,14 +124,6 @@ scripts/                              编排脚本（见下）
 .github/workflows/build-<代号>.yml     每设备 CI
 ```
 
-补丁选择规则：polaris/beryllium 用 `common/` 全 4 个（其 reboot.c 为标准
-上下文）；daisy/vince 的 reboot.c 带 `pullDownReset` 声明，用各自设备目录
-里的 0004 变体（apply-patches.sh 支持传单文件，common/0004 不参与）。
-vince 树额外自带一套**旧版 KernelSU**（kprobes 时代，drivers/kernelsu +
-fs/*.c 埋点），workflow 先剥离 wiring 再反向应用
-`patches/vince/0000-remove-legacy-ksu-hooks.patch` 清源码埋点，然后才走
-ReSukiSU 管线。
-
 CI 里所有补丁应用后会先 `git commit` 一次内核树，让 `setlocalversion` 看到
 干净 git 状态——**版本串不再带 `-dirty` 后缀**，同时保留 `git describe` 的
 提交号（如 `4.9.337-perf-g<sha>`）。
@@ -189,12 +136,10 @@ CI 里所有补丁应用后会先 `git commit` 一次内核树，让 `setlocalve
 ```bash
 KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xiaomi_sdm845
 
-# 1. ReSukiSU manual hook 补丁（daisy/vince 用设备变体 0004，见目录结构节）
+# 1. ReSukiSU manual hook 补丁（daisy/vince 用各自设备目录的 0004 变体）
 bash scripts/apply-patches.sh "$KROOT" \
   patches/resukisu-manual-hook/common          # polaris/beryllium
-# 或 daisy/vince:
-# bash scripts/apply-patches.sh "$KROOT" \
-#   .../common/0001 .../common/0002 .../common/0003 <dev>/0004
+# daisy/vince: 传 common/0001-0003 单文件 + <dev>/0004
 
 # 2. 集成 ReSukiSU / BBG / Droidspace
 bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm
@@ -228,21 +173,12 @@ CC_WERROR 的强制与断言见脚本内注释。
 
 ## 已知取舍 / 边界
 
-- **susfs inline hook**：ReSukiSU Kconfig 在 4.9 上可选（arm64 满足
-  `THREAD_INFO_IN_TASK && 64BIT`），但 susfs4ksu 官方 `kernel-4.9` 分支基于
-  原版 KernelSU、需自行移植到 ReSukiSU。本仓库**未实现**，`hook_mode` 字段
-  预留。只交付 manual hook。
-- **Android/data 隔离**：补丁只验证于 polaris（其 ROM 的
-  `/storage/emulated/0/Android/data` 是 sdcardfs bind-mount 且包名 stat 泄漏
-  实测存在）。beryllium/daisy/vince **默认关闭**——它们的 ROM 存储挂载
-  方式未经同样验证，贸然开启可能误伤。
-- **vince 旧 KernelSU**：树自带 kprobes 时代 KSU（drivers/kernelsu + 源码
-  埋点）。workflow 剥离后跑 ReSukiSU。若上游更新旧 KSU 代码，
-  `0000-remove-legacy-ksu-hooks.patch` 需同步重新生成（反向 eb0503）。
+- **susfs**：本仓库交付 ReSukiSU manual hook；不含 susfs inline hook。
+- **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 默认关闭。
+- **vince 旧 KernelSU**：workflow 剥离树自带旧 KSU 后集成 ReSukiSU；上游若更新旧
+  KSU 代码，`patches/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
 - **Droidspace 官方 01 补丁（xt_qtaguid）**：本内核树无该文件，不拉取。
-- **Droidspace 02 移植补丁**：非致命；apply 失败自动跳过（4.9 原生
-  `cgroup_file_name` 已处理大部分前缀语义）。
+- **Droidspace 02 移植补丁**：非致命；apply 失败自动跳过。
 - ReSukiSU 与管理器（Manager APK）版本需自行匹配；仓库固定引用其
   `main` 分支的 `kernel/setup.sh`。
-- 32 位兼容：`CONFIG_COMPAT=y`，故 `fstat64/fstatat64` 的 hook 也必须打
-  （已包含在 0001）。
+- 32 位兼容：`CONFIG_COMPAT=y`，`fstat64/fstatat64` 的 hook 已包含在 0001。
