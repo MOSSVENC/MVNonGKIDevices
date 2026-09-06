@@ -1306,7 +1306,7 @@ index 4274f83bf..1963ff302 100644
  	if (seq_has_overflowed(m))
  		goto out;
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index 1d06ab4aa..d4c3c8730 100644
+index 1d06ab4aa..151327668 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -17,6 +17,9 @@
@@ -1334,7 +1334,7 @@ index 1d06ab4aa..d4c3c8730 100644
  static void
  show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
  {
-@@ -362,9 +373,37 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
+@@ -362,9 +373,36 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
  
  	if (file) {
  		struct inode *inode = file_inode(vma->vm_file);
@@ -1361,8 +1361,7 @@ index 1d06ab4aa..d4c3c8730 100644
 +				seq_pad(m, ' ');
 +				if (spoofed_redirected_name)
 +					seq_puts(m, spoofed_redirected_name);
-+				seq_putc(m, '
-+');
++				seq_putc(m, '\n');
 +				srcu_read_unlock(&susfs_srcu_open_redirect, srcu_idx);
 +				return;
 +			}
@@ -1372,7 +1371,7 @@ index 1d06ab4aa..d4c3c8730 100644
  	}
  
  	/* We don't show the stack guard page in /proc/maps */
-@@ -822,6 +861,11 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
+@@ -822,6 +860,11 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
  		mss = &mss_stack;
  	}
  
@@ -1384,7 +1383,7 @@ index 1d06ab4aa..d4c3c8730 100644
  	smaps_walk.private = mss;
  
  #ifdef CONFIG_SHMEM
-@@ -911,7 +955,6 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
+@@ -911,7 +954,6 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
  			   (unsigned long)(mss->swap_pss >> (10 + PSS_SHIFT)),
  			   (unsigned long)(mss->pss_locked >> (10 + PSS_SHIFT)));
  
@@ -1392,7 +1391,7 @@ index 1d06ab4aa..d4c3c8730 100644
  	if (!rollup_mode) {
  		arch_show_smap(m, vma);
  		show_smap_vma_flags(m, vma);
-@@ -1570,6 +1613,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -1570,6 +1612,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  	while (count && (start_vaddr < end_vaddr)) {
  		int len;
  		unsigned long end;
@@ -1402,7 +1401,7 @@ index 1d06ab4aa..d4c3c8730 100644
  
  		pm.pos = 0;
  		end = (start_vaddr + PAGEMAP_WALK_SIZE) & PAGEMAP_WALK_MASK;
-@@ -1577,7 +1623,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -1577,7 +1622,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  		if (end < start_vaddr || end > end_vaddr)
  			end = end_vaddr;
  		down_read(&mm->mmap_sem);
@@ -1915,7 +1914,7 @@ index 1059f2a9b..4a0fb3c30 100644
  	return error;
  }
 diff --git a/fs/stat.c b/fs/stat.c
-index 068fdbcc9..c2fe6f4c7 100644
+index 068fdbcc9..cb807cbc9 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -17,6 +17,13 @@
@@ -1932,7 +1931,7 @@ index 068fdbcc9..c2fe6f4c7 100644
  
  void generic_fillattr(struct inode *inode, struct kstat *stat)
  {
-@@ -33,10 +40,15 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
+@@ -33,10 +40,17 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
  	stat->ctime = inode->i_ctime;
  	stat->blksize = i_blocksize(inode);
  	stat->blocks = inode->i_blocks;
@@ -1943,12 +1942,14 @@ index 068fdbcc9..c2fe6f4c7 100644
  
  EXPORT_SYMBOL(generic_fillattr);
  
-+
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat);
++#endif
 +
  /**
   * vfs_getattr_nosec - getattr without security checks
   * @path: file to get attributes from
-@@ -53,8 +65,14 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
+@@ -53,8 +67,14 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
  {
  	struct inode *inode = d_backing_inode(path->dentry);
  
@@ -1965,7 +1966,7 @@ index 068fdbcc9..c2fe6f4c7 100644
  
  	generic_fillattr(inode, stat);
  	return 0;
-@@ -74,6 +92,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
+@@ -74,6 +94,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
  
  EXPORT_SYMBOL(vfs_getattr);
  
@@ -1977,7 +1978,7 @@ index 068fdbcc9..c2fe6f4c7 100644
  int vfs_fstat(unsigned int fd, struct kstat *stat)
  {
  	struct fd f = fdget_raw(fd);
-@@ -81,12 +104,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
+@@ -81,12 +106,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
  
  	if (f.file) {
  		error = vfs_getattr(&f.file->f_path, stat);
@@ -2003,7 +2004,7 @@ index 068fdbcc9..c2fe6f4c7 100644
  int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  		int flag)
  {
-@@ -94,6 +130,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -94,6 +132,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	int error = -EINVAL;
  	unsigned int lookup_flags = 0;
  
@@ -2014,7 +2015,7 @@ index 068fdbcc9..c2fe6f4c7 100644
  	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
  		      AT_EMPTY_PATH)) != 0)
  		goto out;
-@@ -103,7 +143,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -103,7 +145,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	if (flag & AT_EMPTY_PATH)
  		lookup_flags |= LOOKUP_EMPTY;
  retry:
