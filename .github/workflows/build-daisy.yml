@@ -1,0 +1,263 @@
+name: build-daisy
+
+# Builds a Xiaomi Mi A2 Lite (daisy, msm8953) kernel from Flyme66's clean
+# "lineage-20" tree with selectable features (ReSukiSU manual hook / BBG /
+# Droidspace) and packages it as an AnyKernel3 zip.
+# Mirrors build-polaris.yml; differences:
+#   - kernel source: Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy @ lineage-20
+#   - baseline defconfig: msm8953-perf_defconfig (complete, no fragments)
+#   - device is A/B (slot)
+# Feature defaults mirror configs/daisy.yaml; toggle per-run here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_ref:
+        description: kernel branch/ref to build
+        required: false
+        default: lineage-20
+      enable_resukisu:
+        description: integrate ReSukiSU (manual hook)
+        type: boolean
+        default: true
+      enable_bbg:
+        description: integrate Baseband-guard (BBG)
+        type: boolean
+        default: true
+      enable_droidspace:
+        description: enable Droidspaces/LXC kernel support
+        type: boolean
+        default: true
+      cgroup_port:
+        description: apply 4.9 cgroup prefix port (droidspace)
+        type: boolean
+        default: true
+      hook_extra:
+        description: "resukisu extra hooks: lsm (AUTO, default) | manual (source patches 0010-0012)"
+        type: choice
+        options:
+          - lsm
+          - manual
+        default: lsm
+  push:
+    paths:
+      - "patches/**"
+      - "scripts/**"
+      - "configs/daisy.yaml"
+      - ".github/workflows/build-daisy.yml"
+
+concurrency:
+  group: daisy-kernel
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    env:
+      # workflow_dispatch inputs are empty on push-triggered runs, so every
+      # option falls back to a default (thirteen + all features on).
+      KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-20' }}
+      KERNEL_REPO: https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy.git
+      ENABLE_RESUKISU: ${{ inputs.enable_resukisu || true }}
+      ENABLE_BBG: ${{ inputs.enable_bbg || true }}
+      ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
+      CGROUP_PORT: ${{ inputs.cgroup_port || true }}
+      ENABLE_DATA_ISOLATION: "false"   # daisy does not use the sdcardfs data isolation patch
+      HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
+    steps:
+      - name: Checkout action repo
+        uses: actions/checkout@v4
+
+      # NOTE: no "Free disk space" step — it intermittently stalls on some
+      # runners for many minutes; our build fits in the runner's disk.
+
+      # all CAF 4.9 trees are built with with Android clang 14
+      # (clang-r450784d from android13-release); under gcc-10 the 4.9
+      # prepare-compiler-check fails on CONFIG_CC_STACKPROTECTOR_STRONG.
+      # Mirror the official Flyme66 flow: system binutils + AOSP clang.
+      - name: Install binutils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            git zip unzip curl bc bison flex libssl-dev make \
+            libncurses-dev python3 python3-pip \
+            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
+
+      - name: Download AOSP clang 14 (clang-r450784d)
+        run: |
+          mkdir -p "$RUNNER_TEMP/clang-aosp"
+          git clone -q --depth=1 --single-branch \
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+            -b android13-release "$RUNNER_TEMP/clang-aosp"
+          ls -d "$RUNNER_TEMP"/clang-aosp/clang-r450784d/bin/clang && \
+            echo "CLANG_DIR=$RUNNER_TEMP/clang-aosp/clang-r450784d/bin" >> "$GITHUB_ENV"
+
+      - name: Clone kernel source (not part of this repo)
+        run: |
+          set -o pipefail
+          git config --global http.postBuffer 524288000
+          # partial clone: fetch commit+tree first, blobs fetched lazily in
+          # batches — avoids GitHub's single-pack transfer limit on 1.5GB repos
+          git clone --depth=1 --filter=blob:none \
+            --branch="$KERNEL_REF" \
+            "$KERNEL_REPO" \
+            "$RUNNER_TEMP/kernel" 2>&1 | tee /tmp/clone.log
+          echo "KROOT=$RUNNER_TEMP/kernel" >> "$GITHUB_ENV"
+          head -6 "$RUNNER_TEMP/kernel/Makefile"
+          # surface errors via step summary (readable through the API)
+          { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Apply ReSukiSU manual-hook source patches
+        if: env.ENABLE_RESUKISU == 'true'
+        run: |
+          # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
+          # the kernel root, so relative paths would not resolve.
+          C="$GITHUB_WORKSPACE/patches/resukisu-manual-hook"
+          # daisy tree has its own reboot.c context (pullDownReset guard) —
+          # use the daisy-specific 0004, not common/0004.
+          PATCHES="$C/common/0001-fs-stat-ksu-manual-hook.patch $C/common/0002-fs-exec-ksu-manual-hook.patch $C/common/0003-fs-open-ksu-manual-hook.patch $C/daisy/0004-kernel-reboot-ksu-manual-hook.patch"
+          if [ "$HOOK_EXTRA" = "manual" ]; then
+            echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
+            PATCHES="$PATCHES $(ls $C/alt-hooks/*.patch | sort)"
+          else
+            echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
+          fi
+          bash scripts/apply-patches.sh "$KROOT" $PATCHES
+
+      - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
+        if: env.ENABLE_RESUKISU == 'true'
+        run: |
+          bash scripts/integrate-resukisu.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA"
+
+      - name: Integrate Baseband-guard (BBG)
+        if: env.ENABLE_BBG == 'true'
+        run: |
+          bash scripts/integrate-bbg.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/bbg.config.fragment"
+
+      - name: Integrate Droidspace (config fragment + cgroup port)
+        if: env.ENABLE_DROIDSPACE == 'true'
+        run: |
+          PORT=""
+          if [ "$CGROUP_PORT" = "true" ]; then
+            PORT="$GITHUB_WORKSPACE/patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch"
+          fi
+          bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
+
+      # NOTE: no sdcardfs Android/data isolation step — this device does not
+      # use it (see configs/daisy.yaml data_isolation.enabled=false).
+
+      # Commit all applied patches so `make`'s setlocalversion sees a clean
+      # git tree -> kernel version loses the "-dirty" suffix while keeping
+      # the git describe commit id (4.9 uses CONFIG_LOCALVERSION_AUTO).
+      - name: Commit patched kernel tree (drop -dirty from version)
+        run: |
+          cd "$KROOT"
+          git config user.email "action@localhost"
+          git config user.name "kernel-builder"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no changes to commit (clean tree)"
+          else
+            git commit -q -m "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace)"
+            echo "committed patched tree: $(git rev-parse --short HEAD)"
+          fi
+
+      - name: Assemble defconfig (device + feature fragments)
+        run: |
+          FRAGS=""
+          [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
+          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/common/droidspace.config"
+          BASE_DEFCONFIG="arch/arm64/configs/msm8953-perf_defconfig" \
+          DEVICE_FRAGMENTS="" \
+          CLEAR_LOCALVERSION="false" \
+          ENABLE_RESUKISU="$ENABLE_RESUKISU" \
+          ENABLE_BBG="$ENABLE_BBG" \
+          ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
+          ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
+          HOOK_EXTRA="$HOOK_EXTRA" \
+          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
+
+      - name: Build kernel Image.gz-dtb
+        run: |
+          set -o pipefail
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          # device tree compiles with AOSP clang 14 + LLVM IAS — mirrors
+          # Flyme66's official flow exactly (local verification used
+          # clang-r450784d with LLVM=1 LLVM_IAS=1). The 4.9 gcc-10 path
+          # fails prepare-compiler-check on CC_STACKPROTECTOR_STRONG here.
+          export PATH="$CLANG_DIR:$PATH"
+          export KBUILD_BUILD_HOST=build
+          export KBUILD_BUILD_USER=kernel
+          cd "$KROOT"
+          make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
+            CC="clang" \
+            CLANG_TRIPLE="aarch64-linux-gnu-" \
+            CROSS_COMPILE="aarch64-linux-gnu-" \
+            CROSS_COMPILE_ARM32="arm-linux-gnueabi-" \
+            LLVM=1 LLVM_IAS=1 2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
+          rc=${PIPESTATUS[0]}
+          cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
+          cp -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" "$RUNNER_TEMP/out/Image.gz-dtb" 2>/dev/null || true
+          [ -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" ] || { echo "Image.gz-dtb not produced"; rc=1; }
+          if [ "$rc" != 0 ]; then
+            { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+            exit "$rc"
+          fi
+          { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Package AnyKernel3 zip
+        run: |
+          rm -rf "$RUNNER_TEMP/ak3"
+          # full AnyKernel3 template (anykernel.sh + tools/ak3-core.sh,
+          # magiskboot, META-INF ...) — not a hand-rolled minimal layout
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git \
+            "$RUNNER_TEMP/ak3"
+          # strip VCS/CI cruft so the zip holds only flash-relevant files
+          rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
+                 "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
+          # --- device AK3 settings ---
+          # device props inside properties() are indented; boot vars at top
+          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=Daisy ResukiSU+BBG+Droidspace Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=daisy/"       "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name3=.*/\1device.name3=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name4=.*/\1device.name4=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s|^BLOCK=.*|BLOCK=/dev/block/bootdevice/by-name/boot;|"   "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=1;/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
+          cp "$RUNNER_TEMP/out/Image.gz-dtb" "$RUNNER_TEMP/ak3/"
+          # zip INSIDE ak3/ so the zip root is anykernel.sh/META-INF/tools/
+          # (standard AnyKernel3 layout, no extra wrapper directory)
+          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/daisy-kernel.zip" . >/dev/null )
+
+      # --- three SEPARATE artifacts, never nested/repacked into each other ---
+      # 1) raw build log  2) raw kernel image  3) standard AnyKernel3 zip
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build.log
+          path: ${{ github.workspace }}/logs/build.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload kernel image
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Image.gz-dtb
+          path: ${{ runner.temp }}/out/Image.gz-dtb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload AnyKernel3 package
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daisy-kernel.zip
+          path: ${{ runner.temp }}/daisy-kernel.zip
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,46 @@
+# Xiaomi Redmi Note 5 / vince (msm8953) kernel build configuration
+#
+# Consumed by .github/workflows/build-vince.yml.
+#
+# Kernel source: Flyme66's OctaviOS vince tree (branch "13"), a clean 4.9.337
+# tree. NOTE: it ships a LEGACY KernelSU under drivers/kernelsu (old kprobes
+# era Kconfig: KSU / HAVE_KSU_WITHOUT_KPROBES / KSU_DEBUG, drivers/Makefile
+# already wired with obj-$(CONFIG_KSU) += kernelsu/). Our ReSukiSU manual
+# hook pipeline replaces it: the workflow removes drivers/kernelsu and the
+# drivers/Makefile line before running ReSukiSU setup.sh.
+#
+# Defconfig: arch/arm64/configs/vince-perf_defconfig is a self-contained
+# generated defconfig (no xiaomi/ fragments exist in this tree).
+
+kernel:
+  repo: https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince
+  ref: "13"                 # Linux 4.9.337, arm64 (vince / msm8953)
+  expect_major: 4
+  expect_minor: 9
+
+device:
+  codename: vince            # Xiaomi Redmi Note 5
+  base_defconfig: arch/arm64/configs/vince-perf_defconfig
+  fragments: []
+  # vince-perf_defconfig has CONFIG_KALLSYMS=y but NOT KALLSYMS_ALL; the
+  # merge step pins CONFIG_KALLSYMS_ALL=y unconditionally, so no LOCALVERSION
+  # handling needed here (stock config has no vendor suffix).
+  clear_localversion: false
+
+features:
+  resukisu:
+    enabled: true
+    hook_mode: manual
+    hook_extra: lsm
+  bbg:
+    enabled: true
+  droidspace:
+    enabled: true
+    official_01_qtaguid: skip
+    cgroup_02_port: true
+  data_isolation:
+    enabled: false              # NOT enabled for vince
+
+artifact:
+  image: Image.gz-dtb
+  anykernel3: true

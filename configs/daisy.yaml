@@ -1,0 +1,48 @@
+# Xiaomi Mi A2 Lite / daisy-family (msm8953) kernel build configuration
+#
+# Consumed by .github/workflows/build-daisy.yml.
+#
+# Kernel source: Flyme66's msm8953 daisy tree (branch "lineage-20"), a clean
+# 4.9.337 tree (same lineage as polaris/beryllium).
+#
+# Defconfig note (verified, not assumed): arch/arm64/configs/msm8953-perf_defconfig
+# is a COMPLETE defconfig — every CONFIG_* line present in
+# arch/arm64/configs/xiaomi/daisy.config already exists with the identical
+# value in msm8953-perf_defconfig, so no extra device fragment is needed
+# (xiaomi/daisy.config is fully redundant; merging it changes nothing).
+
+kernel:
+  repo: https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy
+  ref: lineage-20            # Linux 4.9.337, arm64 (daisy / msm8953)
+  expect_major: 4
+  expect_minor: 9
+
+device:
+  codename: daisy             # Xiaomi Mi A2 Lite
+  # Complete defconfig; no xiaomi/ fragments required (verified redundant).
+  base_defconfig: arch/arm64/configs/msm8953-perf_defconfig
+  fragments: []
+  # Stock defconfig already sets CONFIG_LOCALVERSION="-lineageos" and
+  # CONFIG_LOCALVERSION_AUTO is not set — leave as-is (no dirty suffix risk).
+  clear_localversion: false
+
+features:
+  resukisu:
+    enabled: true
+    hook_mode: manual           # only "manual" is supported on 4.9 (susfs reserved)
+    hook_extra: lsm             # setuid/initrc/input via ReSukiSU LSM + input_handler AUTO
+  bbg:
+    enabled: true               # Baseband-guard anti-format LSM
+  droidspace:
+    enabled: true               # Droidspaces / LXC container kernel support
+    # 01 (xt_qtaguid panic fix) targets a file absent from msm8953 4.9 trees.
+    official_01_qtaguid: skip
+    # 02 (cgroup prefix restore) 4.9 port is shared in patches/droidspace/common/
+    # and applies to the msm8953 cgroup.c (same 4.9 layout).
+    cgroup_02_port: true
+  data_isolation:
+    enabled: false              # NOT enabled for daisy (no sdcardfs patch port)
+
+artifact:
+  image: Image.gz-dtb
+  anykernel3: true
