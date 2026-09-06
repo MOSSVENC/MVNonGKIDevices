@@ -7,26 +7,36 @@ on JackA1ltman/NonGKI_Kernel_Build_2nd's verified work (polaris/4.9).
 ## Files
 
 - `susfs_patch_to_4.9.patch` — SuSFS v2.3.0 core (fs/susfs.c, susfs.h,
-  susfs_def.h + kernel hook points), self-contained patch.
+  susfs_def.h + kernel hook points).
   Source: https://github.com/JackA1ltman/NonGKI_Kernel_Build_2nd
           (mainline branch, Patches/Patch/susfs_patch_to_4.9.patch)
-- `susfs_inline_hook_patches.sh` — generates the KSU-inline-hook call
-  sites (fs/exec.c, open.c, read_write.c, stat.c, namei.c, input.c,
-  security.c, selinux hooks/services, reboot.c, sys.c) with sed,
-  adapting to 4.4/4.9/4.14/4.19/5.4 feature differences.
-  Source: same repo (Patches/susfs_inline_hook_patches.sh)
+- `susfs_inline_hook_patches-4.9.sh` — sed generator for the
+  KSU-inline-hook call sites, **fixed for ReSukiSU on stock 4.9**:
+  ksu_handle_sys_read is 3-arg (ReSukiSU signature) and the stat.c
+  vfs_fstatat extern no longer carries the fragment bug from the
+  upstream generator.
+- `polaris-susfs-final.patch` — **pre-generated final snapshot** for the
+  polaris LOS tree: core + stat.c/task_mmu.c 4.9 adaptation +
+  hook call sites. This is what CI applies (one self-contained patch);
+  the generator + adapt script below are the regeneration path for
+  tracking upstream.
+- `../../scripts/susfs-adapt-4.9.sh` — stock-4.9 adaptation of the two
+  files the upstream patch misses (stat.c: 2-arg vfs_getattr_nosec /
+  no result_mask; task_mmu.c: two-block show_map_vma).
 
-## Apply order (in CI, inside kernel tree)
+## Regeneration path (tracking upstream gki-android12-5.10)
 
-1. patch -p1 < patches/susfs/susfs_patch_to_4.9.patch   (core)
-2. bash patches/susfs/susfs_inline_hook_patches.sh      (hook call sites)
-3. defconfig fragment: CONFIG_KSU_SUSFS=y + sub-options
-   (KernelSU-side Kconfig provides the symbols; ReSukiSU's KSU_SUSFS
-   choice must be selected — hook mode "susfs")
+1. patch -p1 < susfs_patch_to_4.9.patch            (or refreshed core)
+2. bash scripts/susfs-adapt-4.9.sh                 (stock-4.9 fixes)
+3. create drivers/kernelsu marker (hook gen check), then
+   bash susfs_inline_hook_patches-4.9.sh           (hook call sites)
+4. git diff -> polaris-susfs-final.patch           (snapshot)
 
-Rejected hunks (.rej) must be reviewed manually per kernel tree; the
-polaris LOS tree currently applies cleanly except fs/stat.c and
-fs/proc/task_mmu.c (minor context drift).
+## CI apply
+
+Single step: git apply polaris-susfs-final.patch, then the fragment
+(CONFIG_KSU_SUSFS=y + sub-options; ReSukiSU's KSU_SUSFS choice selected
+— hook mode "susfs").
 
 ## Upstream tracking
 
