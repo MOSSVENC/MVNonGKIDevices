@@ -59,14 +59,14 @@ jobs:
       # option falls back to a default (thirteen + all features on).
       KERNEL_REF: ${{ inputs.kernel_ref || 'thirteen' }}
       KERNEL_REPO: https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium.git
-      ENABLE_RESUKISU: ${{ inputs.enable_resukisu || true }}
-      ENABLE_BBG: ${{ inputs.enable_bbg || true }}
-      ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
-      CGROUP_PORT: ${{ inputs.cgroup_port || true }}
+      ENABLE_RESUKISU: ${{ inputs.enable_resukisu }}
+      ENABLE_BBG: ${{ inputs.enable_bbg }}
+      ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
+      CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
       HOOK_TYPE: ${{ startsWith(inputs.hook_mode, 'auto') && 'auto' || 'manual' }}
       HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
-      AUTO_FIX_49: ${{ inputs.auto_fix_49 || true }}
+      AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
