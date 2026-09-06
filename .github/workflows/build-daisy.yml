@@ -68,7 +68,7 @@ jobs:
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # NOTE: no "Free disk space" step — it intermittently stalls on some
       # runners for many minutes; our build fits in the runner's disk.
@@ -262,27 +262,30 @@ jobs:
       # 1) raw build log  2) raw kernel image  3) standard AnyKernel3 zip
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build.log
           path: ${{ github.workspace }}/logs/build.log
+          archive: false
           if-no-files-found: warn
           retention-days: 14
 
       - name: Upload kernel image
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Image.gz-dtb
           path: ${{ runner.temp }}/out/Image.gz-dtb
+          archive: false
           if-no-files-found: error
           retention-days: 14
 
       - name: Upload AnyKernel3 package
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: daisy-kernel.zip
           path: ${{ runner.temp }}/daisy-kernel.zip
+          archive: false
           if-no-files-found: error
           retention-days: 14
