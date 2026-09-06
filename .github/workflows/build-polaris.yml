@@ -138,23 +138,30 @@ jobs:
           fi
           bash scripts/apply-patches.sh "$KROOT" $PATCH_DIRS
 
-      - name: Apply SuSFS kernel-side port (hook_mode=susfs)
-        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
-        run: |
-          # Non-GKI SuSFS port (see patches/susfs/README.md): self-contained
-          # v2.3.0 core + LOS-4.9-adapted hook points. Contains new files
-          # (fs/susfs.c etc.) so git apply is used against the kernel tree.
-          cd "$KROOT"
-          git apply --check "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-full.patch"             || { echo "SuSFS patch does not apply cleanly (dry-run failed)"; exit 1; }
-          git apply "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-full.patch"
-          echo "SuSFS kernel-side port applied:"
-          grep -rn 'susfs' fs/Makefile | head -3
-
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
         if: env.ENABLE_RESUKISU == 'true'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
+
+      # SuSFS kernel-side port must run AFTER ReSukiSU setup.sh: the hook
+      # generator checks drivers/kernelsu/ for ksu_handle_* before wiring
+      # kernel/sys.c etc.
+      - name: Apply SuSFS kernel-side port (hook_mode=susfs)
+        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
+        run: |
+          cd "$KROOT"
+          # Core port (susfs.c/h/def.h + kernel hook points incl. uname
+          # spoof). ReSukiSU is already set up at this point.
+          git apply --check "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-full.patch" || { echo "SuSFS core patch does not apply cleanly"; exit 1; }
+          git apply "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-full.patch"
+          # KSU-inline-hook call sites (ksu_handle_setresuid in kernel/sys.c
+          # and friends). Idempotent: skips files that already carry the
+          # hooks (they came in with the core patch above).
+          bash "$GITHUB_WORKSPACE/patches/susfs/susfs_inline_hook_patches.sh"
+          echo "SuSFS port applied:"
+          grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
+
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
