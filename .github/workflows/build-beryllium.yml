@@ -191,6 +191,7 @@ jobs:
           export PATH="$CLANG_DIR:$PATH"
           export KBUILD_BUILD_HOST=build
           export KBUILD_BUILD_USER=kernel
+          cd "$KROOT"
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC="clang" \
             CLANG_TRIPLE="aarch64-linux-gnu-" \
