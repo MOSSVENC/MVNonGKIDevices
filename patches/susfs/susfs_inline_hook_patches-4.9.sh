@@ -170,8 +170,16 @@ for i in "${patch_files[@]}"; do
             echo "[-] Kernel have no vfs_statx and vfs_fstatat."
         fi
 
-        sed -i '/if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |/i\#ifdef CONFIG_KSU_SUSFS\n\tstruct filename *fname = NULL;\n#endif\n' fs/stat.c
-        sed -i '/error = user_path_at(dfd, filename, lookup_flags, \&path);/i\#ifdef CONFIG_KSU_SUSFS\n\tfname = getname_flags(filename, lookup_flags, NULL);\n\n\tif (likely(susfs_is_current_proc_no_su()))\n\t\tgoto orig_flow;\n\n\tif (static_branch_likely(\&ksu_su_compat_enabled)) {\n\t\tif (unlikely(__ksu_is_allow_uid_for_current(current_uid().val)))\n\t\t\tksu_handle_stat(\&dfd, \&fname, \&flags);\n\t}\n\norig_flow:\n\terror = filename_lookup(dfd, fname, lookup_flags, \&path, NULL);\n\t\/\/ no putname(fname) here as filename_lookup() has it done for us already;\n#else' fs/stat.c
+        # 4.9 vfs_fstatat uses 'flag' (singular); 5.10 vfs_statx uses 'flags'.
+        # Try both patterns so the fname declaration is always emitted.
+        if grep -q 'if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |' fs/stat.c; then
+            sed -i '/if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |/i\#ifdef CONFIG_KSU_SUSFS\n\tstruct filename *fname = NULL;\n#endif\n' fs/stat.c
+        elif grep -q 'if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |' fs/stat.c; then
+            sed -i '/if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |/i\#ifdef CONFIG_KSU_SUSFS\n\tstruct filename *fname = NULL;\n#endif\n' fs/stat.c
+        else
+            echo "[-] fs/stat.c: no flag(s) sanity-check line found for fname decl"
+        fi
+        sed -i '/error = user_path_at(dfd, filename, lookup_flags, \&path);/i\#ifdef CONFIG_KSU_SUSFS\n\tfname = getname_flags(filename, lookup_flags, NULL);\n\n\tif (likely(susfs_is_current_proc_no_su()))\n\t\tgoto orig_flow;\n\n\tif (static_branch_likely(\&ksu_su_compat_enabled)) {\n\t\tif (unlikely(__ksu_is_allow_uid_for_current(current_uid().val)))\n\t\t\tksu_handle_stat(\&dfd, \&fname, NULL);\n\t}\n\norig_flow:\n\terror = filename_lookup(dfd, fname, lookup_flags, \&path, NULL);\n\t\/\/ no putname(fname) here as filename_lookup() has it done for us already;\n#else' fs/stat.c
         sed -i '/error = user_path_at(dfd, filename, lookup_flags, \&path);/a\#endif' fs/stat.c
         sed -i '/fdput(f);/i\#ifdef CONFIG_KSU_SUSFS\n\t\tif (static_branch_unlikely(\&ksu_is_init_rc_hook_enabled))\n\t\t\tksu_handle_vfs_fstat(fd, \&stat->size);\n#endif \/\/ #ifdef CONFIG_KSU_SUSFS\n' fs/stat.c
 
