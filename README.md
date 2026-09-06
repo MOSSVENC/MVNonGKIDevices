@@ -6,22 +6,26 @@ GitHub Actions 在 CI 中拉取内核源码后按特性开关集成并编译。
 ## 支持设备（均为 Linux 4.9.337 / arm64）
 
 | 设备 | 代号 | 内核源 / 分支 | workflow |
-|---|---|---|---|---|
+|---|---|---|---|
 | Xiaomi Mi Mix 2S | `polaris` (sdm845) | [MOSSVENC/android_kernel_xiaomi_sdm845](https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845) @ `lineage-22.2` | `build-polaris.yml` |
 | Xiaomi Pocophone F1 | `beryllium` (sdm845) | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
 | Xiaomi Mi A2 Lite | `daisy` (msm8953) | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
 | Xiaomi Redmi Note 5 | `vince` (msm8953) | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
 
-workflow_dispatch 输入（enable_resukisu/enable_bbg/enable_droidspace/...）控制各特性开关，默认值见各 workflow 头部注释。
+workflow_dispatch 输入控制各特性开关（enable_resukisu / enable_bbg /
+enable_droidspace / cgroup_port / enable_data_isolation / hook_mode /
+auto_fix_49），默认值见各 workflow 的 input 定义。构建只通过
+workflow_dispatch 手动触发（无 push 自动触发）。
 
-## 特性开关（编译时可组合）
+## 特性开关（workflow_dispatch 输入）
 
-| 特性 | YAML 键 | 说明 | 默认 |
+| 特性 | 输入 | 说明 | 默认 |
 |---|---|---|---|
-| ReSukiSU | `features.resukisu.enabled` | KernelSU 系 root（manual hook，4.9 支持项） | on |
-| BBG | `features.bbg.enabled` | Baseband-guard 防格机 LSM | on |
-| Droidspace | `features.droidspace.enabled` | 容器/LXC/Docker 内核支持 | on |
-| Android/data 隔离 | `features.data_isolation.enabled` | sdcardfs per-uid 隔离 `Android/data/<pkg>`：非 owner app lookup/getattr 得 ENOENT | 仅 polaris on，其余 off |
+| ReSukiSU | `enable_resukisu` | KernelSU 系 root（manual/auto 见 hook_mode） | on |
+| BBG | `enable_bbg` | Baseband-guard 防格机 LSM | on |
+| Droidspace | `enable_droidspace` | 容器/LXC/Docker 内核支持 | on |
+| Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 开启时生效） | on |
+| Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离 `Android/data/<pkg>`：非 owner app lookup/getattr 得 ENOENT | polaris on；beryllium/daisy/vince 固定 off |
 
 ### 工具链
 
@@ -118,7 +122,7 @@ beryllium 用自带 `beryllium_defconfig`（自包含，`CLEAR_LOCALVERSION=true
 ```
 patches/resukisu-manual-hook/common/  4 个通用 hook 补丁（stat/exec/open/reboot；静态符号靠 KALLSYMS_ALL，不导出）
 patches/resukisu-manual-hook/{daisy,vince}/  各设备专用 0004-reboot 变体（树里 reboot.c 上下文不同）
-patches/resukisu-manual-hook/alt-hooks/    可选 3 hook 源码补丁（hook_extra: manual 用）
+patches/resukisu-manual-hook/alt-hooks/    可选 3 hook 源码补丁（hook_mode: manual-source 用）
 patches/vince/0000-remove-legacy-ksu-hooks.patch  清 vince 树旧 KernelSU 埋点（反向 eb0503）
 patches/bbg/common/                   集成说明（无本地补丁，跑官方 setup.sh）
 patches/droidspace/common/            droidspace.config + cgroup 前缀 4.9 移植补丁（官方 02 的移植，4.9 设备共用）
@@ -139,13 +143,17 @@ CI 里所有补丁应用后会先 `git commit` 一次内核树，让 `setlocalve
 ```bash
 KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xiaomi_sdm845
 
-# 1. ReSukiSU manual hook 补丁（daisy/vince 用各自设备目录的 0004 变体）
+# 1. ReSukiSU manual hook 源码补丁（daisy/vince 用各自设备目录的 0004 变体；
+#    hook_mode=auto 时跳过本步）
 bash scripts/apply-patches.sh "$KROOT" \
   patches/resukisu-manual-hook/common          # polaris/beryllium
 # daisy/vince: 传 common/0001-0003 单文件 + <dev>/0004
 
 # 2. 集成 ReSukiSU / BBG / Droidspace
-bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm
+# manual 模式（main 分支 + 源码补丁；hook_mode=manual-lsm / manual-source）
+bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm manual true
+# auto 模式（auto-hook 分支 + inline hook；跳过第 1 步源码补丁）
+# bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm auto true
 bash scripts/integrate-bbg.sh "$KROOT" ./bbg.config.fragment
 PORT=patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch
 bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
@@ -176,12 +184,13 @@ CC_WERROR 的强制与断言见脚本内注释。
 
 ## 已知取舍 / 边界
 
-- **susfs**：本仓库交付 ReSukiSU manual hook；不含 susfs inline hook。
+- **susfs**：不含 susfs inline hook（hook_mode 提供 ReSukiSU manual 与 auto 两种）。
 - **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 默认关闭。
 - **vince 旧 KernelSU**：workflow 剥离树自带旧 KSU 后集成 ReSukiSU；上游若更新旧
   KSU 代码，`patches/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
 - **Droidspace 官方 01 补丁（xt_qtaguid）**：本内核树无该文件，不拉取。
 - **Droidspace 02 移植补丁**：非致命；apply 失败自动跳过。
-- ReSukiSU 与管理器（Manager APK）版本需自行匹配；仓库固定引用其
-  `main` 分支的 `kernel/setup.sh`。
+- ReSukiSU 与管理器（Manager APK）版本需自行匹配；setup.sh 按 hook_mode
+  拉取：manual 用 `main` 分支，auto 用 `auto-hook` 分支（实验性，4.x 需
+  `auto_fix_49`，见上）。
 - 32 位兼容：`CONFIG_COMPAT=y`，`fstat64/fstatat64` 的 hook 已包含在 0001。
