@@ -41,7 +41,7 @@ on:
           - auto
         default: manual-lsm
       auto_fix_49:
-        description: "auto mode: fix auto-hook branch <5.0 kasan_reset_tag guard (required on 4.9)"
+        description: "fix auto-hook branch <5.0 kasan_reset_tag guard on 4.x (only effective when hook_mode=auto)"
         type: boolean
         default: true
 
