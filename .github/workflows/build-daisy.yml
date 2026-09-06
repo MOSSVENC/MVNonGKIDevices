@@ -7,7 +7,7 @@ name: build-daisy
 #   - kernel source: Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy @ lineage-20
 #   - baseline defconfig: msm8953-perf_defconfig (complete, no fragments)
 #   - device is A/B (slot)
-# Feature defaults mirror configs/daisy.yaml; toggle per-run here.
+# Feature defaults mirror the workflow_dispatch input defaults below.
 
 on:
   workflow_dispatch:
@@ -43,7 +43,6 @@ on:
     paths:
       - "patches/**"
       - "scripts/**"
-      - "configs/daisy.yaml"
       - ".github/workflows/build-daisy.yml"
 
 concurrency:
