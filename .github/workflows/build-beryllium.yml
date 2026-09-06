@@ -196,10 +196,11 @@ jobs:
             CLANG_TRIPLE="aarch64-linux-gnu-" \
             CROSS_COMPILE="aarch64-linux-gnu-" \
             CROSS_COMPILE_ARM32="arm-linux-gnueabi-" \
-            LLVM=1 LLVM_IAS=1 Image.gz-dtb 2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
+            LLVM=1 LLVM_IAS=1 2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
           rc=${PIPESTATUS[0]}
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
           cp -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" "$RUNNER_TEMP/out/Image.gz-dtb" 2>/dev/null || true
+          [ -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" ] || { echo "Image.gz-dtb not produced"; rc=1; }
           if [ "$rc" != 0 ]; then
             { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
             exit "$rc"
