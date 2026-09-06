@@ -80,9 +80,9 @@ fi
 # sel_mutex / policy_rwlock / ...) through the kallsyms table when
 # CONFIG_KALLSYMS_ALL=y and falls back to `extern` direct references when
 # it is off. The extern path requires those symbols to be manually
-# de-static'ed in the kernel source (official static_export_check.mk),
-# which this repo deliberately does NOT do (no 0005 export patch).
-# ReSukiSU's own Kconfig only `select KALLSYMS`; it cannot select
+# de-static'ed in the kernel source (official static_export_check.mk);
+# this repo relies on the KALLSYMS_ALL path, so no de-static patches are
+# shipped. ReSukiSU's own Kconfig only `select KALLSYMS`; it cannot select
 # KALLSYMS_ALL because that symbol `depends on DEBUG_KERNEL && KALLSYMS`
 # and select cannot cross a depends-on. So pin the whole chain here
 # instead of relying on the LOS baseline to keep it enabled.
@@ -125,9 +125,9 @@ assert_cfg() { # symbol
 
 rc=0
 
-# KALLSYMS_ALL must survive into the final .config: with the 0005 export
-# patch removed, ReSukiSU resolves every selinux static symbol through
-# kallsyms only when this is y. Fail loudly if it got dropped.
+# KALLSYMS_ALL must survive into the final .config: ReSukiSU resolves
+# every selinux static symbol through kallsyms only when this is y.
+# Fail loudly if it got dropped.
 assert_cfg CONFIG_KALLSYMS || rc=1
 assert_cfg CONFIG_KALLSYMS_ALL || rc=1
 

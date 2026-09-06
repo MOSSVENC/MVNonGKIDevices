@@ -27,7 +27,7 @@ device:
 features:
   resukisu:
     enabled: true
-    hook_mode: manual           # only "manual" is supported on 4.9 (susfs reserved)
+    hook_mode: manual           # 4.9 manual-hook mode (ReSukiSU Kconfig: KSU_MANUAL_HOOK)
     hook_extra: lsm             # setuid/initrc/input via ReSukiSU LSM + input_handler AUTO
   bbg:
     enabled: true               # Baseband-guard anti-format LSM
@@ -39,7 +39,7 @@ features:
     # (verified to apply on the beryllium tree).
     cgroup_02_port: true
   data_isolation:
-    enabled: false              # NOT enabled for beryllium (ROM differs from polaris)
+    enabled: false              # sdcardfs data-isolation is polaris-specific
 
 artifact:
   image: Image.gz-dtb

@@ -8,7 +8,6 @@ name: build-beryllium
 #   - kernel source: Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium @ thirteen
 #   - baseline defconfig: beryllium_defconfig (self-contained, no fragments)
 #   - CLEAR_LOCALVERSION=true (stock defconfig ships "-Helios™")
-#   - sdcardfs data isolation NOT applied (ENABLE_DATA_ISOLATION always off)
 # Feature defaults mirror configs/beryllium.yaml; toggle per-run here.
 
 on:
@@ -65,7 +64,7 @@ jobs:
       ENABLE_BBG: ${{ inputs.enable_bbg || true }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
-      ENABLE_DATA_ISOLATION: "false"   # beryllium does not use the sdcardfs data isolation patch
+      ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
       HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
     steps:
       - name: Checkout action repo
@@ -156,9 +155,6 @@ jobs:
             PORT="$GITHUB_WORKSPACE/patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
-
-      # NOTE: no sdcardfs Android/data isolation step — beryllium does not
-      # use it (see configs/beryllium.yaml data_isolation.enabled=false).
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping

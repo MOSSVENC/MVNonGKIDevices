@@ -63,7 +63,7 @@ jobs:
       ENABLE_BBG: ${{ inputs.enable_bbg || true }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
-      ENABLE_DATA_ISOLATION: "false"   # vince does not use the sdcardfs data isolation patch
+      ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
       HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
     steps:
       - name: Checkout action repo
@@ -188,9 +188,6 @@ jobs:
             PORT="$GITHUB_WORKSPACE/patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
-
-      # NOTE: no sdcardfs Android/data isolation step — this device does not
-      # use it (see configs/vince.yaml data_isolation.enabled=false).
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
