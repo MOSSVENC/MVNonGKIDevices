@@ -201,9 +201,16 @@ jobs:
           export KBUILD_BUILD_HOST=build
           export KBUILD_BUILD_USER=kernel
           cd "$KROOT"
+          # Absolute toolchain prefixes (JackA1ltman style): the 4.9 arm64
+          # Makefile requires CROSS_COMPILE_ARM32 for the compat vDSO and
+          # resolves $(CROSS_COMPILE_ARM32)ld via which/absolute path; the
+          # AOSP GCC 4.9 prebuilts provide the <triple>-as/ld for clang's
+          # external assembler/linker when it builds the AArch32 vDSO.
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC="clang" \
             CLANG_TRIPLE="aarch64-linux-gnu-" \
+            CROSS_COMPILE="$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-" \
+            CROSS_COMPILE_ARM32="$RUNNER_TEMP/tc/gcc32/bin/arm-linux-androideabi-" \
             LD=ld.lld \
             2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
           rc=${PIPESTATUS[0]}
