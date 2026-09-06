@@ -63,6 +63,26 @@ manual hook 共 7 类；4 类必须改内核源码，3 类可选：
   `manual_hook_check.mk` 会改为校验手动符号。
 - workflow_dispatch 输入 `hook_extra`（choice lsm/manual）可单次切换。
 
+### 静态符号：由 CONFIG_KALLSYMS_ALL 代替手动导出
+
+manual-integrate 文档的 [static-symbol-export](https://resukisu.org/zh-Hans/guide/manual-integrate.html#static-symbol-export)
+章节要求对部分 selinux 静态符号去 static（write_op / sel_handle_status_ops /
+selinux_status_page / selinux_status_lock / sel_mutex / policy_rwlock / selinux_ops /
+security_dump_masked_av / context_struct_compute_av），但这只在
+`CONFIG_KALLSYMS_ALL` **关闭**时才是必须的：
+
+- 官方 `kernel/Kbuild`：`ifneq ($(CONFIG_KALLSYMS_ALL),y) → include static_export_check.mk`
+  —— 开了 KALLSYMS_ALL 连导出检查都跳过；
+- ReSukiSU 源码对所有符号都是 `#ifdef CONFIG_KALLSYMS_ALL` → kallsyms 查表 /
+  `#else` → `extern` 直接引用的双路径；KALLSYMS_ALL=y 恒走查表，static 与否无关；
+- 基线 `mi845_defconfig` 自带 `CONFIG_KALLSYMS_ALL=y`（本仓库不做覆盖），
+  4.9 内核导出 `kallsyms_lookup_name`/`kallsyms_on_each_symbol`（EXPORT_SYMBOL_GPL），
+  查表链路完整可用。
+
+因此**本仓库不打任何去 static 的导出补丁**（不再有 0005），selinux 静态符号
+全部由 KALLSYMS_ALL 的 kallsyms 查表解析。若未来某次构建关闭
+KALLSYMS_ALL，需按官方 static_export_check.mk 清单补回手动导出。
+
 ## 最终 .config 合并顺序
 
 ```
@@ -94,7 +114,7 @@ Kconfig 树，再执行合并，否则 `olddefconfig` 看不到新符号会静�
 
 ```
 configs/mix2s.yaml                    设备/特性配置（默认值）
-patches/resukisu-manual-hook/common/  5 个内核源码补丁（stat/exec/open/reboot/selinux export）
+patches/resukisu-manual-hook/common/  4 个内核源码补丁（stat/exec/open/reboot；静态符号靠 KALLSYMS_ALL，不导出）
 patches/bbg/common/                   集成说明（无本地补丁，跑官方 setup.sh）
 patches/droidspace/common/            droidspace.config + 说明
 patches/droidspace/polaris/            cgroup 前缀 4.9 移植补丁（官方 02 的移植）
