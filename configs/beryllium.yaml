@@ -1,0 +1,47 @@
+# Pocophone F1 (beryllium) kernel build configuration
+#
+# This YAML mirrors configs/mix2s.yaml and is consumed by
+# .github/workflows/build-beryllium.yml.
+#
+# Kernel source is Flyme66's beryllium tree (branch "thirteen"), a clean
+# 4.9.337 sdm845 tree WITHOUT any pre-integrated KSU — integration is done
+# from scratch by our pipeline (same as mix2s/polaris).
+
+kernel:
+  repo: https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium
+  ref: thirteen               # Linux 4.9.337, arm64 (beryllium / sdm845)
+  # Expected kernel version; the build asserts this from the cloned Makefile.
+  expect_major: 4
+  expect_minor: 9
+
+device:
+  codename: beryllium          # Xiaomi Pocophone F1
+  # Flyme66 ships a single self-contained defconfig (no xiaomi/ fragments).
+  base_defconfig: arch/arm64/configs/beryllium_defconfig
+  fragments: []
+  # LOCALVERSION in the stock defconfig is "-Helios™"; the merge step forces
+  # CONFIG_LOCALVERSION="" so the built version string is plain
+  # <kernel>[-g<sha>] (no vendor tag, no -dirty after the tree commit).
+  clear_localversion: true
+
+features:
+  resukisu:
+    enabled: true
+    hook_mode: manual           # only "manual" is supported on 4.9 (susfs reserved)
+    hook_extra: lsm             # setuid/initrc/input via ReSukiSU LSM + input_handler AUTO
+  bbg:
+    enabled: true               # Baseband-guard anti-format LSM
+  droidspace:
+    enabled: true               # Droidspaces / LXC container kernel support
+    # 01 (xt_qtaguid panic fix) targets a file absent from sdm845 4.9 trees.
+    official_01_qtaguid: skip
+    # 02 (cgroup prefix restore) 4.9 port is shared in patches/droidspace/common/
+    # (verified to apply on the beryllium tree).
+    cgroup_02_port: true
+  data_isolation:
+    enabled: false              # NOT enabled for beryllium (ROM differs from polaris)
+
+artifact:
+  image: Image.gz-dtb
+  # AnyKernel3 packaging is done by the workflow when set to true
+  anykernel3: true

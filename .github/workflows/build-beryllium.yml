@@ -1,10 +1,15 @@
-name: build-mix2s-polaris
+name: build-beryllium-pocof1
 
-# Builds a Xiaomi Mi Mix 2S (polaris, sdm845) kernel with selectable
-# features (ReSukiSU manual hook / BBG / Droidspace) and packages it as an
-# AnyKernel3 zip.
+# Builds a Xiaomi Pocophone F1 (beryllium, sdm845) kernel from Flyme66's
+# clean "thirteen" tree with selectable features (ReSukiSU manual hook /
+# BBG / Droidspace) and packages it as an AnyKernel3 zip.
 #
-# Feature defaults mirror configs/mix2s.yaml; toggle them per-run here.
+# Mirrors build-mix2s.yml; differences:
+#   - kernel source: Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium @ thirteen
+#   - baseline defconfig: beryllium_defconfig (self-contained, no fragments)
+#   - CLEAR_LOCALVERSION=true (stock defconfig ships "-Helios™")
+#   - sdcardfs data isolation NOT applied (ENABLE_DATA_ISOLATION always off)
+# Feature defaults mirror configs/beryllium.yaml; toggle per-run here.
 
 on:
   workflow_dispatch:
@@ -12,7 +17,7 @@ on:
       kernel_ref:
         description: kernel branch/ref to build
         required: false
-        default: lineage-22.2
+        default: thirteen
       enable_resukisu:
         description: integrate ReSukiSU (manual hook)
         type: boolean
@@ -29,10 +34,6 @@ on:
         description: apply 4.9 cgroup prefix port (droidspace)
         type: boolean
         default: true
-      enable_data_isolation:
-        description: sdcardfs per-uid Android/data|obb isolation (ENOENT for non-owner apps)
-        type: boolean
-        default: true
       hook_extra:
         description: "resukisu extra hooks: lsm (AUTO, default) | manual (source patches 0010-0012)"
         type: choice
@@ -44,11 +45,11 @@ on:
     paths:
       - "patches/**"
       - "scripts/**"
-      - "configs/**"
-      - ".github/workflows/build-mix2s.yml"
+      - "configs/beryllium.yaml"
+      - ".github/workflows/build-beryllium.yml"
 
 concurrency:
-  group: mix2s-kernel
+  group: beryllium-kernel
   cancel-in-progress: true
 
 jobs:
@@ -57,13 +58,14 @@ jobs:
     timeout-minutes: 180
     env:
       # workflow_dispatch inputs are empty on push-triggered runs, so every
-      # option falls back to a default (lineage-22.2 + all features on).
-      KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-22.2' }}
+      # option falls back to a default (thirteen + all features on).
+      KERNEL_REF: ${{ inputs.kernel_ref || 'thirteen' }}
+      KERNEL_REPO: https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium.git
       ENABLE_RESUKISU: ${{ inputs.enable_resukisu || true }}
       ENABLE_BBG: ${{ inputs.enable_bbg || true }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
-      ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation || true }}
+      ENABLE_DATA_ISOLATION: "false"   # beryllium does not use the sdcardfs data isolation patch
       HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
     steps:
       - name: Checkout action repo
@@ -100,7 +102,7 @@ jobs:
           # batches — avoids GitHub's single-pack transfer limit on 1.5GB repos
           git clone --depth=1 --filter=blob:none \
             --branch="$KERNEL_REF" \
-            https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845.git \
+            "$KERNEL_REPO" \
             "$RUNNER_TEMP/kernel" 2>&1 | tee /tmp/clone.log
           echo "KROOT=$RUNNER_TEMP/kernel" >> "$GITHUB_ENV"
           head -6 "$RUNNER_TEMP/kernel/Makefile"
@@ -142,11 +144,8 @@ jobs:
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
-      - name: Apply sdcardfs Android/data isolation patch
-        if: env.ENABLE_DATA_ISOLATION == 'true'
-        run: |
-          bash scripts/apply-patches.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/patches/sdcardfs"
+      # NOTE: no sdcardfs Android/data isolation step — beryllium does not
+      # use it (see configs/beryllium.yaml data_isolation.enabled=false).
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
@@ -160,16 +159,19 @@ jobs:
           if git diff --cached --quiet; then
             echo "no changes to commit (clean tree)"
           else
-            git commit -q -m "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace/sdcardfs)"
+            git commit -q -m "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace)"
             echo "committed patched tree: $(git rev-parse --short HEAD)"
           fi
 
-      - name: Assemble defconfig (mi845 + polaris + feature fragments)
+      - name: Assemble defconfig (beryllium + feature fragments)
         run: |
           FRAGS=""
           [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/common/droidspace.config"
+          BASE_DEFCONFIG="arch/arm64/configs/beryllium_defconfig" \
+          DEVICE_FRAGMENTS="" \
+          CLEAR_LOCALVERSION="true" \
           ENABLE_RESUKISU="$ENABLE_RESUKISU" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
@@ -200,19 +202,19 @@ jobs:
           # strip VCS/CI cruft so the zip holds only flash-relevant files
           rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
-          # --- polaris (Mi Mix 2S) settings ---
+          # --- beryllium (Pocophone F1) settings ---
           # device props inside properties() are indented; boot vars at top
-          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=Mix2S ResukiSU+BBG+Droidspace Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
-          sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=polaris/"           "$RUNNER_TEMP/ak3/anykernel.sh"
-          sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
-          sed -i "s/^\(\s*\)device.name3=.*/\1device.name3=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
-          sed -i "s/^\(\s*\)device.name4=.*/\1device.name4=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
-          sed -i "s|^BLOCK=.*|BLOCK=/dev/block/bootdevice/by-name/boot;|"     "$RUNNER_TEMP/ak3/anykernel.sh"
-          sed -i "s/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/"                    "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=PocoF1 ResukiSU+BBG+Droidspace Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=beryllium/"       "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name3=.*/\1device.name3=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^\(\s*\)device.name4=.*/\1device.name4=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s|^BLOCK=.*|BLOCK=/dev/block/bootdevice/by-name/boot;|"   "$RUNNER_TEMP/ak3/anykernel.sh"
+          sed -i "s/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
           cp "$RUNNER_TEMP/out/Image.gz-dtb" "$RUNNER_TEMP/ak3/"
           # zip INSIDE ak3/ so the zip root is anykernel.sh/META-INF/tools/
           # (standard AnyKernel3 layout, no extra wrapper directory)
-          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/polaris-kernel.zip" . >/dev/null )
+          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/beryllium-kernel.zip" . >/dev/null )
 
       # --- three SEPARATE artifacts, never nested/repacked into each other ---
       # 1) raw build log  2) raw kernel image  3) standard AnyKernel3 zip
@@ -238,7 +240,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: polaris-kernel.zip
-          path: ${{ runner.temp }}/polaris-kernel.zip
+          name: beryllium-kernel.zip
+          path: ${{ runner.temp }}/beryllium-kernel.zip
           if-no-files-found: error
           retention-days: 14

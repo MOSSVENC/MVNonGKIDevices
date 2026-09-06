@@ -37,7 +37,10 @@ cd "$KROOT"
 V=$(awk '/^VERSION *=/{v=$3} /^PATCHLEVEL *=/{p=$3} END{print v"."p}' Makefile)
 echo "Kernel version: $V"
 
-BASE="arch/arm64/configs/vendor/xiaomi/mi845_defconfig"
+# Baseline defconfig + device fragments are device-specific; override via
+# env (BASE_DEFCONFIG / DEVICE_FRAGMENTS="frag1 frag2"). Defaults keep the
+# original mix2s/polaris behaviour.
+BASE="${BASE_DEFCONFIG:-arch/arm64/configs/vendor/xiaomi/mi845_defconfig}"
 [ -f "$BASE" ] || { echo "ERROR: baseline defconfig not found: $BASE" >&2; exit 1; }
 
 mkdir -p "$OUT"
@@ -53,8 +56,10 @@ append_cfg() { # file
 }
 
 echo "==> 1/5 collecting config sources"
-append_cfg "$BASE"                       # baseline (LOS common)
-append_cfg arch/arm64/configs/vendor/xiaomi/polaris.config   # device fragment
+append_cfg "$BASE"                       # baseline (device family base)
+for frag in ${DEVICE_FRAGMENTS:-arch/arm64/configs/vendor/xiaomi/polaris.config}; do
+  append_cfg "$frag"                     # device fragment(s)
+done
 for f in "$@"; do append_cfg "$f"; done  # feature fragments (later wins)
 
 # --- build-hardening override (always): this 4.9 tree predates GCC 10+ and
@@ -62,6 +67,28 @@ for f in "$@"; do append_cfg "$f"; done  # feature fragments (later wins)
 # off for a clean build regardless of feature selection.
 echo "# CONFIG_CC_WERROR is not set" >> "$RAW"
 echo "# CONFIG_CC_WERROR_STRICT is not set" >> "$RAW"   # harmless if absent
+
+# --- LOCALVERSION override (opt-in): CLEAR_LOCALVERSION=true forces an
+# empty CONFIG_LOCALVERSION (e.g. beryllium ships "-Helios™" in its stock
+# defconfig and we want a plain <kernel>[-g<sha>] version string).
+if [ "${CLEAR_LOCALVERSION:-false}" = "true" ]; then
+  echo 'CONFIG_LOCALVERSION=""' >> "$RAW"
+fi
+
+# --- KALLSYMS_ALL override (always): ReSukiSU resolves its selinux static
+# symbols (write_op / sel_handle_status_ops / selinux_status_page|lock /
+# sel_mutex / policy_rwlock / ...) through the kallsyms table when
+# CONFIG_KALLSYMS_ALL=y and falls back to `extern` direct references when
+# it is off. The extern path requires those symbols to be manually
+# de-static'ed in the kernel source (official static_export_check.mk),
+# which this repo deliberately does NOT do (no 0005 export patch).
+# ReSukiSU's own Kconfig only `select KALLSYMS`; it cannot select
+# KALLSYMS_ALL because that symbol `depends on DEBUG_KERNEL && KALLSYMS`
+# and select cannot cross a depends-on. So pin the whole chain here
+# instead of relying on the LOS baseline to keep it enabled.
+echo "CONFIG_DEBUG_KERNEL=y"      >> "$RAW"   # KALLSYMS_ALL dependency
+echo "CONFIG_KALLSYMS=y"          >> "$RAW"   # ReSukiSU select + dep
+echo "CONFIG_KALLSYMS_ALL=y"      >> "$RAW"   # static symbols into table
 
 # --- de-dup: keep the LAST occurrence of each symbol ---
 ALLCONFIG="$OUT/.allconfig"
@@ -97,6 +124,13 @@ assert_cfg() { # symbol
 }
 
 rc=0
+
+# KALLSYMS_ALL must survive into the final .config: with the 0005 export
+# patch removed, ReSukiSU resolves every selinux static symbol through
+# kallsyms only when this is y. Fail loudly if it got dropped.
+assert_cfg CONFIG_KALLSYMS || rc=1
+assert_cfg CONFIG_KALLSYMS_ALL || rc=1
+
 if [ "${ENABLE_RESUKISU:-true}" = "true" ]; then
   assert_cfg CONFIG_KSU || rc=1
   assert_cfg CONFIG_KSU_MANUAL_HOOK || rc=1

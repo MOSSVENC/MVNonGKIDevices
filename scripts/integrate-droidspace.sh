@@ -9,7 +9,9 @@
 #      this kernel tree (sdm845 4.9, all branches) does not contain
 #      net/netfilter/xt_qtaguid.c, so the patch target does not exist.
 #   2. The "02 (cgroup prefix restore)" patch is ported to the 4.9 layout
-#      (kernel/cgroup.c) and shipped here as patches/droidspace/polaris/.
+#      (kernel/cgroup.c) and shipped as
+#      patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch (shared
+#      by all supported 4.9 devices).
 #      It is applied with a dry-run first; on failure we warn and continue
 #      (4.9 already restores prefixes via cgroup_file_name when not NOPREFIX).
 #   3. The bulk of the support is kernel config — handled by

@@ -42,9 +42,10 @@ features:
     # The official non-GKI tree ships two patches. 01 (xt_qtaguid panic fix)
     # targets a file that does not exist in this kernel tree -> never applied.
     official_01_qtaguid: skip
-    # 02 (cgroup prefix restore) is ported to the 4.9 layout in
-    # patches/droidspace/polaris/. If the port fails to apply we warn and
-    # continue (4.9 already restores prefixes via cgroup_file_name).
+    # 02 (cgroup prefix restore) is ported to the 4.9 layout and shared by
+    # all supported 4.9 devices in patches/droidspace/common/. If the port
+    # fails to apply we warn and continue (4.9 already restores prefixes
+    # via cgroup_file_name).
     cgroup_02_port: true
   data_isolation:
     enabled: true               # sdcardfs per-uid Android/data|obb isolation

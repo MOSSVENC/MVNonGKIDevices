@@ -116,8 +116,7 @@ Kconfig 树，再执行合并，否则 `olddefconfig` 看不到新符号会静�
 configs/mix2s.yaml                    设备/特性配置（默认值）
 patches/resukisu-manual-hook/common/  4 个内核源码补丁（stat/exec/open/reboot；静态符号靠 KALLSYMS_ALL，不导出）
 patches/bbg/common/                   集成说明（无本地补丁，跑官方 setup.sh）
-patches/droidspace/common/            droidspace.config + 说明
-patches/droidspace/polaris/            cgroup 前缀 4.9 移植补丁（官方 02 的移植）
+patches/droidspace/common/            droidspace.config + cgroup 前缀 4.9 移植补丁（官方 02 的移植，4.9 设备共用）
 patches/sdcardfs/                     Android/data per-uid 隔离补丁（data_isolation）
 scripts/                              编排脚本（见下）
 .github/workflows/build-mix2s.yml     CI
@@ -135,7 +134,7 @@ KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xia
 bash scripts/apply-patches.sh "$KROOT" patches/resukisu-manual-hook/common
 bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment
 bash scripts/integrate-bbg.sh "$KROOT" ./bbg.config.fragment
-PORT=patches/droidspace/polaris/0001-cgroup-noprefix-4.9-port.patch
+PORT=patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch
 bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 FRAGS="./resukisu.config.fragment ./bbg.config.fragment patches/droidspace/common/droidspace.config"
 ENABLE_RESUKISU=true ENABLE_BBG=true ENABLE_DROIDSPACE=true \
