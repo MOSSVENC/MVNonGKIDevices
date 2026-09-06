@@ -1915,7 +1915,7 @@ index 1059f2a9b..4a0fb3c30 100644
  	return error;
  }
 diff --git a/fs/stat.c b/fs/stat.c
-index 068fdbcc9..2e1bf03d8 100644
+index 068fdbcc9..cb807cbc9 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -17,6 +17,13 @@
@@ -2005,7 +2005,18 @@ index 068fdbcc9..2e1bf03d8 100644
  int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  		int flag)
  {
-@@ -103,7 +141,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -94,6 +132,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+ 	int error = -EINVAL;
+ 	unsigned int lookup_flags = 0;
+ 
++#ifdef CONFIG_KSU_SUSFS
++	struct filename *fname = NULL;
++#endif
++
+ 	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
+ 		      AT_EMPTY_PATH)) != 0)
+ 		goto out;
+@@ -103,7 +145,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	if (flag & AT_EMPTY_PATH)
  		lookup_flags |= LOOKUP_EMPTY;
  retry:
@@ -2017,7 +2028,7 @@ index 068fdbcc9..2e1bf03d8 100644
 +
 +	if (static_branch_likely(&ksu_su_compat_enabled)) {
 +		if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val)))
-+			ksu_handle_stat(&dfd, &fname, &flags);
++			ksu_handle_stat(&dfd, &fname, NULL);
 +	}
 +
 +orig_flow:
