@@ -39,7 +39,7 @@ features:
     official_01_qtaguid: skip
     cgroup_02_port: true
   data_isolation:
-    enabled: false              # NOT enabled for vince
+    enabled: false              # sdcardfs data-isolation is polaris-specific
 
 artifact:
   image: Image.gz-dtb

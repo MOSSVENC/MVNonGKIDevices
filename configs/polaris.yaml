@@ -24,7 +24,7 @@ device:
 features:
   resukisu:
     enabled: true
-    hook_mode: manual           # only "manual" is supported on 4.9 (susfs reserved)
+    hook_mode: manual           # 4.9 manual-hook mode (ReSukiSU Kconfig: KSU_MANUAL_HOOK)
     # "manual" = the 4 mandatory source patches (stat/exec/faccessat/reboot)
     # are applied first, then the official ReSukiSU kernel/setup.sh runs
     # (it clones ReSukiSU into KernelSU/ and mounts drivers/kernelsu).

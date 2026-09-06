@@ -18,7 +18,7 @@ GitHub Actions 在 CI 中拉取内核源码后按特性开关集成并编译。
 
 | 特性 | YAML 键 | 说明 | 默认 |
 |---|---|---|---|
-| ReSukiSU | `features.resukisu.enabled` | KernelSU 系 root（**manual hook**，4.9 唯一支持项；susfs 预留未做） | on |
+| ReSukiSU | `features.resukisu.enabled` | KernelSU 系 root（manual hook，4.9 支持项） | on |
 | BBG | `features.bbg.enabled` | Baseband-guard 防格机 LSM | on |
 | Droidspace | `features.droidspace.enabled` | 容器/LXC/Docker 内核支持 | on |
 | Android/data 隔离 | `features.data_isolation.enabled` | sdcardfs per-uid 隔离 `Android/data/<pkg>`：非 owner app lookup/getattr 得 ENOENT | 仅 polaris on，其余 off |
@@ -115,9 +115,10 @@ security_dump_masked_av / context_struct_compute_av），但这只在
   4.9 内核导出 `kallsyms_lookup_name`/`kallsyms_on_each_symbol`
   （EXPORT_SYMBOL_GPL），查表链路完整可用。
 
-因此**本仓库不打任何去 static 的导出补丁**（不再有 0005），selinux 静态符号
-全部由 KALLSYMS_ALL 的 kallsyms 查表解析。若未来某次构建关闭
-KALLSYMS_ALL，需按官方 static_export_check.mk 清单补回手动导出。
+因此**本仓库不打去 static 的导出补丁**：selinux 静态符号全部由
+KALLSYMS_ALL 的 kallsyms 查表解析，导出检查由官方 static_export_check.mk
+在 KALLSYMS_ALL 关闭时才启用（见上）；本仓库合并阶段无条件强制
+KALLSYMS_ALL，该路径恒不触发。
 
 ## 最终 .config 合并顺序
 
