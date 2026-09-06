@@ -33,20 +33,14 @@ on:
         description: sdcardfs per-uid Android/data|obb isolation (ENOENT for non-owner apps)
         type: boolean
         default: true
-      hook_extra:
-        description: "resukisu extra hooks: lsm (AUTO, default) | manual (source patches 0010-0012)"
+      hook_mode:
+        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches)"
         type: choice
         options:
-          - lsm
-          - manual
-        default: lsm
-      hook_type:
-        description: "resukisu integration: manual (main branch + source patches, default) | auto (auto-hook branch, no source patches)"
-        type: choice
-        options:
-          - manual
+          - manual-lsm
+          - manual-source
           - auto
-        default: manual
+        default: manual-lsm
   push:
     paths:
       - "patches/**"
@@ -70,8 +64,8 @@ jobs:
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
       ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation || true }}
-      HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
-      HOOK_TYPE: ${{ inputs.hook_type || 'manual' }}
+      HOOK_TYPE: ${{ startsWith(inputs.hook_mode, 'auto') && 'auto' || 'manual' }}
+      HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
