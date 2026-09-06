@@ -231,7 +231,12 @@ jobs:
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
           # --- beryllium (Pocophone F1) settings ---
           # device props inside properties() are indented; boot vars at top
-          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=PocoF1 ResukiSU+BBG+Droidspace Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
+          FEATS=""
+          [ "$ENABLE_RESUKISU" = "true" ] && FEATS="$FEATS ResukiSU"
+          [ "$ENABLE_BBG" = "true" ] && FEATS="$FEATS BBG"
+          [ "$ENABLE_DROIDSPACE" = "true" ] && FEATS="$FEATS Droidspace"
+          [ -z "$FEATS" ] && FEATS=" Stock"
+          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=PocoF1${FEATS} Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=beryllium/"       "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name3=.*/\1device.name3=/"                "$RUNNER_TEMP/ak3/anykernel.sh"
