@@ -153,12 +153,8 @@ jobs:
           cd "$KROOT"
           # Core port (susfs.c/h/def.h + kernel hook points incl. uname
           # spoof). ReSukiSU is already set up at this point.
-          git apply --check "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-full.patch" || { echo "SuSFS core patch does not apply cleanly"; exit 1; }
-          git apply "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-full.patch"
-          # KSU-inline-hook call sites (ksu_handle_setresuid in kernel/sys.c
-          # and friends). Idempotent: skips files that already carry the
-          # hooks (they came in with the core patch above).
-          bash "$GITHUB_WORKSPACE/patches/susfs/susfs_inline_hook_patches.sh"
+          git apply --check "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-final.patch" || { echo "SuSFS core patch does not apply cleanly"; exit 1; }
+          git apply "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-final.patch"
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
