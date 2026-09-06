@@ -45,11 +45,6 @@ on:
         description: "auto mode: fix auto-hook branch <5.0 kasan_reset_tag guard (required on 4.9)"
         type: boolean
         default: true
-  push:
-    paths:
-      - "patches/**"
-      - "scripts/**"
-      - ".github/workflows/build-polaris.yml"
 
 concurrency:
   group: polaris-kernel
