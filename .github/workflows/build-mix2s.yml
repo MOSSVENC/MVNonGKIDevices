@@ -72,25 +72,27 @@ jobs:
       # NOTE: no "Free disk space" step — it intermittently stalls on some
       # runners for many minutes; our build fits in the runner's disk.
 
-      - name: Install toolchain & tools
+      # Unified toolchain across all supported devices: AOSP clang 14
+      # (clang-r450784d from android13-release) + system binutils. The
+      # previous gcc-10 path was polaris-only special handling; clang is
+      # supported by the CAF 4.9 tree (LLVM=1 + CLANG_TRIPLE) and is what
+      # the beryllium workflow already uses.
+      - name: Install binutils
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             git zip unzip curl bc bison flex libssl-dev make \
-            libncurses-dev python3 python3-pip
-          # 4.9 (2016) compiles cleanly with GCC 10; GCC 12+ trips new
-          # -Werror diagnostics on this old tree. Install the gcc-10 cross
-          # toolchains and make them the default via update-alternatives.
-          sudo apt-get install -y -qq \
-            gcc-10-aarch64-linux-gnu gcc-10-arm-linux-gnueabihf \
-            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf || true
-          sudo update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc aarch64-linux-gnu-gcc \
-            /usr/bin/aarch64-linux-gnu-gcc-10 100 2>/dev/null || true
-          sudo update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc arm-linux-gnueabihf-gcc \
-            /usr/bin/arm-linux-gnueabihf-gcc-10 100 2>/dev/null || true
-          # if gcc-10 cross pkg is unavailable fall back to distro default
-          aarch64-linux-gnu-gcc --version | head -1 || true
-          arm-linux-gnueabihf-gcc --version | head -1 || true
+            libncurses-dev python3 python3-pip \
+            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
+
+      - name: Download AOSP clang 14 (clang-r450784d)
+        run: |
+          mkdir -p "$RUNNER_TEMP/clang-aosp"
+          git clone -q --depth=1 --single-branch \
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+            -b android13-release "$RUNNER_TEMP/clang-aosp"
+          ls -d "$RUNNER_TEMP"/clang-aosp/clang-r450784d/bin/clang && \
+            echo "CLANG_DIR=$RUNNER_TEMP/clang-aosp/clang-r450784d/bin" >> "$GITHUB_ENV"
 
       - name: Clone kernel source (not part of this repo)
         run: |
@@ -181,9 +183,22 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$GITHUB_WORKSPACE/logs"
-          bash scripts/build-kernel.sh "$KROOT" "$RUNNER_TEMP/out" 2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
+          # Unified AOSP clang 14 build (same as beryllium): CAF 4.9 tree
+          # supports clang via LLVM=1 + CLANG_TRIPLE.
+          export PATH="$CLANG_DIR:$PATH"
+          export KBUILD_BUILD_HOST=build
+          export KBUILD_BUILD_USER=kernel
+          cd "$KROOT"
+          make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
+            CC="clang" \
+            CLANG_TRIPLE="aarch64-linux-gnu-" \
+            CROSS_COMPILE="aarch64-linux-gnu-" \
+            CROSS_COMPILE_ARM32="arm-linux-gnueabi-" \
+            LLVM=1 LLVM_IAS=1 2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
           rc=${PIPESTATUS[0]}
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
+          cp -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" "$RUNNER_TEMP/out/Image.gz-dtb" 2>/dev/null || true
+          [ -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" ] || { echo "Image.gz-dtb not produced"; rc=1; }
           if [ "$rc" != 0 ]; then
             { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
             exit "$rc"
