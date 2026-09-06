@@ -18,7 +18,7 @@ on:
         required: false
         default: thirteen
       enable_resukisu:
-        description: integrate ReSukiSU (manual hook)
+        description: integrate ReSukiSU (hook mode selected below)
         type: boolean
         default: true
       enable_bbg:
@@ -30,7 +30,7 @@ on:
         type: boolean
         default: true
       cgroup_port:
-        description: apply 4.9 cgroup prefix port (droidspace)
+        description: apply 4.9 cgroup noprefix compat patch (only when droidspace is on)
         type: boolean
         default: true
       hook_mode:
