@@ -32,4 +32,4 @@ of `Kernel-Configuration.md` with 4.9 corrections:
 - `CONFIG_ANDROID_PARANOID_NETWORK` (defaults to y here) is explicitly turned
   off so container networking works
 
-Enable via `configs/mix2s.yaml` → `features.droidspace.enabled`.
+Enable via `configs/polaris.yaml` → `features.droidspace.enabled`.

@@ -1,7 +1,7 @@
 # Mix 2S (polaris) kernel build configuration
 #
 # This YAML is the single source of truth consumed by
-# .github/workflows/build-mix2s.yml (and scripts/merge-defconfig.sh).
+# .github/workflows/build-polaris.yml (and scripts/merge-defconfig.sh).
 #
 # Every feature can be toggled here (defaults) or overridden per-run via
 # workflow_dispatch inputs.

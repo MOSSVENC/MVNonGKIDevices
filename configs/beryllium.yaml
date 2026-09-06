@@ -1,11 +1,11 @@
 # Pocophone F1 (beryllium) kernel build configuration
 #
-# This YAML mirrors configs/mix2s.yaml and is consumed by
+# This YAML mirrors configs/polaris.yaml and is consumed by
 # .github/workflows/build-beryllium.yml.
 #
 # Kernel source is Flyme66's beryllium tree (branch "thirteen"), a clean
 # 4.9.337 sdm845 tree WITHOUT any pre-integrated KSU — integration is done
-# from scratch by our pipeline (same as mix2s/polaris).
+# from scratch by our pipeline (same as polaris).
 
 kernel:
   repo: https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium

@@ -37,7 +37,7 @@ to `git apply --check` cleanly on pristine files.
 ## Wiring
 
 - workflow_dispatch input `hook_extra` (choice lsm/manual, default lsm)
-- configs/mix2s.yaml → `features.resukisu.hook_extra`
+- configs/polaris.yaml → `features.resukisu.hook_extra`
 - scripts/integrate-resukisu.sh `[hook_extra_mode]` argument picks the fragment
 - merge-defconfig.sh asserts the three AUTO symbols only in `lsm` mode (see
   its resukisu assertion block); in `manual` mode it asserts the AUTO options

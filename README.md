@@ -16,7 +16,7 @@ GitHub Actions 在 CI 中拉取内核源码后按特性开关集成并编译。
 | Droidspace | `features.droidspace.enabled` | 容器/LXC/Docker 内核支持 | on |
 | Android/data 隔离 | `features.data_isolation.enabled` | sdcardfs per-uid 隔离 `Android/data/<pkg>`：非 owner app lookup/getattr 得 ENOENT | on |
 
-`workflow_dispatch` 里同名布尔输入可单次覆盖；`configs/mix2s.yaml` 是默认值。
+`workflow_dispatch` 里同名布尔输入可单次覆盖；`configs/polaris.yaml` 是默认值。
 
 ### Android/data 隔离（sdcardfs per-uid ENOENT）
 
@@ -113,13 +113,13 @@ Kconfig 树，再执行合并，否则 `olddefconfig` 看不到新符号会静�
 ## 目录结构
 
 ```
-configs/mix2s.yaml                    设备/特性配置（默认值）
+configs/polaris.yaml                    设备/特性配置（默认值）
 patches/resukisu-manual-hook/common/  4 个内核源码补丁（stat/exec/open/reboot；静态符号靠 KALLSYMS_ALL，不导出）
 patches/bbg/common/                   集成说明（无本地补丁，跑官方 setup.sh）
 patches/droidspace/common/            droidspace.config + cgroup 前缀 4.9 移植补丁（官方 02 的移植，4.9 设备共用）
 patches/sdcardfs/                     Android/data per-uid 隔离补丁（data_isolation）
 scripts/                              编排脚本（见下）
-.github/workflows/build-mix2s.yml     CI
+.github/workflows/build-polaris.yml     CI
 ```
 
 CI 里所有补丁应用后会先 `git commit` 一次内核树，让 `setlocalversion` 看到

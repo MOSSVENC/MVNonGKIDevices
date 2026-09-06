@@ -1,10 +1,10 @@
-name: build-mix2s-polaris
+name: build-polaris
 
 # Builds a Xiaomi Mi Mix 2S (polaris, sdm845) kernel with selectable
 # features (ReSukiSU manual hook / BBG / Droidspace) and packages it as an
 # AnyKernel3 zip.
 #
-# Feature defaults mirror configs/mix2s.yaml; toggle them per-run here.
+# Feature defaults mirror configs/polaris.yaml; toggle them per-run here.
 
 on:
   workflow_dispatch:
@@ -45,10 +45,10 @@ on:
       - "patches/**"
       - "scripts/**"
       - "configs/**"
-      - ".github/workflows/build-mix2s.yml"
+      - ".github/workflows/build-polaris.yml"
 
 concurrency:
-  group: mix2s-kernel
+  group: polaris-kernel
   cancel-in-progress: true
 
 jobs:

@@ -39,7 +39,7 @@ echo "Kernel version: $V"
 
 # Baseline defconfig + device fragments are device-specific; override via
 # env (BASE_DEFCONFIG / DEVICE_FRAGMENTS="frag1 frag2"). Defaults keep the
-# original mix2s/polaris behaviour.
+# original polaris behaviour.
 BASE="${BASE_DEFCONFIG:-arch/arm64/configs/vendor/xiaomi/mi845_defconfig}"
 [ -f "$BASE" ] || { echo "ERROR: baseline defconfig not found: $BASE" >&2; exit 1; }
 

@@ -4,7 +4,7 @@ name: build-beryllium-pocof1
 # clean "thirteen" tree with selectable features (ReSukiSU manual hook /
 # BBG / Droidspace) and packages it as an AnyKernel3 zip.
 #
-# Mirrors build-mix2s.yml; differences:
+# Mirrors build-polaris.yml; differences:
 #   - kernel source: Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium @ thirteen
 #   - baseline defconfig: beryllium_defconfig (self-contained, no fragments)
 #   - CLEAR_LOCALVERSION=true (stock defconfig ships "-Helios™")
