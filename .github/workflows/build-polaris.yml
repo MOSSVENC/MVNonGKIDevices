@@ -4,7 +4,7 @@ name: build-polaris
 # features (ReSukiSU manual hook / BBG / Droidspace) and packages it as an
 # AnyKernel3 zip.
 #
-# Feature defaults mirror configs/polaris.yaml; toggle them per-run here.
+# Feature defaults mirror the workflow_dispatch input defaults below.
 
 on:
   workflow_dispatch:
@@ -40,11 +40,17 @@ on:
           - lsm
           - manual
         default: lsm
+      hook_type:
+        description: "resukisu integration: manual (main branch + source patches, default) | auto (auto-hook branch, no source patches)"
+        type: choice
+        options:
+          - manual
+          - auto
+        default: manual
   push:
     paths:
       - "patches/**"
       - "scripts/**"
-      - "configs/**"
       - ".github/workflows/build-polaris.yml"
 
 concurrency:
@@ -65,6 +71,7 @@ jobs:
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
       ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation || true }}
       HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
+      HOOK_TYPE: ${{ inputs.hook_type || 'manual' }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
@@ -122,10 +129,11 @@ jobs:
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Apply ReSukiSU manual-hook source patches
-        if: env.ENABLE_RESUKISU == 'true'
+        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE != 'auto'
         run: |
           # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
           # the kernel root, so relative paths would not resolve.
+          # hook_type=auto skips source patches (auto-hook branch inlines them).
           PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu-manual-hook/common"
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
@@ -139,7 +147,7 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA"
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -189,6 +197,7 @@ jobs:
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
           HOOK_EXTRA="$HOOK_EXTRA" \
+          HOOK_TYPE="$HOOK_TYPE" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
 
       - name: Build kernel Image.gz-dtb
@@ -237,7 +246,13 @@ jobs:
           # kernel.string reflects the features actually enabled this run
           # (build inputs), not a fixed list.
           FEATS=""
-          [ "$ENABLE_RESUKISU" = "true" ] && FEATS="$FEATS ResukiSU"
+          if [ "$ENABLE_RESUKISU" = "true" ]; then
+            if [ "$HOOK_TYPE" = "auto" ]; then
+              FEATS="$FEATS ResukiSU-AutoHook"
+            else
+              FEATS="$FEATS ResukiSU"
+            fi
+          fi
           [ "$ENABLE_BBG" = "true" ] && FEATS="$FEATS BBG"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FEATS="$FEATS Droidspace"
           [ -z "$FEATS" ] && FEATS=" Stock"

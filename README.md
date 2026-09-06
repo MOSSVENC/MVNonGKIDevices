@@ -5,14 +5,14 @@ GitHub Actions 在 CI 中拉取内核源码后按特性开关集成并编译。
 
 ## 支持设备（均为 Linux 4.9.337 / arm64）
 
-| 设备 | 代号 | 内核源 / 分支 | workflow | config |
+| 设备 | 代号 | 内核源 / 分支 | workflow |
 |---|---|---|---|---|
-| Xiaomi Mi Mix 2S | `polaris` (sdm845) | [MOSSVENC/android_kernel_xiaomi_sdm845](https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845) @ `lineage-22.2` | `build-polaris.yml` | `polaris.yaml` |
-| Xiaomi Pocophone F1 | `beryllium` (sdm845) | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` | `beryllium.yaml` |
-| Xiaomi Mi A2 Lite | `daisy` (msm8953) | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` | `daisy.yaml` |
-| Xiaomi Redmi Note 5 | `vince` (msm8953) | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` | `vince.yaml` |
+| Xiaomi Mi Mix 2S | `polaris` (sdm845) | [MOSSVENC/android_kernel_xiaomi_sdm845](https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845) @ `lineage-22.2` | `build-polaris.yml` |
+| Xiaomi Pocophone F1 | `beryllium` (sdm845) | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
+| Xiaomi Mi A2 Lite | `daisy` (msm8953) | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
+| Xiaomi Redmi Note 5 | `vince` (msm8953) | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
 
-各设备特性默认值见对应 `configs/<代号>.yaml`；workflow_dispatch 输入可单次覆盖。
+workflow_dispatch 输入（enable_resukisu/enable_bbg/enable_droidspace/...）控制各特性开关，默认值见各 workflow 头部注释。
 
 ## 特性开关（编译时可组合）
 
@@ -112,7 +112,6 @@ beryllium 用自带 `beryllium_defconfig`（自包含，`CLEAR_LOCALVERSION=true
 ## 目录结构
 
 ```
-configs/<代号>.yaml                  每设备特性/配置（polaris/beryllium/daisy/vince）
 patches/resukisu-manual-hook/common/  4 个通用 hook 补丁（stat/exec/open/reboot；静态符号靠 KALLSYMS_ALL，不导出）
 patches/resukisu-manual-hook/{daisy,vince}/  各设备专用 0004-reboot 变体（树里 reboot.c 上下文不同）
 patches/resukisu-manual-hook/alt-hooks/    可选 3 hook 源码补丁（hook_extra: manual 用）

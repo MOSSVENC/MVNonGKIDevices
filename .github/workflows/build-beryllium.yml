@@ -8,7 +8,7 @@ name: build-beryllium
 #   - kernel source: Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium @ thirteen
 #   - baseline defconfig: beryllium_defconfig (self-contained, no fragments)
 #   - CLEAR_LOCALVERSION=true (stock defconfig ships "-Helios™")
-# Feature defaults mirror configs/beryllium.yaml; toggle per-run here.
+# Feature defaults mirror the workflow_dispatch input defaults below.
 
 on:
   workflow_dispatch:
@@ -44,7 +44,6 @@ on:
     paths:
       - "patches/**"
       - "scripts/**"
-      - "configs/beryllium.yaml"
       - ".github/workflows/build-beryllium.yml"
 
 concurrency:

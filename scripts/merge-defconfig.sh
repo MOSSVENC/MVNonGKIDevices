@@ -134,9 +134,11 @@ assert_cfg CONFIG_KALLSYMS_ALL || rc=1
 if [ "${ENABLE_RESUKISU:-true}" = "true" ]; then
   assert_cfg CONFIG_KSU || rc=1
   assert_cfg CONFIG_KSU_MANUAL_HOOK || rc=1
-  # hook_extra: lsm (default) -> three AUTO_* options must be ON;
-  #             manual -> the alt source patches are used, AUTO_* must be OFF.
-  if [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then
+  # hook_type=auto (ReSukiSU auto-hook branch): no CONFIG_KSU_MANUAL_HOOK
+  # AUTO_* symbols exist there, so skip the per-extra-hook assertions.
+  if [ "${HOOK_TYPE:-manual}" = "auto" ]; then
+    echo "   OK   hook_type=auto (no AUTO_* hook symbols on auto-hook branch)"
+  elif [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then
     for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
              CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
              CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
