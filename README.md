@@ -61,7 +61,9 @@ sdcardfs 自身 `derived_perm.c` 算 `d_uid` 同源。`Android/obb` 保持共享
 ### ReSukiSU 的 7 类 hook 与覆盖方式
 
 按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)，
-manual hook 共 7 类；4 类必须改内核源码，3 类可选：
+manual hook 共 7 类；4 类必须改内核源码，3 类可选。以下补丁清单适用于
+`hook_mode: manual-lsm / manual-source`；`hook_mode: auto` 不提供源码补丁，
+由 ReSukiSU auto-hook 分支的 inline-hook 引擎替代。
 
 | hook | 内核文件 | 是否必打 | 本仓库做法 |
 |---|---|---|---|
@@ -69,17 +71,19 @@ manual hook 共 7 类；4 类必须改内核源码，3 类可选：
 | execve | fs/exec.c | 必 | `common/0002` |
 | faccessat | fs/open.c | 必 | `common/0003` |
 | sys_reboot | kernel/reboot.c | 必 | `common/0004`（polaris/beryllium）；`{daisy,vince}/0004` 变体（树里 reboot.c 上下文不同） |
-| input | drivers/input/input.c | 可选 | `hook_extra: lsm` → input_handler AUTO；`manual` → `alt-hooks/0010` |
-| setuid | kernel/sys.c | 可选 | `hook_extra: lsm` → LSM AUTO；`manual` → `alt-hooks/0011` |
-| sys_read(initrc) | fs/read_write.c | 可选 | `hook_extra: lsm` → LSM AUTO；`manual` → `alt-hooks/0012` |
+| input | drivers/input/input.c | 可选 | `manual-lsm` → input_handler AUTO；`manual-source` → `alt-hooks/0010` |
+| setuid | kernel/sys.c | 可选 | `manual-lsm` → LSM AUTO；`manual-source` → `alt-hooks/0011` |
+| sys_read(initrc) | fs/read_write.c | 可选 | `manual-lsm` → LSM AUTO；`manual-source` → `alt-hooks/0012` |
 
-- `hook_extra: lsm`（默认，4.9 < 6.8 官方推荐）—— 3 个可选 hook 由 ReSukiSU 的
-  LSM / input_handler AUTO 机制接管，fragment 置 `CONFIG_KSU_MANUAL_HOOK_AUTO_*=y`，
-  不打源码补丁。
-- `hook_extra: manual` —— 打 `patches/resukisu-manual-hook/alt-hooks/0010~0012`
-  源码补丁，fragment 关掉三个 AUTO（`# ... is not set`），编译期
-  `manual_hook_check.mk` 会改为校验手动符号。
-- workflow_dispatch 输入 `hook_extra`（choice lsm/manual）可单次切换。
+workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm）：
+- `manual-lsm`（默认）—— 源码补丁 + 3 个可选 hook 由 ReSukiSU 的
+  LSM / input_handler AUTO 机制接管（fragment 置 `CONFIG_KSU_MANUAL_HOOK_AUTO_*=y`，
+  4.9 < 6.8 适用）。
+- `manual-source` —— 源码补丁 + 打 `patches/resukisu-manual-hook/alt-hooks/0010~0012`
+  源码补丁，fragment 关掉三个 AUTO。
+- `auto` —— ReSukiSU **auto-hook 分支**：不提供源码补丁（0001-0004 跳过），
+  hook 由运行时 inline-hook 引擎完成；`auto_fix_49`（默认开）修正 auto-hook
+  分支对 4.x 的 `kasan_reset_tag` 门槛。
 
 ### 静态符号
 

@@ -33,18 +33,18 @@ on:
         description: apply 4.9 cgroup prefix port (droidspace)
         type: boolean
         default: true
-      hook_extra:
-        description: "resukisu extra hooks: lsm (AUTO, default) | manual (source patches 0010-0012)"
+      hook_mode:
+        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches)"
         type: choice
         options:
-          - lsm
-          - manual
-        default: lsm
-  push:
-    paths:
-      - "patches/**"
-      - "scripts/**"
-      - ".github/workflows/build-beryllium.yml"
+          - manual-lsm
+          - manual-source
+          - auto
+        default: manual-lsm
+      auto_fix_49:
+        description: "auto mode: fix auto-hook branch <5.0 kasan_reset_tag guard (required on 4.9)"
+        type: boolean
+        default: true
 
 concurrency:
   group: beryllium-kernel
@@ -64,7 +64,9 @@ jobs:
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
-      HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
+      HOOK_TYPE: ${{ startsWith(inputs.hook_mode, 'auto') && 'auto' || 'manual' }}
+      HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
+      AUTO_FIX_49: ${{ inputs.auto_fix_49 || true }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
@@ -121,7 +123,7 @@ jobs:
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Apply ReSukiSU manual-hook source patches
-        if: env.ENABLE_RESUKISU == 'true'
+        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE != 'auto'
         run: |
           # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
           # the kernel root, so relative paths would not resolve.
@@ -138,7 +140,7 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA"
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -185,6 +187,7 @@ jobs:
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
           HOOK_EXTRA="$HOOK_EXTRA" \
+          HOOK_TYPE="$HOOK_TYPE" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
 
       - name: Build kernel Image.gz-dtb
@@ -231,7 +234,13 @@ jobs:
           # --- beryllium (Pocophone F1) settings ---
           # device props inside properties() are indented; boot vars at top
           FEATS=""
-          [ "$ENABLE_RESUKISU" = "true" ] && FEATS="$FEATS ResukiSU"
+          if [ "$ENABLE_RESUKISU" = "true" ]; then
+            if [ "$HOOK_TYPE" = "auto" ]; then
+              FEATS="$FEATS ResukiSU-AutoHook"
+            else
+              FEATS="$FEATS ResukiSU"
+            fi
+          fi
           [ "$ENABLE_BBG" = "true" ] && FEATS="$FEATS BBG"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FEATS="$FEATS Droidspace"
           [ -z "$FEATS" ] && FEATS=" Stock"
