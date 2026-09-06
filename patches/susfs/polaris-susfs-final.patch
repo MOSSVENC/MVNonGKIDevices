@@ -1915,7 +1915,7 @@ index 1059f2a9b..4a0fb3c30 100644
  	return error;
  }
 diff --git a/fs/stat.c b/fs/stat.c
-index 068fdbcc9..cb807cbc9 100644
+index 068fdbcc9..c2fe6f4c7 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -17,6 +17,13 @@
@@ -1932,7 +1932,7 @@ index 068fdbcc9..cb807cbc9 100644
  
  void generic_fillattr(struct inode *inode, struct kstat *stat)
  {
-@@ -33,10 +40,17 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
+@@ -33,10 +40,15 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
  	stat->ctime = inode->i_ctime;
  	stat->blksize = i_blocksize(inode);
  	stat->blocks = inode->i_blocks;
@@ -1943,14 +1943,12 @@ index 068fdbcc9..cb807cbc9 100644
  
  EXPORT_SYMBOL(generic_fillattr);
  
-+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat);
-+#endif
++
 +
  /**
   * vfs_getattr_nosec - getattr without security checks
   * @path: file to get attributes from
-@@ -53,8 +67,14 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
+@@ -53,8 +65,14 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
  {
  	struct inode *inode = d_backing_inode(path->dentry);
  
@@ -1967,7 +1965,7 @@ index 068fdbcc9..cb807cbc9 100644
  
  	generic_fillattr(inode, stat);
  	return 0;
-@@ -74,6 +94,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
+@@ -74,6 +92,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
  
  EXPORT_SYMBOL(vfs_getattr);
  
@@ -1979,7 +1977,7 @@ index 068fdbcc9..cb807cbc9 100644
  int vfs_fstat(unsigned int fd, struct kstat *stat)
  {
  	struct fd f = fdget_raw(fd);
-@@ -81,12 +106,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
+@@ -81,12 +104,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
  
  	if (f.file) {
  		error = vfs_getattr(&f.file->f_path, stat);
@@ -2005,7 +2003,7 @@ index 068fdbcc9..cb807cbc9 100644
  int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  		int flag)
  {
-@@ -94,6 +132,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -94,6 +130,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	int error = -EINVAL;
  	unsigned int lookup_flags = 0;
  
@@ -2016,7 +2014,7 @@ index 068fdbcc9..cb807cbc9 100644
  	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
  		      AT_EMPTY_PATH)) != 0)
  		goto out;
-@@ -103,7 +145,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -103,7 +143,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	if (flag & AT_EMPTY_PATH)
  		lookup_flags |= LOOKUP_EMPTY;
  retry:
