@@ -234,7 +234,14 @@ jobs:
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
           # --- polaris (Mi Mix 2S) settings ---
           # device props inside properties() are indented; boot vars at top
-          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=Mix2S ResukiSU+BBG+Droidspace Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
+          # kernel.string reflects the features actually enabled this run
+          # (build inputs), not a fixed list.
+          FEATS=""
+          [ "$ENABLE_RESUKISU" = "true" ] && FEATS="$FEATS ResukiSU"
+          [ "$ENABLE_BBG" = "true" ] && FEATS="$FEATS BBG"
+          [ "$ENABLE_DROIDSPACE" = "true" ] && FEATS="$FEATS Droidspace"
+          [ -z "$FEATS" ] && FEATS=" Stock"
+          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=Mix2S${FEATS} Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=polaris/"           "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name3=.*/\1device.name3=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
