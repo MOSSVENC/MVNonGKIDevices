@@ -2,7 +2,7 @@
 #
 # integrate-resukisu.sh — ReSukiSU integration into a kernel tree.
 #
-# Usage: integrate-resukisu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type]
+# Usage: integrate-resukisu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]
 #
 #   hook_extra_mode: lsm     (default) — the 3 optional hooks (setuid / initrc
 #                                      / input) are handled by ReSukiSU's LSM
@@ -36,10 +36,11 @@
 #
 set -euo pipefail
 
-KROOT="${1:?usage: integrate-resukisu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type]}"
+KROOT="${1:?usage: integrate-resukisu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]}"
 FRAG="${2:-$(pwd)/resukisu.config.fragment}"
 MODE="${3:-lsm}"
 TYPE="${4:-manual}"
+FIX49="${5:-true}"   # auto 模式下修正 auto-hook 分支对 <5.0 内核的 kasan_reset_tag 门槛
 case "$MODE" in lsm|manual) ;; *) echo "ERROR: hook_extra_mode must be 'lsm' or 'manual' (got: $MODE)" >&2; exit 2;; esac
 case "$TYPE" in manual|auto) ;; *) echo "ERROR: hook_type must be 'manual' or 'auto' (got: $TYPE)" >&2; exit 2;; esac
 
@@ -62,6 +63,34 @@ fi
 [ -L drivers/kernelsu ] || { echo "ERROR: drivers/kernelsu symlink missing after setup.sh" >&2; exit 1; }
 [ -f drivers/kernelsu/Kconfig ] || { echo "ERROR: drivers/kernelsu/Kconfig missing" >&2; exit 1; }
 grep -q "obj-\$(CONFIG_KSU) += kernelsu/" drivers/Makefile || { echo "ERROR: drivers/Makefile not wired" >&2; exit 1; }
+
+# --- 1b. auto-hook <5.0 compatibility fix (opt-in, default on) ---
+# The auto-hook branch guards kasan_reset_tag() (added in v5.0) with
+# LINUX_VERSION_CODE < 4.0, so 4.x kernels link-fail on the undefined
+# symbol. Rewrite the threshold to 5.0 so 4.x takes the no-op branch.
+if [ "$TYPE" = "auto" ] && [ "$FIX49" = "true" ]; then
+  TGT="KernelSU/kernel/hook/arm64/inline_hook.c"
+  if [ -f "$TGT" ]; then
+    if grep -q 'KERNEL_VERSION(5, 0, 0)' "$TGT"; then
+      echo "==> auto-hook 4.9 kasan fix already applied, skipping"
+    else
+      # only the ksu_inline_kasan_reset_tag() guard (the other <4.0 guard in
+      # this file, ksu_inline_kasan_module_alloc(), is correct and must stay)
+      python3 - "$TGT" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = "#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)\n    return p;\n#else\n    return kasan_reset_tag(p);"
+new = "#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)\n    return p;\n#else\n    return kasan_reset_tag(p);"
+assert old in s, "kasan_reset_tag guard not found"
+open(p, "w").write(s.replace(old, new, 1))
+PYEOF
+      echo "==> auto-hook 4.9 kasan_reset_tag threshold fixed (4.0 -> 5.0)"
+    fi
+  else
+    echo "WARN: $TGT not found, kasan fix skipped" >&2
+  fi
+fi
 
 # --- 2. hook fragment ---
 if [ "$TYPE" = "auto" ]; then

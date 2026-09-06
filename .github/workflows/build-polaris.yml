@@ -41,6 +41,10 @@ on:
           - manual-source
           - auto
         default: manual-lsm
+      auto_fix_49:
+        description: "auto mode: fix auto-hook branch <5.0 kasan_reset_tag guard (required on 4.9)"
+        type: boolean
+        default: true
   push:
     paths:
       - "patches/**"
@@ -66,6 +70,7 @@ jobs:
       ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation || true }}
       HOOK_TYPE: ${{ startsWith(inputs.hook_mode, 'auto') && 'auto' || 'manual' }}
       HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
+      AUTO_FIX_49: ${{ inputs.auto_fix_49 || true }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v4
@@ -141,7 +146,7 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE"
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
