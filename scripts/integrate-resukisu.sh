@@ -26,6 +26,11 @@
 #                                    fragment carries no CONFIG_KSU_MANUAL_HOOK
 #                                    AUTO_* symbols (they do not exist in the
 #                                    auto-hook branch Kconfig).
+#                  susfs           — ReSukiSU main + SuSFS inline hook:
+#                                    kernel-side susfs (fs/susfs.c + hook
+#                                    points) must be applied by the caller;
+#                                    fragment selects CONFIG_KSU_SUSFS=y
+#                                    (KernelSU-side Kconfig choice).
 #
 # Steps:
 #   1. Kernel-side mandatory source patches (stat/exec/open/reboot) are applied
@@ -42,11 +47,13 @@ MODE="${3:-lsm}"
 TYPE="${4:-manual}"
 FIX49="${5:-true}"   # auto 模式下修正 auto-hook 分支对 <5.0 内核的 kasan_reset_tag 门槛
 case "$MODE" in lsm|manual) ;; *) echo "ERROR: hook_extra_mode must be 'lsm' or 'manual' (got: $MODE)" >&2; exit 2;; esac
-case "$TYPE" in manual|auto) ;; *) echo "ERROR: hook_type must be 'manual' or 'auto' (got: $TYPE)" >&2; exit 2;; esac
+case "$TYPE" in manual|auto|susfs) ;; *) echo "ERROR: hook_type must be 'manual', 'auto' or 'susfs' (got: $TYPE)" >&2; exit 2;; esac
 
 KSU_BRANCH="main"
 if [ "$TYPE" = "auto" ]; then
   KSU_BRANCH="auto-hook"
+elif [ "$TYPE" = "susfs" ]; then
+  KSU_BRANCH="main"
 fi
 
 cd "$KROOT"
@@ -93,7 +100,27 @@ PYEOF
 fi
 
 # --- 2. hook fragment ---
-if [ "$TYPE" = "auto" ]; then
+if [ "$TYPE" = "susfs" ]; then
+  # SuSFS inline hook: kernel-side susfs is applied by the caller
+  # (patches/susfs/), KernelSU-side Kconfig provides the KSU_SUSFS
+  # symbols; select the full feature set.
+  echo "==> hook_type=susfs (ReSukiSU + SuSFS inline hook)"
+  cat > "$FRAG" <<'EOF'
+CONFIG_KSU=y
+# CONFIG_KSU_DEBUG is not set
+# CONFIG_KSU_TRACEPOINT_HOOK is not set
+CONFIG_KSU_SUSFS=y
+CONFIG_KSU_SUSFS_SUS_PATH=y
+CONFIG_KSU_SUSFS_SUS_MOUNT=y
+CONFIG_KSU_SUSFS_SUS_KSTAT=y
+CONFIG_KSU_SUSFS_SPOOF_UNAME=y
+CONFIG_KSU_SUSFS_ENABLE_LOG=y
+CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
+CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
+CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+CONFIG_KSU_SUSFS_SUS_MAP=y
+EOF
+elif [ "$TYPE" = "auto" ]; then
   # auto-hook branch: runtime inline-hook engine; its Kconfig has no
   # CONFIG_KSU_MANUAL_HOOK_AUTO_* symbols (those exist only on main).
   echo "==> hook_type=auto (ReSukiSU auto-hook branch)"

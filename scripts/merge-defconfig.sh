@@ -133,28 +133,37 @@ assert_cfg CONFIG_KALLSYMS_ALL || rc=1
 
 if [ "${ENABLE_RESUKISU:-true}" = "true" ]; then
   assert_cfg CONFIG_KSU || rc=1
-  assert_cfg CONFIG_KSU_MANUAL_HOOK || rc=1
-  # hook_type=auto (ReSukiSU auto-hook branch): no CONFIG_KSU_MANUAL_HOOK
-  # AUTO_* symbols exist there, so skip the per-extra-hook assertions.
-  if [ "${HOOK_TYPE:-manual}" = "auto" ]; then
-    echo "   OK   hook_type=auto (no AUTO_* hook symbols on auto-hook branch)"
-  elif [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then
-    for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
-             CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
-             CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
-      if grep -qE "^# ${s} is not set$" "$CFG"; then
-        echo "   OK   $s is not set"
-      else
-        echo "   FAIL $s (manual hook mode wants it off)" >&2
-        rc=1
-      fi
-    done
-  else
-    for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
-             CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
-             CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
+  if [ "${HOOK_TYPE:-manual}" = "susfs" ]; then
+    # SuSFS inline hook: KSU_SUSFS is a KernelSU-side choice (mutually
+    # exclusive with KSU_MANUAL_HOOK / KSU_TRACEPOINT_HOOK).
+    assert_cfg CONFIG_KSU_SUSFS || rc=1
+    for s in CONFIG_KSU_SUSFS_SUS_PATH CONFIG_KSU_SUSFS_SUS_MOUNT \
+             CONFIG_KSU_SUSFS_SUS_KSTAT CONFIG_KSU_SUSFS_OPEN_REDIRECT \
+             CONFIG_KSU_SUSFS_SUS_MAP; do
       assert_cfg "$s" || rc=1
     done
+  else
+    assert_cfg CONFIG_KSU_MANUAL_HOOK || rc=1
+    if [ "${HOOK_TYPE:-manual}" = "auto" ]; then
+      echo "   OK   hook_type=auto (no AUTO_* hook symbols on auto-hook branch)"
+    elif [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then
+      for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
+               CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
+               CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
+        if grep -qE "^# ${s} is not set$" "$CFG"; then
+          echo "   OK   $s is not set"
+        else
+          echo "   FAIL $s (manual hook mode wants it off)" >&2
+          rc=1
+        fi
+      done
+    else
+      for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
+               CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
+               CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
+        assert_cfg "$s" || rc=1
+      done
+    fi
   fi
 fi
 if [ "${ENABLE_BBG:-true}" = "true" ]; then
