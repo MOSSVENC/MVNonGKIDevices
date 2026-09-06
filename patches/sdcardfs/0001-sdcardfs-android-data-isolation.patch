@@ -1,0 +1,161 @@
+diff --git a/fs/sdcardfs/file.c b/fs/sdcardfs/file.c
+index 271c4c4..10b7258 100644
+--- a/fs/sdcardfs/file.c
++++ b/fs/sdcardfs/file.c
+@@ -243,7 +243,8 @@ static int sdcardfs_open(struct inode *inode, struct file *file)
+ 		goto out_err;
+ 	}
+ 
+-	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name)) {
++	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name) ||
++	    !sdcardfs_check_private_dir_access(d_inode(parent), &dentry->d_name)) {
+ 		err = -EACCES;
+ 		goto out_err;
+ 	}
+diff --git a/fs/sdcardfs/inode.c b/fs/sdcardfs/inode.c
+index 87d8aa6..78e6437 100644
+--- a/fs/sdcardfs/inode.c
++++ b/fs/sdcardfs/inode.c
+@@ -776,9 +776,10 @@ static int sdcardfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
+ 	int err;
+ 
+ 	parent = dget_parent(dentry);
+-	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name)) {
++	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name) ||
++	    !sdcardfs_check_private_dir_access(d_inode(parent), &dentry->d_name)) {
+ 		dput(parent);
+-		return -EACCES;
++		return -ENOENT;
+ 	}
+ 	dput(parent);
+ 
+diff --git a/fs/sdcardfs/lookup.c b/fs/sdcardfs/lookup.c
+index d8e6ae0..273697c 100644
+--- a/fs/sdcardfs/lookup.c
++++ b/fs/sdcardfs/lookup.c
+@@ -438,8 +438,9 @@ struct dentry *sdcardfs_lookup(struct inode *dir, struct dentry *dentry,
+ 
+ 	parent = dget_parent(dentry);
+ 
+-	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name)) {
+-		ret = ERR_PTR(-EACCES);
++	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name) ||
++	    !sdcardfs_check_private_dir_access(d_inode(parent), &dentry->d_name)) {
++		ret = ERR_PTR(-ENOENT);
+ 		goto out_err;
+ 	}
+ 
+diff --git a/fs/sdcardfs/packagelist.c b/fs/sdcardfs/packagelist.c
+index 4b9a563..6e92460 100644
+--- a/fs/sdcardfs/packagelist.c
++++ b/fs/sdcardfs/packagelist.c
+@@ -174,6 +174,96 @@ int check_caller_access_to_name(struct inode *parent_node, const struct qstr *na
+ 	return 1;
+ }
+ 
++
++/*
++ * AOSP data-isolation semantics for sdcardfs.
++ *
++ * Returns true when the caller is NOT allowed to reach @name under
++ * @parent_node because @name sits inside an app-private
++ * Android/data/<pkg> directory owned by a different uid.
++ * (Android/obb stays shared: sdcardfs only isolates it when mounted
++ * with the unshared_obb option, which this device does not use.)
++ *
++ * Two shapes:
++ *   1. @parent_node is Android/data and @name is <pkg>.  The package is
++ *      looked up in the vold-provided packagelist to find its owner uid
++ *      (same logic as get_derived_permission_new()).
++ *   2. @parent_node lives inside an Android/data/<pkg> subtree.  The
++ *      subtree owner is @parent_node's top_data (the package dir inode,
++ *      whose d_uid was set by get_derived_permission_new()).
++ */
++static bool is_private_dir_cross_access(struct inode *parent_node,
++					const struct qstr *name)
++{
++	struct sdcardfs_inode_data *pdata;
++	struct sdcardfs_inode_data *top;
++	uid_t caller;
++	uid_t owner;
++	appid_t appid;
++
++	if (!parent_node || !name || !name->name)
++		return false;
++
++	pdata = SDCARDFS_I(parent_node)->data;
++	if (!pdata)
++		return false;
++
++	caller = from_kuid(&init_user_ns, current_fsuid());
++	/* Root/system/media/shell and friends are always allowed. */
++	if (caller < AID_APP_START)
++		return false;
++
++	/* Shape 1: direct child of Android/data.  (Android/obb stays shared:
++	 * sdcardfs only makes it per-package when mounted with unshared_obb.) */
++	if (pdata->perm == PERM_ANDROID_DATA) {
++		struct qstr q_nomedia = QSTR_LITERAL(".nomedia");
++
++		/* .nomedia is a shared marker, not a package. */
++		if (qstr_case_eq(name, &q_nomedia))
++			return false;
++
++		appid = get_appid(name->name);
++		if (appid == 0)
++			return false;	/* unknown pkg: keep legacy view */
++		if (is_excluded(name->name, pdata->userid))
++			return false;	/* explicitly shared package */
++
++		owner = multiuser_get_uid(pdata->userid, appid);
++		return caller != owner;
++	}
++
++	/* Shape 2: node under an app-private Android/data/<pkg> subtree
++	 * (under_obb subtrees are shared and therefore excluded). */
++	top = top_data_get(SDCARDFS_I(parent_node));
++	if (!top)
++		return false;
++	if (!top->under_obb &&
++	    (top->perm == PERM_ANDROID_PACKAGE ||
++	     top->perm == PERM_ANDROID_PACKAGE_CACHE)) {
++		owner = top->d_uid;
++		data_put(top);
++		if (owner == 0 || !uid_is_app(owner))
++			return false;	/* unknown owner: keep legacy view */
++		return caller != owner;
++	}
++	data_put(top);
++	return false;
++}
++
++/*
++ * Chokepoint used by lookup/getattr/open.  Returns 0 (deny) or 1 (allow).
++ * lookup/getattr map a denial to -ENOENT so existence probes see
++ * "not found" instead of "permission denied" (EACCES would be treated
++ * as "exists" by stat-based detectors); open maps it to -EACCES.
++ */
++int sdcardfs_check_private_dir_access(struct inode *parent_node,
++				      const struct qstr *name)
++{
++	if (is_private_dir_cross_access(parent_node, name))
++		return 0;
++	return 1;
++}
++
+ static struct hashtable_entry *alloc_hashtable_entry(const struct qstr *key,
+ 		appid_t value)
+ {
+diff --git a/fs/sdcardfs/sdcardfs.h b/fs/sdcardfs/sdcardfs.h
+index b991219..a8763af 100644
+--- a/fs/sdcardfs/sdcardfs.h
++++ b/fs/sdcardfs/sdcardfs.h
+@@ -493,6 +493,8 @@ extern appid_t get_appid(const char *app_name);
+ extern appid_t get_ext_gid(const char *app_name);
+ extern appid_t is_excluded(const char *app_name, userid_t userid);
+ extern int check_caller_access_to_name(struct inode *parent_node, const struct qstr *name);
++extern int sdcardfs_check_private_dir_access(struct inode *parent_node,
++					     const struct qstr *name);
+ extern int packagelist_init(void);
+ extern void packagelist_exit(void);
+ 

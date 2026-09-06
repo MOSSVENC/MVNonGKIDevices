@@ -29,6 +29,10 @@ on:
         description: apply 4.9 cgroup prefix port (droidspace)
         type: boolean
         default: true
+      enable_data_isolation:
+        description: sdcardfs per-uid Android/data|obb isolation (ENOENT for non-owner apps)
+        type: boolean
+        default: true
       hook_extra:
         description: "resukisu extra hooks: lsm (AUTO, default) | manual (source patches 0010-0012)"
         type: choice
@@ -59,6 +63,7 @@ jobs:
       ENABLE_BBG: ${{ inputs.enable_bbg || true }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace || true }}
       CGROUP_PORT: ${{ inputs.cgroup_port || true }}
+      ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation || true }}
       HOOK_EXTRA: ${{ inputs.hook_extra || 'lsm' }}
     steps:
       - name: Checkout action repo
@@ -137,6 +142,28 @@ jobs:
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
+      - name: Apply sdcardfs Android/data isolation patch
+        if: env.ENABLE_DATA_ISOLATION == 'true'
+        run: |
+          bash scripts/apply-patches.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/patches/sdcardfs"
+
+      # Commit all applied patches so `make`'s setlocalversion sees a clean
+      # git tree -> kernel version loses the "-dirty" suffix while keeping
+      # the git describe commit id (4.9 uses CONFIG_LOCALVERSION_AUTO).
+      - name: Commit patched kernel tree (drop -dirty from version)
+        run: |
+          cd "$KROOT"
+          git config user.email "action@localhost"
+          git config user.name "kernel-builder"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no changes to commit (clean tree)"
+          else
+            git commit -q -m "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace/sdcardfs)"
+            echo "committed patched tree: $(git rev-parse --short HEAD)"
+          fi
+
       - name: Assemble defconfig (mi845 + polaris + feature fragments)
         run: |
           FRAGS=""
@@ -146,6 +173,7 @@ jobs:
           ENABLE_RESUKISU="$ENABLE_RESUKISU" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
+          ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
           HOOK_EXTRA="$HOOK_EXTRA" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
 

@@ -46,6 +46,18 @@ features:
     # patches/droidspace/polaris/. If the port fails to apply we warn and
     # continue (4.9 already restores prefixes via cgroup_file_name).
     cgroup_02_port: true
+  data_isolation:
+    enabled: true               # sdcardfs per-uid Android/data|obb isolation
+    # On 4.9 non-GKI, /storage/emulated/0/Android/{data,obb} are sdcardfs
+    # bind-mounts; the MediaProvider FUSE daemon's data-isolation check never
+    # runs for them (and its non-BPF path blanket-rejects the primary volume).
+    # sdcardfs only masks the top dirs to 0711, so stat/open of a known
+    # package path still succeeds and leaks installed package names.
+    # This patch ports the AOSP isUidAllowedAccessToDataOrObbPath() semantics
+    # into sdcardfs: uid < AID_APP_START or the package owner (or anything
+    # below it) is allowed; any other app walking Android/data|obb/<pkg>
+    # gets ENOENT on lookup/getattr and EACCES on open.
+    # Patch: patches/sdcardfs/0001-sdcardfs-android-data-isolation.patch
 
 artifact:
   image: Image.gz-dtb

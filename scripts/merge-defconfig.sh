@@ -138,5 +138,11 @@ if [ "${ENABLE_DROIDSPACE:-true}" = "true" ]; then
   fi
 fi
 
+if [ "${ENABLE_DATA_ISOLATION:-true}" = "true" ]; then
+  # The isolation semantics are enforced by the sdcardfs source patch
+  # (patches/sdcardfs), so only the filesystem itself must be present.
+  assert_cfg CONFIG_SDCARD_FS || rc=1
+fi
+
 [ "$rc" = 0 ] || { echo "merge-defconfig.sh: assertions failed" >&2; exit 1; }
 echo "==> 5/5 done: $CFG"
