@@ -243,7 +243,7 @@ jobs:
             CLANG_TRIPLE="aarch64-linux-gnu-" \
             CROSS_COMPILE="$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-" \
             CROSS_COMPILE_ARM32="$RUNNER_TEMP/tc/gcc32/bin/arm-linux-androideabi-" \
-            LD=ld.lld \
+            LD=ld.lld LLVM=1 LLVM_IAS=1 \
             2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
           rc=${PIPESTATUS[0]}
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
