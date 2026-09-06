@@ -14,7 +14,7 @@ on:
         required: false
         default: lineage-22.2
       enable_resukisu:
-        description: integrate ReSukiSU (manual hook)
+        description: integrate ReSukiSU (hook mode selected below)
         type: boolean
         default: true
       enable_bbg:
@@ -26,11 +26,11 @@ on:
         type: boolean
         default: true
       cgroup_port:
-        description: apply 4.9 cgroup prefix port (droidspace)
+        description: apply 4.9 cgroup noprefix compat patch (only when droidspace is on)
         type: boolean
         default: true
       enable_data_isolation:
-        description: sdcardfs per-uid Android/data|obb isolation (ENOENT for non-owner apps)
+        description: sdcardfs per-uid Android/data isolation (other apps get ENOENT on lookup/stat)
         type: boolean
         default: true
       hook_mode:
