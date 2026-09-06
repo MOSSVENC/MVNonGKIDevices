@@ -84,14 +84,26 @@ jobs:
             libncurses-dev python3 python3-pip \
             binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
 
-      - name: Download AOSP clang 14 (clang-r450784d)
+      - name: Download AOSP clang 14 + GCC 4.9 binutils
         run: |
-          mkdir -p "$RUNNER_TEMP/clang-aosp"
+          mkdir -p "$RUNNER_TEMP/tc"
+          # AOSP clang (contains clang + ld.lld)
           git clone -q --depth=1 --single-branch \
             https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
-            -b android13-release "$RUNNER_TEMP/clang-aosp"
-          ls -d "$RUNNER_TEMP"/clang-aosp/clang-r450784d/bin/clang && \
-            echo "CLANG_DIR=$RUNNER_TEMP/clang-aosp/clang-r450784d/bin" >> "$GITHUB_ENV"
+            -b android13-release "$RUNNER_TEMP/tc/clang"
+          CLANG_BIN="$RUNNER_TEMP/tc/clang/clang-r450784d/bin"
+          ls "$CLANG_BIN/clang" >/dev/null
+          echo "CLANG_DIR=$CLANG_BIN" >> "$GITHUB_ENV"
+          # Android GCC 4.9 cross toolchains: clang (without LLVM=1) locates
+          # the external as/ld for the vDSO (AArch32) builds via these bin
+          # dirs on PATH (gcc-toolchain style layout with <triple>-as/ld).
+          git clone -q --depth=1 --single-branch \
+            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
+            -b android12L-release "$RUNNER_TEMP/tc/gcc64"
+          git clone -q --depth=1 --single-branch \
+            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 \
+            -b android12L-release "$RUNNER_TEMP/tc/gcc32"
+          echo "$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/gcc32/bin:$CLANG_BIN" >> "$GITHUB_PATH"
 
       - name: Clone kernel source (not part of this repo)
         run: |
@@ -185,10 +197,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$GITHUB_WORKSPACE/logs"
-          # device tree compiles with AOSP clang 14 + LLVM IAS — mirrors
-          # Flyme66's official flow exactly (local verification used
-          # clang-r450784d with LLVM=1 LLVM_IAS=1). The 4.9 gcc-10 path
-          # fails prepare-compiler-check on CC_STACKPROTECTOR_STRONG here.
+          # Unified toolchain: AOSP clang 14 + LD=ld.lld.
           export PATH="$CLANG_DIR:$PATH"
           export KBUILD_BUILD_HOST=build
           export KBUILD_BUILD_USER=kernel
@@ -196,9 +205,8 @@ jobs:
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC="clang" \
             CLANG_TRIPLE="aarch64-linux-gnu-" \
-            CROSS_COMPILE="aarch64-linux-gnu-" \
-            CROSS_COMPILE_ARM32="arm-linux-gnueabi-" \
-            LLVM=1 LLVM_IAS=1 2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
+            LD=ld.lld \
+            2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
           rc=${PIPESTATUS[0]}
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
           cp -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" "$RUNNER_TEMP/out/Image.gz-dtb" 2>/dev/null || true
