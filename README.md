@@ -14,8 +14,31 @@ GitHub Actions 在 CI 中拉取内核源码后按特性开关集成并编译。
 | ReSukiSU | `features.resukisu.enabled` | KernelSU 系 root（**manual hook**，4.9 唯一支持项；susfs 预留未做） | on |
 | BBG | `features.bbg.enabled` | Baseband-guard 防格机 LSM | on |
 | Droidspace | `features.droidspace.enabled` | 容器/LXC/Docker 内核支持 | on |
+| Android/data 隔离 | `features.data_isolation.enabled` | sdcardfs per-uid 隔离 `Android/data/<pkg>`：非 owner app lookup/getattr 得 ENOENT | on |
 
 `workflow_dispatch` 里同名布尔输入可单次覆盖；`configs/mix2s.yaml` 是默认值。
+
+### Android/data 隔离（sdcardfs per-uid ENOENT）
+
+背景：4.9 非 GKI 机器上 `/storage/emulated/0/Android/{data,obb}` 是 **sdcardfs
+bind-mount**（`/dev/fuse` 只服务到 `/storage/emulated` 上层），MediaProvider
+FUSE daemon 的 data-isolation 判权（`isUidAllowedAccessToDataOrObbPath`）**永远
+看不到这些 lookup**——它在 AOSP 里是为 GKI 5.10+ FUSE daemon 设计的，且 4.9
+无 FUSE BPF。sdcardfs 自身只把顶层 mask 成 0711：挡住 readdir 枚举，但
+**已知包路径的 stat/open 仍成功**，于是任何 app 都能探测任意已装应用的
+`Android/data/<pkg>` 是否存在（包名泄漏）。
+
+补丁 `patches/sdcardfs/0001-sdcardfs-android-data-isolation.patch` 把 AOSP
+语义搬进 sdcardfs：
+- `uid < AID_APP_START`（root/系统/媒体/shell）→ 放行
+- 包 owner（或该包 `Android/data/<pkg>` 子树内任意节点）→ 放行
+- 其它 app 访问 `Android/data/<pkg>` → lookup/getattr 返回 **ENOENT**（干净
+  "不存在"，stat 类探测不会误判 EACCES 为存在），open 返回 EACCES
+
+owner 判定复用 vold 经 configfs 填的 packagelist（`get_appid` + userid），与
+sdcardfs 自身 `derived_perm.c` 算 `d_uid` 同源。`Android/obb` 保持共享（本机
+挂载无 `unshared_obb`）。已知边界：能拿到"所有文件访问"的特权 app 不在这条
+链路内（那是 Android 的授权语义，非本补丁范围）。
 
 ### ReSukiSU 的 7 类 hook 与覆盖方式
 
@@ -75,9 +98,15 @@ patches/resukisu-manual-hook/common/  5 个内核源码补丁（stat/exec/open/r
 patches/bbg/common/                   集成说明（无本地补丁，跑官方 setup.sh）
 patches/droidspace/common/            droidspace.config + 说明
 patches/droidspace/polaris/            cgroup 前缀 4.9 移植补丁（官方 02 的移植）
+patches/sdcardfs/                     Android/data per-uid 隔离补丁（data_isolation）
 scripts/                              编排脚本（见下）
 .github/workflows/build-mix2s.yml     CI
 ```
+
+CI 里所有补丁应用后会先 `git commit` 一次内核树，让 `setlocalversion` 看到
+干净 git 状态——**版本串不再带 `-dirty` 后缀**，同时保留 `git describe` 的
+提交号（如 `4.9.337-perf-g<sha>`）。
+
 
 ## 手动复现
 
