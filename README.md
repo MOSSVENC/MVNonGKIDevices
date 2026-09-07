@@ -3,14 +3,15 @@
 构建脚本 / 补丁 / 配置片段在本仓库维护，内核源码按设备固定在外部
 仓库（下表），由 GitHub Actions 检出后按特性开关集成并编译。
 
-## 支持设备（均为 Linux 4.9.337 / arm64）
+## 支持设备（4.9 / 4.19，arm64）
 
-| 设备 | 代号 | 内核源 / 分支 | workflow |
-|---|---|---|---|
-| Xiaomi Mi Mix 2S | `polaris` (sdm845) | [MOSSVENC/android_kernel_xiaomi_sdm845](https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845) @ `lineage-22.2` | `build-polaris.yml` |
-| Xiaomi Pocophone F1 | `beryllium` (sdm845) | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
-| Xiaomi Mi A2 Lite | `daisy` (msm8953) | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
-| Xiaomi Redmi Note 5 | `vince` (msm8953) | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
+| 设备 | 代号 | 内核 | 内核源 / 分支 | workflow |
+|---|---|---|---|---|
+| Xiaomi Mi Mix 2S | `polaris` (sdm845) | 4.9.337 | [MOSSVENC/android_kernel_xiaomi_sdm845](https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845) @ `lineage-22.2` | `build-polaris.yml` |
+| Xiaomi Pocophone F1 | `beryllium` (sdm845) | 4.9.337 | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
+| Xiaomi Mi A2 Lite | `daisy` (msm8953) | 4.9.337 | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
+| Xiaomi Redmi Note 5 | `vince` (msm8953) | 4.9.337 | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
+| Xiaomi Redmi K40 / POCO F3 | `alioth` (sm8250) | 4.19.325 | [MOSSVENC/android_kernel_xiaomi_sm8250](https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250) @ `lineage-23.2` | `build-alioth.yml` |
 
 workflow_dispatch 输入控制各特性开关（enable_resukisu / enable_bbg /
 enable_droidspace / cgroup_port / enable_data_isolation / hook_mode /
@@ -79,12 +80,14 @@ manual hook 共 7 类；4 类必须改内核源码，3 类可选。以下补丁�
 | setuid | kernel/sys.c | 可选 | `manual-lsm` → LSM AUTO；`manual-source` → `alt-hooks/0011` |
 | sys_read(initrc) | fs/read_write.c | 可选 | `manual-lsm` → LSM AUTO；`manual-source` → `alt-hooks/0012` |
 
-workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm）：
+workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm）。
+4.9 设备用 `patches/resukisu-manual-hook/common/`（+ `alt-hooks/`）；
+alioth（4.19）用 `patches/resukisu-manual-hook/419/`（+ `419-alt/`）：
 - `manual-lsm`（默认）—— 源码补丁 + 3 个可选 hook 由 ReSukiSU 的
   LSM / input_handler AUTO 机制接管（fragment 置 `CONFIG_KSU_MANUAL_HOOK_AUTO_*=y`，
-  4.9 < 6.8 适用）。
-- `manual-source` —— 源码补丁 + 打 `patches/resukisu-manual-hook/alt-hooks/0010~0012`
-  源码补丁，fragment 关掉三个 AUTO。
+  < 6.8 适用）。
+- `manual-source` —— 源码补丁 + 打可选 3 hook 源码补丁
+  （4.9：`alt-hooks/0010~0012`；4.19：`419-alt/0010~0012`），fragment 关掉三个 AUTO。
 - `auto` —— ReSukiSU **auto-hook 分支**：hook 由运行时 inline-hook 引擎完成；
   `auto_fix_49`（默认开）修正 auto-hook 分支对 4.x 的 `kasan_reset_tag` 门槛。
 - `susfs` —— SuSFS inline hook（**polaris** 支持）：应用
@@ -94,7 +97,8 @@ workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm�
   树的移植产物。polaris 应用 `test/susfs-510-to-49/susfs-49-test.patch`
   （test 重建产物，与 `vendor/reference-polaris-susfs-final.patch`
   逐字一致）；beryllium/daisy/vince 应用各自
-  `test/susfs-510-to-49/vendor/reference-<设备>.patch`。
+  `test/susfs-510-to-49/vendor/reference-<设备>.patch`；alioth（4.19）
+  应用 `test/susfs-510-to-419/susfs-419-test.patch`（4.19 候选移植）。
 
 ### 静态符号
 
@@ -130,6 +134,10 @@ patches/resukisu-manual-hook/common/  4 个通用 hook 补丁（stat/exec/open/r
 patches/resukisu-manual-hook/{daisy,vince}/  各设备专用 0004-reboot 变体（树里 reboot.c 上下文不同）
 patches/resukisu-manual-hook/alt-hooks/    可选 3 hook 源码补丁（hook_mode: manual-source 用）
 patches/vince/0000-remove-legacy-ksu-hooks.patch  清 vince 树旧 KernelSU 埋点（反向 eb0503）
+patches/resukisu-manual-hook/419/           4.19 必加 manual hook（stat/faccessat 按 4.19 形态；exec/reboot 同 common）
+patches/resukisu-manual-hook/419-alt/       4.19 可选 3 hook 源码补丁（manual-source 用；setuid/sysread 按 4.17+/4.19+ 形态）
+patches/droidspace/4.19/                    Droidspace 4.19：官方 non-GKI 补丁集 + 官方 mandatory config（kona 及 4.19 树）
+test/susfs-510-to-419/                      SuSFS 4.19 移植候选（LOS sm8250 落位；CI 验证中）
 test/susfs-510-to-49/susfs-49-test.patch              polaris test 重建产物（susfs-test 应用对象）
 test/susfs-510-to-49/vendor/reference-polaris-susfs-final.patch   polaris 设备树 reference（冻结基准）
 test/susfs-510-to-49/vendor/reference-{beryllium,daisy,vince}.patch
@@ -142,7 +150,8 @@ scripts/                              编排脚本（见下）
 ```
 
 CI 里所有补丁应用后会先 `git commit` 一次内核树，`setlocalversion` 基于
-干净的 git 状态生成版本串：`4.9.337-perf-g<sha>`（内核版本 + `git
+干净的 git 状态生成版本串：`<内核版本>-perf-g<sha>`（如 4.9 设备
+`4.9.337-perf-g<sha>`、alioth `4.19.325-perf-g<sha>`；内核版本 + `git
 describe` 提交号）。
 
 
@@ -199,7 +208,14 @@ CC_WERROR 的强制与断言见脚本内注释。
   reference（polaris/beryllium/daisy/vince），设备树差异（selinux
   state-ful 变体、树自带 KernelSU 等）见
   `test/susfs-510-to-49/ADAPTATION.md`。
-- **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 默认关闭。
+- **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 固定 off，
+  alioth 无 sdcardfs（4.19 kona 树）不适用。
+- **alioth（4.19）**：ReSukiSU manual hook 用 `patches/resukisu-manual-hook/419`
+  （+ `419-alt` 于 manual-source）；droidspace 用 `patches/droidspace/4.19/`
+  官方补丁；susfs 走 `hook_mode=susfs-test` 应用
+  `test/susfs-510-to-419/susfs-419-test.patch`（4.19 候选移植，
+  编译验证状态见该目录 README）。产物为 `Image` + `dtbo.img`
+  （boot header v3、dtbo 独立分区），AnyKernel3 按 slot 设备打包。
 - **vince 旧 KernelSU**：workflow 剥离树自带旧 KSU 后集成 ReSukiSU；上游若更新旧
   KSU 代码，`patches/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
 - **Droidspace cgroup 移植补丁**：非致命；apply 失败自动跳过（见
