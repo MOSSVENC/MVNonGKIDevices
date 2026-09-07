@@ -19,7 +19,7 @@
 | `vendor/reference-polaris-susfs-final.patch` | 字节校验基准 + 翻译骨架来源（与仓库 mix2s 交付物 `patches/susfs/polaris-susfs-final.patch` 一致时初始化；此后独立维护） |
 | `inputs/susfs49-adapt.diff` `def49-adapt.diff` | core 的 4.9 形态适配（i_state 位域、fsnotify 回调声明等；susfs.h 原样） |
 | `tools/extract-anchors.py` | 从 reference 提取 5.10→4.9 hunk 锚点映射（上游变更时重跑） |
-| `tools/translate49.py` | 逐文件监督式翻译：reference 段为 4.9 结构骨架，5.10 段为载荷源 |
+| `tools/translate49.py` | 逐文件对照翻译：reference 段为 4.9 参考，5.10 段用于差异对照 |
 | `tools/anchors/*.json` | 21 文件的 hunk 锚点映射（入库） |
 | `out/` | 重建产物（不入库） |
 
@@ -36,10 +36,10 @@
 
 ## 监督式翻译语义
 
-- reference 段（已验收的 4.9 形态）提供 4.9 上下文与插入位置，是结构
-  骨架；
-- 5.10 段是载荷源：语义与 reference 一致时保留 4.9 载荷（格式以 4.9
-  为准），出现语义漂移时保留 4.9 载荷并**上报人工复核**（不猜测）；
+- reference 段是 4.9 参考（已验收形态，含上下文与插入位置）；
+- 上游 5.10 段用于对照：内容与 reference 语义一致时不改动 reference
+  （格式以 4.9 为准），出现差异时**上报人工复核**——reference 是
+  参考基准，不被自动替换；
 - 上游升版流程：把新版上游 core 与主补丁放入 `vendor/`（仓库文件更新，
   由维护者完成并提交）→ 重跑 `extract-anchors.py`（锚点变化上报）→
   重跑本工具（漂移上报）→ 产物校验闸门兜底。本工具自身只读取仓库内
@@ -59,5 +59,5 @@ test/susfs-510-to-49/translate.sh <kernel-root> --keep   # 保留重建后的树
 - 产物 `out/susfs-49-rebuilt.patch` 与 mix2s 交付物
   `patches/susfs/polaris-susfs-final.patch` 逐字节一致（145092 B）
 - 语义漂移上报（保守，非阻断）：exec/open/namei/namespace/readdir/
-  stat/task_mmu 等 16 文件的 5.10-only hook 或载荷差异，记录于
+  stat/task_mmu 等 16 文件的 5.10-only hook 或内容差异，记录于
   `out/.work/tr-*.log`

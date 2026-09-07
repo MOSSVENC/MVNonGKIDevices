@@ -2,12 +2,12 @@
 """
 extract-anchors.py — build the 5.10->4.9 hunk anchor map from the frozen
 4.9 reference (supervised). One-time per upstream sync: pair each 5.10
-hunk with the 4.9 hunk that carries the same payload, then record the
+hunk with the 4.9 hunk that carries the same content, then record the
 4.9 anchor (host function + insertion point class).
 
 The map is the durable 4.9 structural knowledge; the frozen patch only
 seeds it. When upstream moves, re-run against the updated 5.10 segment:
-payload-identical hunks keep their anchor; changed hunks surface for a
+content-identical hunks keep their anchor; changed hunks surface for a
 manual anchor review instead of being silently misplaced.
 
 Usage:
@@ -38,8 +38,8 @@ def parse_hunks(diff_text):
     return out
 
 
-def payload_sig(adds):
-    """order-insensitive signature: sorted distinctive payload lines.
+def content_sig(adds):
+    """order-insensitive signature: sorted distinctive content lines.
     Preprocessor-only blocks (include guards) sign by their content."""
     sem = [l for l in adds if l.strip() and not l.startswith('#')]
     if sem:
@@ -87,13 +87,13 @@ def main():
         out_path = sys.argv[sys.argv.index('--out') + 1]
     up_hunks = parse_hunks(open(up_path).read())
     ref_hunks = parse_hunks(open(ref_path).read())
-    ref_sigs = [payload_sig(h['adds']) for h in ref_hunks]
+    ref_sigs = [content_sig(h['adds']) for h in ref_hunks]
 
     entries = []
     used_ref = set()
     for ui, uh in enumerate(up_hunks):
-        usig = payload_sig(uh['adds'])
-        # pick best unused ref hunk by payload overlap
+        usig = content_sig(uh['adds'])
+        # pick best unused ref hunk by content overlap
         best_j, best_score = -1, -1
         for rj, rsig in enumerate(ref_sigs):
             if rj in used_ref:
@@ -121,7 +121,7 @@ def main():
             })
     doc = {
         'file': fname,
-        'note': '5.10 hunk -> 4.9 hunk anchor map (payload-supervised)',
+        'note': '5.10 hunk -> 4.9 hunk anchor map (content-supervised)',
         'entries': entries,
     }
     if out_path:

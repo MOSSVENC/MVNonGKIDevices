@@ -22,14 +22,15 @@
 #   inputs/
 #     susfs49-adapt.diff def49-adapt.diff core 4.9 adaptation assets
 #
-# Pipeline per file with 5.10 + 4.9 segments: the frozen 4.9 segment is
-# the structural skeleton (context + placement are 4.9-authoritative),
-# the 5.10 segment is the payload source; translate49.py keeps the 4.9
-# payload unless the upstream payload drifted semantically, in which
-# case the drift is reported for manual review. The KSU-interaction hook
-# sites and stat.c/task_mmu.c stock-4.9 adaptation are part of the
-# reference segments (vendor/susfs_inline_hook_patches-4.9.sh and
-# vendor/susfs-adapt-4.9.sh document how those were produced).
+# Pipeline per file with 5.10 + 4.9 segments: the frozen reference
+# segment is the 4.9 reference (authoritative form, context + placement
+# included). The upstream 5.10 segment is used for comparison: when its
+# content differs semantically from the reference, the difference is
+# reported for manual review — the reference is never silently replaced.
+# The KSU-interaction hook sites and stat.c/task_mmu.c stock-4.9
+# adaptation are part of the reference segments
+# (vendor/susfs_inline_hook_patches-4.9.sh and vendor/susfs-adapt-4.9.sh
+# document how those were produced).
 #
 # Verification: the rebuilt tree must be byte-identical (hash-object) to
 # applying vendor/reference-polaris-susfs-final.patch on the same base.
@@ -153,12 +154,9 @@ if [ -f "$WORK/refonly.txt" ]; then
   done < "$WORK/refonly.txt"
 fi
 
-echo "--- 3) emit layer patch set + byte-verify vs vendor reference"
+echo "--- 3) emit rebuilt patch + byte-verify vs vendor reference"
 git -C "$KROOT" add -A 2>/dev/null || true
 git -C "$KROOT" diff --cached --binary > "$HERE/out/susfs-49-rebuilt.patch"
-mkdir -p "$HERE/out/layers"
-python3 "$T/split-layers.py" "$HERE/out/susfs-49-rebuilt.patch" \
-  "$HERE/out/layers"
 
 GT="$HERE/out/.gt-verify"
 rm -rf "$GT"

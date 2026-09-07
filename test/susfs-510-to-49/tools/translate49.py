@@ -5,9 +5,9 @@ translate49.py — supervised 5.10 -> 4.9 segment translator (test tree).
 The frozen 4.9 reference segment is the structural skeleton: its hunks
 carry the 4.9 host context and the correct placement across the file
 (extern before the function, body inside it). The upstream 5.10 segment
-carries the latest payload. Translation = reference skeleton with each
-hunk's payload replaced by the matching upstream hunk's payload, after
-applying the file's payload fixups (inputs/*.fixups.json).
+carries the latest content. Translation = reference skeleton with each
+hunk's content replaced by the matching upstream hunk's content, after
+applying the file's content fixups (inputs/*.fixups.json).
 
 Matching: by anchor map from extract-anchors.py (up_hunk -> ref_hunk);
 an unpaired upstream hunk is dropped only when the reference has no
@@ -15,7 +15,7 @@ counterpart (5.10-only hook site) — reported, never guessed.
 
 Usage:
   translate49.py <upstream-segment.diff> <ref-segment.diff> <anchor.json>
-                 <out-4.9-segment.diff> [<payload-fixups.json>]
+                 <out-4.9-segment.diff> [<content-fixups.json>]
 Exit: 0 ok; 2 manual needed.
 """
 import json
@@ -54,7 +54,7 @@ def emit_hunk(h):
 
 def rebuild_hunk(hdr, body, add_map):
     """Rebuild a hunk preserving original line order; replace each '+'
-    line i with add_map[i] (a new payload list of the same length, or a
+    line i with add_map[i] (a new content list of the same length, or a
     dict {index: text}). Header counts are recomputed."""
     m = re.match(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$', hdr)
     if not m:
@@ -124,7 +124,7 @@ def main():
         mapped = [ui for ui, e in entries.items()
                   if e.get('ref_hunk') == rj]
         if not mapped:
-            new_parts.append(ht)  # keep ref payload unchanged
+            new_parts.append(ht)  # keep ref content unchanged
             continue
         ui = mapped[0]
         ref_h = ref_hunks[rj]
@@ -133,21 +133,21 @@ def main():
         sem = lambda ls: [l.strip() for l in ls
                           if l.strip() and not l.startswith('#')]
         if sem(up_adds) == sem(ref_adds):
-            # only whitespace/blank drift: keep the reference payload —
+            # only whitespace/blank drift: keep the reference content —
             # the 4.9 form is authoritative for formatting.
-            payload = ref_adds
+            content = ref_adds
         else:
             # semantic drift: the 4.9 host structure may not host the
-            # upstream form verbatim. Keep the reference payload and
+            # upstream form verbatim. Keep the reference content and
             # report for manual review instead of guessing.
-            payload = ref_adds
+            content = ref_adds
             manual.append((up_hunks[ui]['hdr'],
-                           'semantic payload drift from ref — manual review'))
-        if payload:
-            new_h = rebuild_hunk(ref_h['hdr'], ref_h['body'], payload)
+                           'semantic content drift from ref — manual review'))
+        if content:
+            new_h = rebuild_hunk(ref_h['hdr'], ref_h['body'], content)
             new_parts.append(new_h if new_h else ht)
         else:
-            manual.append((up_hunks[ui]['hdr'], 'empty payload'))
+            manual.append((up_hunks[ui]['hdr'], 'empty content'))
     # report upstream hunks that had no ref counterpart (5.10-only)
     for ui, uh in enumerate(up_hunks):
         e = entries.get(ui)
