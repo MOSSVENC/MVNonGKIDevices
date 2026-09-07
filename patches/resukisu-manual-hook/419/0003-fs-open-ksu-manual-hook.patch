@@ -1,0 +1,21 @@
+diff --git a/fs/open.c b/fs/open.c
+index f2b82c4..3482ad4 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -33,3 +33,8 @@
+ #include <linux/compat.h>
+ 
++#ifdef CONFIG_KSU_MANUAL_HOOK
++__attribute__((hot))
++extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
++				int *mode, int *__unused_flags);
++#endif
+ #include "internal.h"
+@@ -453,4 +453,7 @@
+ 
+ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ {
++#ifdef CONFIG_KSU_MANUAL_HOOK
++	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
++#endif
+ 	return do_faccessat(dfd, filename, mode);
