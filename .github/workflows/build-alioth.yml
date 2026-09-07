@@ -176,6 +176,7 @@ jobs:
             echo "scripts/min-tool-version.sh already present"
           else
             cp "$GITHUB_WORKSPACE/patches/alioth/min-tool-version.sh" scripts/
+            chmod +x scripts/min-tool-version.sh
             echo "restored scripts/min-tool-version.sh"
           fi
 
