@@ -253,20 +253,33 @@ jobs:
             exit "$rc"
           fi
           { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
-          # dtbo.img: mkdtboimg (AOSP libufdt) from the alioth overlay dtbo.
-          # The kona dts Makefile builds alioth-sm8250-overlay.dtbo (base
-          # kona.dtb); LOS assembles dtbo.img out-of-tree with mkdtimg.
-          if [ -f "$RUNNER_TEMP/out/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250-overlay.dtbo" ]; then
+          # dtbo.img: mkdtboimg (AOSP libufdt) from ALL xiaomi sm8250
+          # overlays, in the dts Makefile order. Verified against the
+          # official LOS 23.2 dtbo.img (20260902): 12 entries, one per
+          # kona xiaomi device, alioth first (mkdtboimg dump on the
+          # official image shows dt_entry_count=12, entry.0 model
+          # "xiaomi alioth" ... entry.11 "xiaomi umi"). A dtbo.img with
+          # only the alioth overlay would not match the stock partition
+          # content.
+          DTBO_DIR="$RUNNER_TEMP/out/arch/arm64/boot/dts/vendor/qcom"
+          DTBO_LIST="alioth-sm8250-overlay.dtbo apollo-sm8250-overlay.dtbo cas-sm8250-overlay.dtbo cmi-sm8250-overlay.dtbo dagu-sm8250-overlay.dtbo enuma-sm8250-overlay.dtbo elish-sm8250-overlay.dtbo lmi-sm8250-overlay.dtbo munch-sm8250-overlay.dtbo psyche-sm8250-overlay.dtbo thyme-sm8250-overlay.dtbo umi-sm8250-overlay.dtbo"
+          missing=""
+          for f in $DTBO_LIST; do
+            [ -f "$DTBO_DIR/$f" ] || missing="$missing $f"
+          done
+          if [ -z "$missing" ]; then
             curl -sL --max-time 60 \
               "https://android.googlesource.com/platform/system/libufdt/+/refs/heads/main/utils/src/mkdtboimg.py?format=TEXT" \
               -o "$RUNNER_TEMP/mkdtboimg.py.b64"
             base64 -d "$RUNNER_TEMP/mkdtboimg.py.b64" > "$RUNNER_TEMP/mkdtboimg.py"
+            # shellcheck disable=SC2086
             python3 "$RUNNER_TEMP/mkdtboimg.py" create "$RUNNER_TEMP/dtbo.img" \
               --page_size=4096 \
-              "$RUNNER_TEMP/out/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250-overlay.dtbo" \
-              && echo "dtbo.img assembled" || echo "dtbo.img assembly failed (non-fatal)"
+              $(for f in $DTBO_LIST; do echo "$DTBO_DIR/$f"; done) \
+              && echo "dtbo.img assembled ($(echo $DTBO_LIST | wc -w) overlays)" \
+              || echo "dtbo.img assembly failed (non-fatal)"
           else
-            echo "alioth overlay dtbo not found; dtbo.img not produced (non-fatal)"
+            echo "missing overlays:$missing; dtbo.img not produced (non-fatal)"
           fi
 
       - name: Package AnyKernel3 zip
