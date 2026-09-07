@@ -85,13 +85,12 @@ workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm�
   4.9 < 6.8 适用）。
 - `manual-source` —— 源码补丁 + 打 `patches/resukisu-manual-hook/alt-hooks/0010~0012`
   源码补丁，fragment 关掉三个 AUTO。
-- `auto` —— ReSukiSU **auto-hook 分支**：不提供源码补丁（0001-0004 跳过），
-  hook 由运行时 inline-hook 引擎完成；`auto_fix_49`（默认开）修正 auto-hook
-  分支对 4.x 的 `kasan_reset_tag` 门槛。
+- `auto` —— ReSukiSU **auto-hook 分支**：hook 由运行时 inline-hook 引擎完成；
+  `auto_fix_49`（默认开）修正 auto-hook 分支对 4.x 的 `kasan_reset_tag` 门槛。
 
 ### 静态符号
 
-selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 查表解析（合并阶段无条件强制），不提供去 static 导出补丁。
+selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 查表解析（合并阶段无条件强制）。
 
 ## 最终 .config 合并顺序
 
@@ -131,9 +130,9 @@ scripts/                              编排脚本（见下）
 .github/workflows/build-<代号>.yml     每设备 CI
 ```
 
-CI 里所有补丁应用后会先 `git commit` 一次内核树，让 `setlocalversion` 看到
-干净 git 状态——**版本串不再带 `-dirty` 后缀**，同时保留 `git describe` 的
-提交号（如 `4.9.337-perf-g<sha>`）。
+CI 里所有补丁应用后会先 `git commit` 一次内核树，`setlocalversion` 基于
+干净的 git 状态生成版本串：`4.9.337-perf-g<sha>`（内核版本 + `git
+describe` 提交号）。
 
 
 ## 手动复现
@@ -184,12 +183,12 @@ CC_WERROR 的强制与断言见脚本内注释。
 
 ## 已知取舍 / 边界
 
-- **susfs**：不含 susfs inline hook（hook_mode 提供 ReSukiSU manual 与 auto 两种）。
+- **susfs**：经 hook_mode 集成（ReSukiSU manual / auto / susfs inline hook 三种，见特性开关表）。
 - **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 默认关闭。
 - **vince 旧 KernelSU**：workflow 剥离树自带旧 KSU 后集成 ReSukiSU；上游若更新旧
   KSU 代码，`patches/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
-- **Droidspace 官方 01 补丁（xt_qtaguid）**：本内核树无该文件，不拉取。
-- **Droidspace 02 移植补丁**：非致命；apply 失败自动跳过。
+- **Droidspace cgroup 移植补丁**：非致命；apply 失败自动跳过（见
+  patches/droidspace/common/README.md）。
 - ReSukiSU 与管理器（Manager APK）版本需自行匹配；setup.sh 按 hook_mode
   拉取：manual 用 `main` 分支，auto 用 `auto-hook` 分支（实验性，4.x 需
   `auto_fix_49`，见上）。

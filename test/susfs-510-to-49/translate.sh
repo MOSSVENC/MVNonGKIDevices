@@ -1,37 +1,28 @@
 #!/usr/bin/env bash
 #
-# translate.sh v3 — reproducible 4.9 SuSFS builder + verifier.
+# translate.sh — reproducible 4.9 SuSFS builder + verifier.
 #
 # Rebuilds the shipped 4.9 SuSFS port (patches/susfs/polaris-susfs-final.patch)
-# on a clean stock-4.9 kernel, minimizing third-party runtime dependency:
+# on a clean stock-4.9 kernel from these inputs:
 #
 #   Core (fs/susfs.c, include/linux/susfs.h, susfs_def.h):
 #     upstream gki-android12-5.10 mirror (patches/susfs/upstream-5.10/)
-#     + OWN adaptation assets (inputs/susfs49-adapt.diff,
-#     inputs/def49-adapt.diff). Verified byte-identical to the shipped
-#     port core. susfs.h needs no adaptation (mirror == 4.9 file).
-#     => core is independent of any third-party 4.9 patch.
+#     + adaptation assets (inputs/susfs49-adapt.diff,
+#     inputs/def49-adapt.diff). susfs.h is used as mirrored.
 #
-#   Tier-1 VFS (fs/Makefile, fs/readdir.c, mm/memory.c): the 5.10 segment
-#     is byte-identical to the 4.9 port segment (measured 100%).
-#
-#   Tier-2 VFS (fs/statfs.c, kernel/kallsyms.c, fs/proc_namespace.c,
-#     security/selinux/avc.c, fs/proc/base.c, ...): 5.10 segment plus a
-#     small enumerated rewrite set (documented below) yields the 4.9 form.
-#
-#   Tier-3 VFS (fs/namei.c, fs/namespace.c, fs/proc/task_mmu.c,
-#     fs/stat.c, fs/notify/fdinfo.c, fs/proc/fd.c): hook points whose
-#     5.10 context does not apply to stock 4.9 (measured). These still
-#     come from the frozen JackA1ltman patch (patches/susfs/
-#     susfs_patch_to_4.9.patch) as a *reference base*; converting these
-#     into own anchor templates is the remaining Jack-dependency.
-#
-#   KSU-interaction hooks: patches/susfs/susfs_inline_hook_patches-4.9.sh
-#     + inputs/delta_{stat,sys}.diff (generator skips on bare 4.9).
+#   VFS hook points:
+#     - files whose 5.10 segment applies to stock 4.9 are taken from the
+#       mirror; the rest from the frozen reference patch
+#       patches/susfs/susfs_patch_to_4.9.patch
+#     - KSU-interaction hook sites:
+#       patches/susfs/susfs_inline_hook_patches-4.9.sh
+#       + inputs/delta_{stat,sys}.diff
+#     - stock-4.9 fixes for fs/stat.c and fs/proc/task_mmu.c:
+#       scripts/susfs-adapt-4.9.sh
 #
 # Verification: the rebuilt tree must be byte-identical (hash-object) to
 # applying patches/susfs/polaris-susfs-final.patch on the same base, for
-# every file it touches. Any mismatch fails the build (no false positive).
+# every file it touches. Any mismatch fails the build.
 #
 # Usage: translate.sh <kernel-root>            (clean git tree, stock 4.9)
 #        translate.sh <kernel-root> --keep

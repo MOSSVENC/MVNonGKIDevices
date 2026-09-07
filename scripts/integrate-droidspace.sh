@@ -5,17 +5,14 @@
 # Usage: integrate-droidspace.sh <kernel-root> [port-patch-file]
 #
 # Steps:
-#   1. The official non-GKI patch "01 (xt_qtaguid panic fix)" is NOT applied:
-#      this kernel tree (sdm845 4.9, all branches) does not contain
-#      net/netfilter/xt_qtaguid.c, so the patch target does not exist.
-#   2. The "02 (cgroup prefix restore)" patch is ported to the 4.9 layout
-#      (kernel/cgroup.c) and shipped as
-#      patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch (shared
-#      by all supported 4.9 devices).
-#      It is applied with a dry-run first; on failure we warn and continue
-#      (4.9 already restores prefixes via cgroup_file_name when not NOPREFIX).
-#   3. The bulk of the support is kernel config — handled by
-#      merge-defconfig.sh merging patches/droidspace/common/droidspace.config.
+#   1. Apply the 4.9 cgroup prefix port
+#      (patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch,
+#      shared by all supported 4.9 devices) so runc/crun see `subsys.file`
+#      symlinks on noprefix (systemd-style) cgroup mounts. Dry-run first;
+#      if it does not apply, warn and continue — the port matters only for
+#      noprefix mounts, and 4.9 already restores prefixed names otherwise.
+#   2. Kernel config support is merged by merge-defconfig.sh from
+#      patches/droidspace/common/droidspace.config.
 #
 set -euo pipefail
 

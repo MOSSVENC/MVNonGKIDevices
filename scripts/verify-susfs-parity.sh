@@ -136,7 +136,7 @@ for fn,ua in sorted(up.items()):
     pa=port.get(fn,0)
     # files that exist in both but the port did not touch at all
     if fn in up and fn not in port and fn not in (
-        'security/selinux/hooks.c','security/selinux/selinuxfs.c',   # ReSukiSU fallback owns selinux hide
+        'security/selinux/hooks.c','security/selinux/selinuxfs.c',
         'fs/proc/bootconfig.c',                                      # no bootconfig on 4.9
         'fs/open.c','fs/exec.c','fs/read_write.c','kernel/reboot.c', # hook gen handles these
         'drivers/input/input.c'):

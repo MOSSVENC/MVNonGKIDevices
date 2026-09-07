@@ -1,26 +1,21 @@
 #!/usr/bin/env bash
 #
-# susfs-adapt-4.9.sh — apply the LOS-stock-4.9 adaptations on top of
-# JackA1ltman's susfs_patch_to_4.9.patch (which was authored against his
-# fork kernel_xiaomi_sdm845_binder_cgroup_v2 with backported statx /
-# newer vfs_getattr_nosec / single-block show_map_vma).
+# susfs-adapt-4.9.sh — stock-4.9 adaptation of two SuSFS hook files.
 #
-# Fixes two files whose hunks do not apply to stock 4.9:
-#   - fs/stat.c:       generic_fillattr / vfs_getattr_nosec use stock 4.9
-#                      signatures (2-arg, no result_mask); the SUS_KSTAT
-#                      spoof hook is inserted accordingly.
+#   - fs/stat.c:         generic_fillattr / vfs_getattr_nosec use the stock
+#                        4.9 signatures (2-arg, no result_mask); the
+#                        SUS_KSTAT spoof hook is inserted accordingly.
 #   - fs/proc/task_mmu.c: show_map_vma() has the stock 4.9 two-block shape
-#                      (dev/ino block, then print block); SUS_MAP /
-#                      SUS_KSTAT / OPEN_REDIRECT hooks are placed in the
-#                      first block before show_vma_header_prefix().
+#                        (dev/ino block, then print block); SUS_MAP /
+#                        SUS_KSTAT / OPEN_REDIRECT hooks are placed in the
+#                        first block before show_vma_header_prefix().
 #
-# Run from the kernel root AFTER susfs_patch_to_4.9.patch and BEFORE
-# susfs_inline_hook_patches-4.9.sh. Idempotent.
+# Run from the kernel root after the SuSFS hook-point base is applied and
+# before susfs_inline_hook_patches-4.9.sh. Idempotent.
 #
 set -euo pipefail
 
-cd "$(pwd)"
-[ -f fs/susfs.c ] || { echo "ERROR: fs/susfs.c not found — run susfs_patch_to_4.9.patch first" >&2; exit 1; }
+[ -f fs/susfs.c ] || { echo "ERROR: fs/susfs.c not found — apply the SuSFS hook-point base first" >&2; exit 1; }
 
 # ---------- fs/stat.c ----------
 python3 - <<'PYEOF'

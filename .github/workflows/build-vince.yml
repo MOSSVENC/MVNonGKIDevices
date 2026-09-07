@@ -73,10 +73,8 @@ jobs:
       # NOTE: no "Free disk space" step — it intermittently stalls on some
       # runners for many minutes; our build fits in the runner's disk.
 
-      # all CAF 4.9 trees are built with with Android clang 14
-      # (clang-r450784d from android13-release); under gcc-10 the 4.9
-      # prepare-compiler-check fails on CONFIG_CC_STACKPROTECTOR_STRONG.
-      # Mirror the official Flyme66 flow: system binutils + AOSP clang.
+      # Toolchain: AOSP clang 14 (clang-r450784d from android13-release)
+      # + system binutils, matching the maintainer's official flow.
       - name: Install binutils
         run: |
           sudo apt-get update -qq

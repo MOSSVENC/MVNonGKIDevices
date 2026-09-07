@@ -75,10 +75,8 @@ jobs:
       # runners for many minutes; our build fits in the runner's disk.
 
       # Unified toolchain across all supported devices: AOSP clang 14
-      # (clang-r450784d from android13-release) + system binutils. The
-      # previous gcc-10 path was polaris-only special handling; clang is
-      # supported by the CAF 4.9 tree (LLVM=1 + CLANG_TRIPLE) and is what
-      # the beryllium workflow already uses.
+      # (clang-r450784d from android13-release) + system binutils (see
+      # README "工具链": LLVM=1 + CLANG_TRIPLE on the CAF 4.9 tree).
       - name: Install binutils
         run: |
           sudo apt-get update -qq
