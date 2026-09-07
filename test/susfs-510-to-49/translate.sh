@@ -66,13 +66,15 @@ echo "--- 1) core: vendor susfs.c/h/def.h + 4.9 adaptation assets"
 cp "$CORE_SUSFS" "$KROOT/fs/susfs.c"
 cp "$CORE_H"     "$KROOT/include/linux/susfs.h"
 cp "$CORE_DEF"   "$KROOT/include/linux/susfs_def.h"
-git -C "$KROOT" add -f fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h
 git -C "$KROOT" apply --whitespace=nowarn "$CORE_ADAPT_SUSFS"
 git -C "$KROOT" apply --whitespace=nowarn "$CORE_ADAPT_DEF"
+git -C "$KROOT" add -f fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h
 
 echo "--- 2) VFS hook-point base (vendor susfs_patch_to_4.9.patch)"
+# the base patch carries fs/susfs.c and include/linux/susfs_{h,def.h} as
+# new-file segments; those are already in place from step 1 and are
+# skipped by git apply ("already exists"), so no core reset is needed.
 git -C "$KROOT" apply --reject --whitespace=nowarn "$JACK_PATCH" >/dev/null 2>&1 || true
-git -C "$KROOT" checkout -q -f -- fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h
 rm -f "$KROOT"/fs/*.rej "$KROOT"/fs/proc/*.rej 2>/dev/null || true
 
 echo "--- 3) stock-4.9 adaptation (vendor susfs-adapt-4.9.sh)"
