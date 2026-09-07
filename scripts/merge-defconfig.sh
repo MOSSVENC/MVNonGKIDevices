@@ -49,7 +49,7 @@ rm -f "$RAW"
 
 append_cfg() { # file
   local f="$1"
-  [ -f "$f" ] || { echo "WARN: config source not found, skipped: $f"; return; }
+  [ -f "$f" ] || { echo "WARN: config source not found, ignored: $f"; return; }
   echo "# ==== $f" >> "$RAW"
   # extract config lines (value forms: CONFIG_X=y / CONFIG_X="str" / "# CONFIG_X is not set")
   grep -E "^(# )?CONFIG_[A-Za-z0-9_]+[ =]" "$f" >> "$RAW" || true
@@ -177,9 +177,13 @@ if [ "${ENABLE_DROIDSPACE:-true}" = "true" ]; then
   done
   if grep -qE "^# CONFIG_ANDROID_PARANOID_NETWORK is not set$" "$CFG"; then
     echo "   OK   CONFIG_ANDROID_PARANOID_NETWORK is not set"
-  else
+  elif grep -qE "^CONFIG_ANDROID_PARANOID_NETWORK=y$" "$CFG"; then
     echo "   FAIL CONFIG_ANDROID_PARANOID_NETWORK (should be off)" >&2
     rc=1
+  else
+    # symbol absent from this kernel's Kconfig (modern CAF/LOS trees
+    # dropped it) -> nothing to turn off, nothing to assert
+    echo "   OK   CONFIG_ANDROID_PARANOID_NETWORK absent from this kernel"
   fi
 fi
 
