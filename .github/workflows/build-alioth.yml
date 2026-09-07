@@ -143,6 +143,27 @@ jobs:
           git apply "$P"
           echo "SuSFS 4.19 port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
+          # ReSukiSU's inline_hook_check.mk requires the ksu_handle_* call
+          # sites (setresuid/execveat/faccessat/sys_read/stat) in the
+          # kernel sources when using the SuSFS inline hook. The 4.9/4.19
+          # hook generator (ReSukiSU-adapted, handles the 4.19
+          # __sys_setresuid split) injects them; run it from the kernel
+          # root.
+          cp "$GITHUB_WORKSPACE/patches/susfs/susfs_inline_hook_patches-4.9.sh" ./
+          bash ./susfs_inline_hook_patches-4.9.sh 2>&1 | tail -30
+          # verify the hooks ReSukiSU's inline_hook_check.mk demands
+          MISSING=""
+          for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
+                      "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
+                      "ksu_handle_stat:fs/stat.c"; do
+            sym="${spec%%:*}"; file="${spec##*:}"
+            grep -q "$sym" "$file" || MISSING="$MISSING $sym($file)"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "hook generator left missing:$MISSING" >&2
+            exit 1
+          fi
+          echo "SuSFS KSU-interaction hooks present"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
