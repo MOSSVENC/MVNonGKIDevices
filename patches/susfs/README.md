@@ -86,3 +86,31 @@ done.
   avc_log_spoofing, enabled_features, is_inode_sus_path).
 - Remaining diff lines classified: only the two adaptations above +
   `#include <linux/version.h>`; no un-adapted functional difference.
+
+### Upstream refresh checklist (5.10 -> 4.9 port)
+
+When `scripts/sync-susfs-510.sh check` reports a newer upstream:
+
+1. `scripts/sync-susfs-510.sh refresh`
+2. `bash scripts/verify-susfs-parity.sh` — must report PARITY: OK after
+   re-deriving; any MISSING_FUNCTIONS / BODY_MISMATCH / MISSING_FILE is
+   drift to fix.
+3. Re-derive the port: update `susfs_patch_to_4.9.patch` file-by-file
+   per the translation map below, re-run `susfs-adapt-4.9.sh` and
+   `susfs_inline_hook_patches-4.9.sh`, regenerate
+   `polaris-susfs-final.patch`, git-apply-check on a clean tree.
+4. Build via CI (hook_mode=susfs) and device-test the affected feature.
+
+### Per-file translation map (upstream 5.10 patch -> 4.9)
+
+| upstream file | 4.9 handling |
+|---|---|
+| fs/susfs.c (+h/def.h) | external files; AS_FLAGS_* stored in inode->i_state high bits (33/34/35/36/39) instead of i_mapping->flags; sdcard fsnotify handler via SUSFS_DECL_FSNOTIFY_OPS macro; extra m_free for old fsnotify API |
+| fs/Makefile, fs/statfs.c, fs/proc_namespace.c, fs/notify/fdinfo.c, mm/memory.c, kernel/kallsyms.c, fs/proc/base.c, fs/proc/fd.c, fs/namespace.c | translate directly (contexts close) |
+| fs/namei.c | translate; nameidata gains `state` field for sus_path |
+| fs/stat.c | translate; drop statx mnt_id spoof (no statx on 4.9); keep vfs_getattr_nosec 2-arg adaptation |
+| fs/readdir.c | inject into the 3 callbacks that exist on 4.9 (fillonedir/filldir/filldir64); upstream's extra 5.10 callbacks do not exist here |
+| fs/readdir/stat faccessat/exec hooks | NOT in main patch — emitted by susfs_inline_hook_patches-4.9.sh (ksu_handle_* call sites), run after ReSukiSU setup |
+| fs/proc/cmdline.c | 4.9 location for cmdline spoof (upstream uses proc/bootconfig.c — bootconfig absent on 4.9) |
+| security/selinux/hooks.c, selinuxfs.c | NOT ported: 5.10 my_* depend on state-ful selinux APIs (security_context_to_sid(&state,..)) absent on 4.9; ReSukiSU fallback is line-equivalent (same uid gate / fake-policy resolution / node coverage) |
+| fs/proc/bootconfig.c | absent on 4.9 (bootconfig is 5.x) |
