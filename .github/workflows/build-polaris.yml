@@ -34,13 +34,14 @@ on:
         type: boolean
         default: true
       hook_mode:
-        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches) | susfs (SuSFS inline hook)"
+        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches) | susfs (SuSFS inline hook, shipped patches) | susfs-test (SuSFS inline hook from test-tree output)"
         type: choice
         options:
           - manual-lsm
           - manual-source
           - auto
           - susfs
+          - susfs-test
         default: manual-lsm
       auto_fix_49:
         description: "fix auto-hook branch <5.0 kasan_reset_tag guard on 4.x (only effective when hook_mode=auto)"
@@ -64,7 +65,8 @@ jobs:
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation }}
-      HOOK_TYPE: ${{ inputs.hook_mode == 'susfs' && 'susfs' || inputs.hook_mode == 'auto' && 'auto' || 'manual' }}
+      HOOK_TYPE: ${{ (inputs.hook_mode == 'susfs' || inputs.hook_mode == 'susfs-test') && 'susfs' || inputs.hook_mode == 'auto' && 'auto' || 'manual' }}
+      SUSFS_SOURCE: ${{ inputs.hook_mode == 'susfs-test' && 'test' || 'shipped' }}
       HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
@@ -145,17 +147,24 @@ jobs:
       # SuSFS kernel-side port must run AFTER ReSukiSU setup.sh: the hook
       # generator checks drivers/kernelsu/ for ksu_handle_* before wiring
       # kernel/sys.c etc.
-      - name: Apply SuSFS kernel-side port (hook_mode=susfs)
+      - name: Apply SuSFS kernel-side port (hook_mode=susfs / susfs-test)
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          # Modular port: core / vfs-hooks / ksu-hooks / overlay, applied
-          # in order. ReSukiSU is already set up at this point.
-          for p in "$GITHUB_WORKSPACE"/patches/susfs/000[1-4]-*.patch; do
-            echo "apply: $(basename "$p")"
-            git apply --check "$p" || { echo "SuSFS patch does not apply cleanly: $p"; exit 1; }
-            git apply "$p"
-          done
+          # ReSukiSU is already set up at this point. SUSFS_SOURCE selects
+          # the shipped modular patches or the test-tree pipeline output.
+          if [ "$SUSFS_SOURCE" = "test" ]; then
+            echo "susfs-test: applying test-tree output"
+            P="$GITHUB_WORKSPACE/test/susfs-510-to-49/susfs-49-test.patch"
+            git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
+            git apply "$P"
+          else
+            for p in "$GITHUB_WORKSPACE"/patches/susfs/000[1-4]-*.patch; do
+              echo "apply: $(basename "$p")"
+              git apply --check "$p" || { echo "SuSFS patch does not apply cleanly: $p"; exit 1; }
+              git apply "$p"
+            done
+          fi
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
