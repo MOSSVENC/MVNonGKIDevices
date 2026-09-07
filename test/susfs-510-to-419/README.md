@@ -24,8 +24,8 @@
 
 - 静态核对：core 三段与 4.9 已验收资产逐字一致；落位文件对 LOS
   4.19.325 树的 context 匹配如上。
-- 应用/编译验证经 GitHub Actions `build-alioth.yml`
-  （workflow_dispatch, hook_mode=susfs-test）完成；首轮报错按
+- 应用/编译验证将经 GitHub Actions `build-alioth.yml`
+  （workflow_dispatch, hook_mode=susfs-test）进行；首轮报错按
   `.rej` 迭代修正本候选。当前为候选状态。
 
 ## 后续（CI 验证通过后）
