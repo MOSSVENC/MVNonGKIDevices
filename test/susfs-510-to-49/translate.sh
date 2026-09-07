@@ -153,9 +153,12 @@ if [ -f "$WORK/refonly.txt" ]; then
   done < "$WORK/refonly.txt"
 fi
 
-echo "--- 3) emit rebuilt patch + byte-verify vs vendor reference"
+echo "--- 3) emit layer patch set + byte-verify vs vendor reference"
 git -C "$KROOT" add -A 2>/dev/null || true
 git -C "$KROOT" diff --cached --binary > "$HERE/out/susfs-49-rebuilt.patch"
+mkdir -p "$HERE/out/layers"
+python3 "$T/split-layers.py" "$HERE/out/susfs-49-rebuilt.patch" \
+  "$HERE/out/layers"
 
 GT="$HERE/out/.gt-verify"
 rm -rf "$GT"
