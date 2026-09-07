@@ -1,116 +1,50 @@
 # patches/susfs — SuSFS for 4.9 (Non-GKI)
 
-SuSFS upstream (susfs4ksu) has abandoned Non-GKI support; this directory
-holds the porting assets used to bring SuSFS onto our 4.9 kernels, based
-on JackA1ltman/NonGKI_Kernel_Build_2nd's verified work (polaris/4.9).
+4.9 SuSFS 移植资产：CI 应用的整包补丁、上游 gki-android12-5.10 镜像
+（功能来源基准）、以及从上游派生 4.9 形态的重建工具。
 
-## Files
+## 文件
 
-- `susfs_patch_to_4.9.patch` — SuSFS v2.3.0 core (fs/susfs.c, susfs.h,
-  susfs_def.h + kernel hook points).
-  Source: https://github.com/JackA1ltman/NonGKI_Kernel_Build_2nd
-          (mainline branch, Patches/Patch/susfs_patch_to_4.9.patch)
-- `susfs_inline_hook_patches-4.9.sh` — sed generator for the
-  KSU-inline-hook call sites, **fixed for ReSukiSU on stock 4.9**:
-  ksu_handle_sys_read is 3-arg (ReSukiSU signature) and the stat.c
-  vfs_fstatat extern no longer carries the fragment bug from the
-  upstream generator.
-- `polaris-susfs-final.patch` — **pre-generated final snapshot** for the
-  polaris LOS tree: core + stat.c/task_mmu.c 4.9 adaptation +
-  hook call sites. This is what CI applies (one self-contained patch);
-  the generator + adapt script below are the regeneration path for
-  tracking upstream.
-- `../../scripts/susfs-adapt-4.9.sh` — stock-4.9 adaptation of the two
-  files the upstream patch misses (stat.c: 2-arg vfs_getattr_nosec /
-  no result_mask; task_mmu.c: two-block show_map_vma).
+- `polaris-susfs-final.patch` — 自包含 4.9 快照：core（fs/susfs.c、
+  include/linux/susfs.h、susfs_def.h）+ 内核 hook 点 + stock-4.9 适配
+  （stat.c：2 参 vfs_getattr_nosec / 无 result_mask；task_mmu.c：两段式
+  show_map_vma）。CI 应用此文件。
+- `susfs_patch_to_4.9.patch` — 4.9 hook 点基底的冻结参考（其在重建管线
+  中的角色见 test/susfs-510-to-49/README.md）。
+- `susfs_inline_hook_patches-4.9.sh` — KSU-inline-hook 调用点生成器
+  （ReSukiSU 签名）。
+- `susfs_inline_hook_patches.sh` — 上游生成器镜像（参考）。
+- `upstream-5.10/` — susfs4ksu gki-android12-5.10 kernel_patches 镜像。
+- `../../scripts/susfs-adapt-4.9.sh` — 两个文件的 stock-4.9 适配。
+- `../../scripts/verify-susfs-parity.sh` — 上游刷新后的 parity 校验。
+- `../../scripts/sync-susfs-510.sh` — 上游镜像 check / refresh。
 
-## Regeneration path (tracking upstream gki-android12-5.10)
+## 重建路径
 
-1. patch -p1 < susfs_patch_to_4.9.patch            (or refreshed core)
-2. bash scripts/susfs-adapt-4.9.sh                 (stock-4.9 fixes)
-3. create drivers/kernelsu marker (hook gen check), then
-   bash susfs_inline_hook_patches-4.9.sh           (hook call sites)
-4. git diff -> polaris-susfs-final.patch           (snapshot)
+1. `bash scripts/susfs-adapt-4.9.sh`
+2. `bash susfs_inline_hook_patches-4.9.sh`
+3. `git diff` → `polaris-susfs-final.patch`
 
-## CI apply
+可复现构建器见 `test/susfs-510-to-49/translate.sh`：从上游镜像 + 适配
+资产重建快照，并与 `polaris-susfs-final.patch` 做逐字校验。
 
-Single step: git apply polaris-susfs-final.patch, then the fragment
-(CONFIG_KSU_SUSFS=y + sub-options; ReSukiSU's KSU_SUSFS choice selected
-— hook mode "susfs").
+## 上游跟踪（gki-android12-5.10）
 
-## Upstream tracking
+- `upstream-5.10/` 是功能集合的基准。
+- `scripts/sync-susfs-510.sh check|refresh` 对比 / 刷新镜像。
+- 上游升版时：刷新镜像 → 跑 `verify-susfs-parity.sh` → 按重建路径
+  重新派生 4.9 快照 → CI 构建（hook_mode=susfs）。
 
-Upstream susfs4ksu (gitlab.com/simonpunk/susfs4ksu) tracks
-gki-android12-5.10+ only. To refresh: re-port susfs.c/susfs.h/susfs_def.h
-from the 5.10 branch and re-run the generator script against a 4.9 tree;
-the sed-based generator is the main maintenance lever.
+## 4.9 形态
 
-## Upstream tracking (gki-android12-5.10)
+9 个 Kconfig 特性 + susfs.c API 与上游一致。4.9 上 AS_FLAGS_* 存于
+`inode->i_state` 高位（33/34/35/36/39）；sdcard fsnotify handler 经
+`SUSFS_DECL_FSNOTIFY_OPS` 声明（旧 fsnotify API）；selinux-hide 用户态
+查询伪造（setprocattr/context/access/status 节点）由 ReSukiSU 内建
+fallback 基于 backup policydb 提供。4.9 与上游的 parity 校验结果见
+`scripts/verify-susfs-parity.sh`。
 
-- `upstream-5.10/` mirrors the official susfs4ksu gki-android12-5.10
-  kernel_patches (main patch, KernelSU 10_enable, fs/susfs.c,
-  include/linux/susfs.h, susfs_def.h) — the source of truth for the
-  SuSFS feature set.
-- `scripts/sync-susfs-510.sh check|refresh` compares/refreshes the
-  snapshot against gitlab (SUSFS_VERSION + susfs.c size signal).
-- The 4.9 port (`polaris-susfs-final.patch`) is derived from this
-  snapshot via the regeneration path above; when upstream bumps the
-  version, refresh the snapshot and re-derive.
+## CI 应用
 
-### Feature-set parity note (4.9 vs 5.10)
-
-Feature surface (9 Kconfig features + susfs.c API) is kept identical
-between 5.10 upstream and the 4.9 port. The selinux-hide *userspace
-query faking* (setprocattr/context/access/status nodes) is provided on
-4.9 by ReSukiSU's built-in fallback, which is line-equivalent to the
-5.10 compile-time my_* components (same uid gate, same fake-policy
-resolution, same node coverage). The 5.10 compile-time my_* themselves
-depend on state-ful selinux APIs (security_context_to_sid(&state,...))
-that do not exist on 4.9, so they are not portable verbatim; the 4.9
-fallback resolves against its backup policydb instead — same semantics,
-different plumbing. Compile-time integration of my_* into 4.9
-selinuxfs.c/hooks.c would be cosmetic (no behavior change) and is not
-done.
-
-### Parity verification (run 2026-09-07, upstream 7373f8d8 / v2.3.0)
-
-- Function inventory: all 40 upstream susfs.c functions exist in the
-  4.9 port; no missing functions. Port adds only `m_free` (fsnotify
-  old-API mark free callback, required on 4.9).
-- Per-function body line counts are identical after normalizing the two
-  known 4.9 adaptations: AS_FLAGS_* stored in `inode->i_state` high
-  bits (33/34/35/36/39, free on 4.9) instead of `i_mapping->flags`;
-  sdcard fsnotify handler declared via `SUSFS_DECL_FSNOTIFY_OPS`.
-- 9 core feature functions verified line-equal (sus_path, sus_kstat,
-  kstat_spoof_generic_fillattr, uname, open_redirect, sus_map,
-  avc_log_spoofing, enabled_features, is_inode_sus_path).
-- Remaining diff lines classified: only the two adaptations above +
-  `#include <linux/version.h>`; no un-adapted functional difference.
-
-### Upstream refresh checklist (5.10 -> 4.9 port)
-
-When `scripts/sync-susfs-510.sh check` reports a newer upstream:
-
-1. `scripts/sync-susfs-510.sh refresh`
-2. `bash scripts/verify-susfs-parity.sh` — must report PARITY: OK after
-   re-deriving; any MISSING_FUNCTIONS / BODY_MISMATCH / MISSING_FILE is
-   drift to fix.
-3. Re-derive the port: update `susfs_patch_to_4.9.patch` file-by-file
-   per the translation map below, re-run `susfs-adapt-4.9.sh` and
-   `susfs_inline_hook_patches-4.9.sh`, regenerate
-   `polaris-susfs-final.patch`, git-apply-check on a clean tree.
-4. Build via CI (hook_mode=susfs) and device-test the affected feature.
-
-### Per-file translation map (upstream 5.10 patch -> 4.9)
-
-| upstream file | 4.9 handling |
-|---|---|
-| fs/susfs.c (+h/def.h) | external files; AS_FLAGS_* stored in inode->i_state high bits (33/34/35/36/39) instead of i_mapping->flags; sdcard fsnotify handler via SUSFS_DECL_FSNOTIFY_OPS macro; extra m_free for old fsnotify API |
-| fs/Makefile, fs/statfs.c, fs/proc_namespace.c, fs/notify/fdinfo.c, mm/memory.c, kernel/kallsyms.c, fs/proc/base.c, fs/proc/fd.c, fs/namespace.c | translate directly (contexts close) |
-| fs/namei.c | translate; nameidata gains `state` field for sus_path |
-| fs/stat.c | translate; drop statx mnt_id spoof (no statx on 4.9); keep vfs_getattr_nosec 2-arg adaptation |
-| fs/readdir.c | inject into the 3 callbacks that exist on 4.9 (fillonedir/filldir/filldir64); upstream's extra 5.10 callbacks do not exist here |
-| fs/readdir/stat faccessat/exec hooks | NOT in main patch — emitted by susfs_inline_hook_patches-4.9.sh (ksu_handle_* call sites), run after ReSukiSU setup |
-| fs/proc/cmdline.c | 4.9 location for cmdline spoof (upstream uses proc/bootconfig.c — bootconfig absent on 4.9) |
-| security/selinux/hooks.c, selinuxfs.c | NOT ported: 5.10 my_* depend on state-ful selinux APIs (security_context_to_sid(&state,..)) absent on 4.9; ReSukiSU fallback is line-equivalent (same uid gate / fake-policy resolution / node coverage) |
-| fs/proc/bootconfig.c | absent on 4.9 (bootconfig is 5.x) |
+单步 `git apply polaris-susfs-final.patch` + config fragment
+（CONFIG_KSU_SUSFS=y + 子项；hook_mode=susfs）。

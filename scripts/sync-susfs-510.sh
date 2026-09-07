@@ -3,11 +3,10 @@
 # sync-susfs-510.sh — check / refresh the gki-android12-5.10 upstream
 # snapshot stored in patches/susfs/upstream-5.10/.
 #
-# The 5.10 branch is the source of truth for the SuSFS feature set
-# (9 features + the compile-time selinux-hide components that depend on
-# state-ful selinux APIs). Our 4.9 port (polaris-susfs-final.patch)
-# tracks it: when upstream bumps SUSFS_VERSION or changes susfs.c,
-# re-derive the 4.9 port from the refreshed snapshot (see README).
+# The 5.10 branch is the source of truth for the SuSFS feature set.
+# The 4.9 port (polaris-susfs-final.patch) tracks it: when upstream
+# bumps SUSFS_VERSION or changes susfs.c, re-derive the 4.9 port from
+# the refreshed snapshot (see patches/susfs/README.md).
 #
 # Usage:
 #   sync-susfs-510.sh check    — compare local snapshot vs upstream, no write

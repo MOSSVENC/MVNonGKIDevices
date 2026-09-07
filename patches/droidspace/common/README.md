@@ -1,35 +1,31 @@
 # Droidspace — kernel support for containers on 4.9 (non-GKI)
 
 Droidspaces (https://github.com/ravindu644/Droidspaces-OSS) is a
-lightweight Linux container tool. On a 4.9 non-GKI kernel, "support"
-mostly means **kernel config** plus one small cgroup source fix.
+lightweight Linux container tool. Support on this 4.9 non-GKI kernel is
+a kernel config fragment plus one cgroup source fix.
 
-## What is NOT applied and why
+## Contents
 
-Official `Documentation/resources/kernel-patches/non-GKI/` ships two patches:
+- `droidspace.config` — kernel config merged into the final `.config`
+  (see `scripts/merge-defconfig.sh`), following the official non-GKI
+  section of `Kernel-Configuration.md` with 4.9 symbol names:
+  - `CONFIG_NF_CT_NETLINK` (4.9 name)
+  - masquerade: `CONFIG_IP_NF_TARGET_MASQUERADE` (4.9 name)
+  - `CONFIG_SECCOMP_FILTER` is a 5.x symbol; on 4.9 arm64,
+    `CONFIG_SECCOMP=y` already provides filters
+  - `CONFIG_ANDROID_PARANOID_NETWORK` turned off so container
+    networking works
+- `0001-cgroup-noprefix-4.9-port.patch` — cgroup `subsys.file`
+  kernfs symlink restore for `noprefix` mounts (systemd/runc style),
+  ported to the 4.9 layout (`kernel/cgroup.c`).
 
-| patch | target | status here |
-|---|---|---|
-| `01.fix_kernel_panic_in_xt_qtaguid.patch` | `net/netfilter/xt_qtaguid.c` | **skipped** — this sdm845 4.9 tree has no `xt_qtaguid.c` in any branch (verified), the file simply does not exist. |
-| `02.fix_restore cgroup file prefix handling .patch` | `kernel/cgroup/cgroup.c` (4.14+ layout) | **ported to 4.9** → `../polaris/0001-cgroup-noprefix-4.9-port.patch` (4.9 keeps this code in `kernel/cgroup.c`). Non-fatal if it fails to apply. |
+This tree carries the cgroup patch from the official non-GKI patch set;
+the other patch of that set targets `net/netfilter/xt_qtaguid.c`, which
+this sdm845 4.9 tree does not contain.
 
-The cgroup port recreates `subsys.file` kernfs symlinks when a cgroup root is
-mounted `noprefix` (systemd/runc style), which is what runc/crun expect.
-This matches the reference implementation used in the beryllium build
-(`Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium`, commit `b2d517b90def`).
+## Integration
 
-## Kernel config
-
-`droidspace.config` in this directory is merged into the final `.config`
-(see `scripts/merge-defconfig.sh`). It follows the official non-GKI section
-of `Kernel-Configuration.md` with 4.9 corrections:
-
-- `CONFIG_NF_CT_NETLINK` (4.9 name) instead of `CONFIG_NF_CONNTRACK_NETLINK`
-- masquerade on 4.9 is `CONFIG_IP_NF_TARGET_MASQUERADE` (already =y in the
-  mi845 baseline; the upstream `NETFILTER_XT_TARGET_MASQUERADE` does not exist)
-- `CONFIG_SECCOMP_FILTER` is not a 4.9 symbol (arm64 selects
-  `HAVE_ARCH_SECCOMP_FILTER`; `CONFIG_SECCOMP=y` already carries filters)
-- `CONFIG_ANDROID_PARANOID_NETWORK` (defaults to y here) is explicitly turned
-  off so container networking works
-
-Enable via `configs/polaris.yaml` → `features.droidspace.enabled`.
+```bash
+bash scripts/integrate-droidspace.sh <kernel-root> \
+  patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch
+```
