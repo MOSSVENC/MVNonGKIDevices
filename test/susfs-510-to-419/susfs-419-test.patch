@@ -487,10 +487,11 @@ diff --git a/fs/namespace.c b/fs/namespace.c
 index 5e94ec9..a9810ba 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -26,10 +26,21 @@
+@@ -26,11 +26,22 @@
  #include <linux/bootmem.h>
  #include <linux/task_work.h>
  #include <linux/sched/task.h>
+ #include <linux/fs_context.h>
 +#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 +#include <linux/susfs_def.h>
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
@@ -509,7 +510,7 @@ index 5e94ec9..a9810ba 100644
  /* Maximum number of mounts in a mount namespace */
  unsigned int sysctl_mount_max __read_mostly = 100000;
  
-@@ -108,6 +119,12 @@ static int mnt_alloc_id(struct mount *mnt)
+@@ -109,6 +119,12 @@ static int mnt_alloc_id(struct mount *mnt)
  
  static void mnt_free_id(struct mount *mnt)
  {
@@ -522,7 +523,7 @@ index 5e94ec9..a9810ba 100644
  	ida_free(&mnt_id_ida, mnt->mnt_id);
  }
  
-@@ -116,7 +133,24 @@ static void mnt_free_id(struct mount *mnt)
+@@ -117,7 +133,24 @@ static void mnt_free_id(struct mount *mnt)
   */
  static int mnt_alloc_group_id(struct mount *mnt)
  {
@@ -547,7 +548,7 @@ index 5e94ec9..a9810ba 100644
  
  	if (res < 0)
  		return res;
-@@ -174,6 +208,116 @@ static void drop_mountpoint(struct fs_pin *p)
+@@ -175,6 +208,116 @@ static void drop_mountpoint(struct fs_pin *p)
  	mntput(&m->mnt);
  }
  
@@ -664,7 +665,7 @@ index 5e94ec9..a9810ba 100644
  static struct mount *alloc_vfsmnt(const char *name)
  {
  	struct mount *mnt = kmem_cache_zalloc(mnt_cache, GFP_KERNEL);
-@@ -617,6 +761,18 @@ struct mount *__lookup_mnt(struct vfsmount *mnt, struct dentry *dentry)
+@@ -601,6 +761,18 @@ struct mount *__lookup_mnt(struct vfsmount *mnt, struct dentry *dentry)
  	struct hlist_head *head = m_hash(mnt, dentry);
  	struct mount *p;
  
@@ -683,7 +684,7 @@ index 5e94ec9..a9810ba 100644
  	hlist_for_each_entry_rcu(p, head, mnt_hash)
  		if (&p->mnt_parent->mnt == mnt && p->mnt_mountpoint == dentry)
  			return p;
-@@ -1008,7 +1179,40 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+@@ -1039,7 +1179,40 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  	struct mount *mnt;
  	int err;
  
@@ -724,7 +725,7 @@ index 5e94ec9..a9810ba 100644
  	if (!mnt)
  		return ERR_PTR(-ENOMEM);
  
-@@ -1033,6 +1237,13 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+@@ -1064,6 +1237,13 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  
  	mnt->mnt.mnt_flags = old->mnt.mnt_flags;
  	mnt->mnt.mnt_flags &= ~(MNT_WRITE_HOLD|MNT_MARKED|MNT_INTERNAL);
@@ -738,7 +739,7 @@ index 5e94ec9..a9810ba 100644
  	/* Don't allow unprivileged users to change mount flags */
  	if (flag & CL_UNPRIVILEGED) {
  		mnt->mnt.mnt_flags |= MNT_LOCK_ATIME;
-@@ -2945,6 +3156,9 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+@@ -3074,6 +3285,9 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  	copy_flags = CL_COPY_UNBINDABLE | CL_EXPIRE;
  	if (user_ns != ns->user_ns)
  		copy_flags |= CL_SHARED_TO_SLAVE | CL_UNPRIVILEGED;
@@ -748,7 +749,7 @@ index 5e94ec9..a9810ba 100644
  	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
  	if (IS_ERR(new)) {
  		namespace_unlock();
-@@ -3527,3 +3741,35 @@ const struct proc_ns_operations mntns_operations = {
+@@ -3652,3 +3867,35 @@ const struct proc_ns_operations mntns_operations = {
  	.install	= mntns_install,
  	.owner		= mntns_owner,
  };
@@ -902,7 +903,7 @@ index 78692a8..6100839 100644
  #include <trace/events/oom.h>
  #include "internal.h"
  #include "fd.h"
-@@ -1881,6 +1884,10 @@ out:
+@@ -1885,6 +1884,10 @@ out:
  	return ERR_PTR(error);
  }
  
@@ -913,7 +914,7 @@ index 78692a8..6100839 100644
  static int do_proc_readlink(struct path *path, char __user *buffer, int buflen)
  {
  	char *tmp = (char *)__get_free_page(GFP_KERNEL);
-@@ -1890,6 +1897,17 @@ static int do_proc_readlink(struct path *path, char __user *buffer, int buflen)
+@@ -1894,6 +1897,17 @@ static int do_proc_readlink(struct path *path, char __user *buffer, int buflen)
  	if (!tmp)
  		return -ENOMEM;
  
@@ -931,7 +932,7 @@ index 78692a8..6100839 100644
  	pathname = d_path(path, tmp, PAGE_SIZE);
  	len = PTR_ERR(pathname);
  	if (IS_ERR(pathname))
-@@ -2481,6 +2499,10 @@ proc_map_files_readdir(struct file *file, struct dir_context *ctx)
+@@ -2479,6 +2499,10 @@ proc_map_files_readdir(struct file *file, struct dir_context *ctx)
  		for (i = 0, vma = mm->mmap, pos = 2; vma;
  				vma = vma->vm_next) {
  			if (!vma->vm_file)
@@ -1142,7 +1143,7 @@ index 9e17d92..61f6ccb 100644
  	}
  
  	start = vma->vm_start;
-@@ -844,6 +882,13 @@ static int show_smap(struct seq_file *m, void *v)
+@@ -847,6 +882,13 @@ static int show_smap(struct seq_file *m, void *v)
  	struct vm_area_struct *vma = v;
  	struct mem_size_stats mss;
  
@@ -1156,7 +1157,7 @@ index 9e17d92..61f6ccb 100644
  	memset(&mss, 0, sizeof(mss));
  
  	smap_gather_stats(vma, &mss);
-@@ -901,7 +946,17 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
+@@ -904,7 +946,17 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
  	hold_task_mempolicy(priv);
  
  	for (vma = priv->mm->mmap; vma; vma = vma->vm_next) {
@@ -1174,7 +1175,7 @@ index 9e17d92..61f6ccb 100644
  		last_vma_end = vma->vm_end;
  	}
  
-@@ -1554,6 +1609,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -1558,6 +1609,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  	unsigned long start_vaddr;
  	unsigned long end_vaddr;
  	int ret = 0, copied = 0;
@@ -1387,8 +1388,7 @@ index bd07f0f..40d82ef 100644
  static int mounts_open_common(struct inode *inode, struct file *file,
  			      int (*show)(struct seq_file *, struct vfsmount *))
  {
-@@ -306,16 +470,34 @@ static int mounts_release(struct inode *inode, struct file *file)
- 
+@@ -306,15 +470,33 @@ static int mounts_release(struct inode *inode, struct file *file)
  
  static int mounts_open(struct inode *inode, struct file *file)
  {
