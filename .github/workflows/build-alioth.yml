@@ -162,6 +162,23 @@ jobs:
             { echo "!! official cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.19 patches done (config merged below)"
 
+      # LOS lineage-23.2 backported scripts/as-version.sh (upstream
+      # "kbuild: check the minimum assembler version in Kconfig") but its
+      # companion scripts/min-tool-version.sh never landed in the tree;
+      # Kconfig.include calls as-version.sh during alldefconfig and fails
+      # on the missing file. Drop the v5.15 upstream file in before the
+      # defconfig stage (binutils floor 2.23.0 — far below the runner's
+      # binutils, so the check passes once the file exists).
+      - name: Restore missing scripts/min-tool-version.sh (LOS tree gap)
+        run: |
+          cd "$KROOT"
+          if [ -f scripts/min-tool-version.sh ]; then
+            echo "scripts/min-tool-version.sh already present"
+          else
+            cp "$GITHUB_WORKSPACE/patches/alioth/min-tool-version.sh" scripts/
+            echo "restored scripts/min-tool-version.sh"
+          fi
+
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id.
