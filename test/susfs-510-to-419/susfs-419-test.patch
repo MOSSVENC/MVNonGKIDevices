@@ -2,10 +2,11 @@ diff --git a/fs/Makefile b/fs/Makefile
 index 0fc34ca..8f4b814 100644
 --- a/fs/Makefile
 +++ b/fs/Makefile
-@@ -14,4 +14,6 @@
+@@ -14,5 +14,7 @@
  		pnode.o splice.o sync.o utimes.o d_path.o \
  		stack.o fs_struct.o statfs.o fs_pin.o nsfs.o \
  		fs_context.o fs_parser.o
+ 
 +obj-$(CONFIG_KSU_SUSFS) += susfs.o
 +
  ifeq ($(CONFIG_BLOCK),y)
@@ -682,29 +683,6 @@ index 5e94ec9..a9810ba 100644
  	hlist_for_each_entry_rcu(p, head, mnt_hash)
  		if (&p->mnt_parent->mnt == mnt && p->mnt_mountpoint == dentry)
  			return p;
-@@ -953,7 +1109,22 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
- 	if (!type)
- 		return ERR_PTR(-ENODEV);
- 
-+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-+	// - We will just stop checking for ksu process if /sdcard/Android is accessible,
-+	//   for the sake of performance
-+	if (static_branch_unlikely(&susfs_is_sdcard_android_data_not_decrypted)) {
-+		if (susfs_is_current_ksu_domain()) {
-+			mnt = susfs_alloc_non_unshare_ksu_vfsmnt(name ?:"none");
-+			goto bypass_orig_flow;
-+		}
-+	}
-+#endif
-+
- 	mnt = alloc_vfsmnt(name);
-+
-+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-+bypass_orig_flow:
-+#endif
- 	if (!mnt)
- 		return ERR_PTR(-ENOMEM);
- 
 @@ -1008,7 +1179,40 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  	struct mount *mnt;
  	int err;
@@ -953,8 +931,8 @@ index 78692a8..6100839 100644
  	pathname = d_path(path, tmp, PAGE_SIZE);
  	len = PTR_ERR(pathname);
  	if (IS_ERR(pathname))
-@@ -2476,6 +2494,10 @@ proc_map_files_readdir(struct file *file, struct dir_context *ctx)
- 
+@@ -2481,6 +2499,10 @@ proc_map_files_readdir(struct file *file, struct dir_context *ctx)
+ 		for (i = 0, vma = mm->mmap, pos = 2; vma;
  				vma = vma->vm_next) {
  			if (!vma->vm_file)
  				continue;
@@ -1206,9 +1184,8 @@ index 9e17d92..61f6ccb 100644
  
  	if (!mm || !mmget_not_zero(mm))
  		goto out;
-@@ -1612,7 +1670,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
- 
- 		ret = down_read_killable(&mm->mmap_sem);
+@@ -1616,6 +1616,14 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+ 		ret = mmap_read_lock_killable(mm);
  		if (ret)
  			goto out_free;
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
@@ -1220,7 +1197,7 @@ index 9e17d92..61f6ccb 100644
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
 +bypass_orig_flow:
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
- 		up_read(&mm->mmap_sem);
+ 		mmap_read_unlock(mm);
  		start_vaddr = end;
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
 index bd07f0f..40d82ef 100644
@@ -3942,10 +3919,7 @@ index b8ec1db..3a83a54 100644
  
  /*
   * These will be re-linked against their real values
-@@ -657,8 +660,36 @@ static int s_show(struct seq_file *m, void *p)
- 
- 		seq_printf(m, "%px %c %s\t[%s]\n", value,
- 			   type, iter->name, iter->module_name);
+@@ -658,5 +658,33 @@ static int s_show(struct seq_file *m, void *p)
  	} else
 +#ifndef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
  		seq_printf(m, "%px %c %s\n", value,

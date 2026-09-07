@@ -19,6 +19,12 @@
     有 LOS 行差。
 - `susfs-419-test.patch` — 与 reference 同文件的 CI 应用副本
   （build-alioth.yml 的 susfs-test 步骤应用对象）。
+- 已知缺口（候选状态，待适配）：`fs/namespace.c` 的 vfs_kern_mount
+  SUS_MOUNT 分支——LOS kona 树该函数是 fs_context 版
+  （fs_context_for_mount/fc_mount），susfs 的
+  susfs_alloc_non_unshare_ksu_vfsmnt 拦截基于旧 alloc_vfsmnt 流程，
+  该 hunk 未包含在候选内；其余 namespace SUS_MOUNT hunk 已按 LOS 树
+  校准。
 
 ## 验证状态
 
@@ -28,7 +34,7 @@
   （workflow_dispatch, hook_mode=susfs-test）进行；首轮报错按
   `.rej` 迭代修正本候选。当前为候选状态。
 
-## 后续（CI 验证通过后）
+## 后续（CI 验证后）
 
 把本候选固化为监督翻译管线的 reference（对齐 4.9 的
 `test/susfs-510-to-49/`：inputs 适配资产 + tools 锚点 + translate
