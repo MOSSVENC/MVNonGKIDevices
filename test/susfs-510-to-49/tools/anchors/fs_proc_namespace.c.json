@@ -1,0 +1,30 @@
+{
+ "file": "fs/proc_namespace.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": 0,
+   "score": 1.0,
+   "up_host": "mounts_poll",
+   "ref_host": "mounts_poll",
+   "kind": "include"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": 1,
+   "score": 0.886,
+   "up_host": "int",
+   "ref_host": "int",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 2,
+   "ref_hunk": 2,
+   "score": 1.0,
+   "up_host": "mountstats_open",
+   "ref_host": "mountstats_open",
+   "kind": "body"
+  }
+ ]
+}

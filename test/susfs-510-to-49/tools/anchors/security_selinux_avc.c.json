@@ -1,0 +1,22 @@
+{
+ "file": "security/selinux/avc.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": 0,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": "avc_dump_av",
+   "kind": "extern"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": 1,
+   "score": 0.727,
+   "up_host": "avc_audit_post_callback",
+   "ref_host": "avc_dump_query",
+   "kind": "body"
+  }
+ ]
+}

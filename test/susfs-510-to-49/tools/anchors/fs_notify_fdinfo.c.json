@@ -1,0 +1,38 @@
+{
+ "file": "fs/notify/fdinfo.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": 0,
+   "score": 0.5,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "include"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": 1,
+   "score": 1.0,
+   "up_host": "list_for_each_entry",
+   "ref_host": "list_for_each_entry",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 2,
+   "ref_hunk": 2,
+   "score": 1.0,
+   "up_host": "inotify_fdinfo",
+   "ref_host": "inotify_fdinfo",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 3,
+   "ref_hunk": 3,
+   "score": 1.0,
+   "up_host": "seq_printf",
+   "ref_host": "seq_printf",
+   "kind": "body"
+  }
+ ]
+}

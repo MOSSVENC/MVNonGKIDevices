@@ -1,0 +1,38 @@
+{
+ "file": "fs/open.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": 0,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "include"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": null,
+   "score": 0.286,
+   "up_host": "do_faccessat",
+   "ref_host": null,
+   "kind": "extern"
+  },
+  {
+   "up_hunk": 2,
+   "ref_hunk": 2,
+   "score": 1.0,
+   "up_host": "do_faccessat",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 3,
+   "ref_hunk": 3,
+   "score": 1.0,
+   "up_host": "do_faccessat",
+   "ref_host": null,
+   "kind": "body"
+  }
+ ]
+}

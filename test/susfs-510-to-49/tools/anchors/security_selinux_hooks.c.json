@@ -1,0 +1,30 @@
+{
+ "file": "security/selinux/hooks.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "extern"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": "selinux_ismaclabel",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 2,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  }
+ ]
+}

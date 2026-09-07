@@ -1,0 +1,190 @@
+{
+ "file": "fs/readdir.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": 0,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "include"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": 1,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 2,
+   "ref_hunk": 2,
+   "score": 1.0,
+   "up_host": "fillonedir",
+   "ref_host": "fillonedir",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 3,
+   "ref_hunk": 3,
+   "score": 1.0,
+   "up_host": "fillonedir",
+   "ref_host": "fillonedir",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 4,
+   "ref_hunk": 4,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 5,
+   "ref_hunk": 5,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 6,
+   "ref_hunk": 6,
+   "score": 1.0,
+   "up_host": "filldir",
+   "ref_host": "filldir",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 7,
+   "ref_hunk": 7,
+   "score": 1.0,
+   "up_host": "filldir",
+   "ref_host": "filldir",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 8,
+   "ref_hunk": 9,
+   "score": 0.818,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 9,
+   "ref_hunk": 10,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 10,
+   "ref_hunk": 11,
+   "score": 1.0,
+   "up_host": "filldir64",
+   "ref_host": "filldir64",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 11,
+   "ref_hunk": 12,
+   "score": 1.0,
+   "up_host": "filldir64",
+   "ref_host": "filldir64",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 12,
+   "ref_hunk": 14,
+   "score": 0.818,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 13,
+   "ref_hunk": 15,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 14,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 15,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": "compat_fillonedir",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 16,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": "compat_fillonedir",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 17,
+   "ref_hunk": null,
+   "score": 0.154,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 18,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 19,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": "compat_filldir",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 20,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": "compat_filldir",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 21,
+   "ref_hunk": null,
+   "score": 0.182,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 22,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "body"
+  }
+ ]
+}

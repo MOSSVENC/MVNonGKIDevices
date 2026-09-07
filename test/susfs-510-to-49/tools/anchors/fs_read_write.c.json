@@ -1,0 +1,14 @@
+{
+ "file": "fs/read_write.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": null,
+   "score": 0.333,
+   "up_host": "ksys_read",
+   "ref_host": null,
+   "kind": "extern"
+  }
+ ]
+}

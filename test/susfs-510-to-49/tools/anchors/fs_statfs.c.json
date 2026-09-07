@@ -1,0 +1,22 @@
+{
+ "file": "fs/statfs.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": 0,
+   "score": 1.0,
+   "up_host": "flags_by_mnt",
+   "ref_host": "flags_by_mnt",
+   "kind": "include"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": 1,
+   "score": 0.955,
+   "up_host": "vfs_statfs",
+   "ref_host": "vfs_statfs",
+   "kind": "extern"
+  }
+ ]
+}

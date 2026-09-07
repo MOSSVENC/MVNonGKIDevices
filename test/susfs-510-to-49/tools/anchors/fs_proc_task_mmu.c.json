@@ -1,0 +1,70 @@
+{
+ "file": "fs/proc/task_mmu.c",
+ "note": "5.10 hunk -> 4.9 hunk anchor map (payload-supervised)",
+ "entries": [
+  {
+   "up_hunk": 0,
+   "ref_hunk": 0,
+   "score": 1.0,
+   "up_host": null,
+   "ref_host": null,
+   "kind": "include"
+  },
+  {
+   "up_hunk": 1,
+   "ref_hunk": 1,
+   "score": 1.0,
+   "up_host": "show_map_vma",
+   "ref_host": "show_map_vma",
+   "kind": "extern"
+  },
+  {
+   "up_hunk": 2,
+   "ref_hunk": 2,
+   "score": 0.909,
+   "up_host": "show_map_vma",
+   "ref_host": "show_map_vma",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 3,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": "show_smap",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 4,
+   "ref_hunk": null,
+   "score": 0.4,
+   "up_host": "show_smaps_rollup",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 5,
+   "ref_hunk": null,
+   "score": 0.0,
+   "up_host": "show_smaps_rollup",
+   "ref_host": null,
+   "kind": "body"
+  },
+  {
+   "up_hunk": 6,
+   "ref_hunk": 5,
+   "score": 1.0,
+   "up_host": "pagemap_read",
+   "ref_host": "pagemap_read",
+   "kind": "body"
+  },
+  {
+   "up_hunk": 7,
+   "ref_hunk": 6,
+   "score": 1.0,
+   "up_host": "pagemap_read",
+   "ref_host": "pagemap_read",
+   "kind": "body"
+  }
+ ]
+}
