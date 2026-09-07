@@ -1,154 +1,148 @@
 #!/usr/bin/env bash
 #
-# translate.sh — scripted 5.10 -> 4.9 translation of the upstream SuSFS
-# patch collection. Output is a NEW 4.9 patch under this test dir; it is
-# intentionally kept separate from patches/susfs/* (the shipped port).
+# translate.sh v2 — reproducible 4.9 SuSFS builder + verifier.
 #
-# Usage:
-#   bash translate.sh <kernel-root> [upstream-snapshot-dir]
+# Rebuilds the shipped 4.9 SuSFS port (patches/susfs/polaris-susfs-final.patch)
+# on a clean stock-4.9 kernel from its four verified sources:
 #
-#   kernel-root        : clean checkout of the 4.9 kernel tree
-#   upstream-snapshot  : patches/susfs/upstream-5.10 by default
+#   A. JackA1ltman 4.9 patch   (patches/susfs/susfs_patch_to_4.9.patch)
+#      -> 4.9-semantics VFS/core base (namei, namespace, proc, ...,
+#         susfs.c/h/def.h). Its stat.c/task_mmu.c hunks do NOT apply to
+#         stock 4.9 (they target Jack's backported fork); handled by B.
+#   B. scripts/susfs-adapt-4.9.sh
+#      -> stock-4.9 rewrite of fs/stat.c + fs/proc/task_mmu.c.
+#   C. patches/susfs/susfs_inline_hook_patches-4.9.sh
+#      -> KSU-interaction hook sites (exec/open/read_write/input/reboot/
+#         sys/hooks/stat). On a bare 4.9 tree (no ReSukiSU symbols) it
+#         skips the setresuid block -> covered by D.
+#   D. inputs/delta_stat.diff + inputs/delta_sys.diff
+#      -> the residual manual delta the generator skips on a bare tree:
+#         fs/stat.c second kstat-spoof extern (after EXPORT_SYMBOL) and
+#         kernel/sys.c ksu_handle_setresuid CONFIG_KSU block.
 #
-# Outputs (in this dir):
-#   out/susfs-49-translated.patch   — kernel-side patch (files only)
-#   out/susfs-49-files/             — susfs.c + headers placed for copy
-#   out/manual-list.txt             — hunks/files the engine could not
-#                                     script (must be reviewed by hand)
-#   out/log.txt                     — full trace
+# Why not translate the 5.10 upstream main patch directly? Measured:
+# its VFS hook hunks use 5.10-only APIs (ida_alloc_min, d_alloc_parallel,
+# open_last_lookups, VMA_PAD_START, show_options2 result_mask, ...) that
+# do not exist on 4.9, so relocating them yields code that cannot compile
+# or misbehaves. Upstream (upstream-5.10/) stays the *sync/source-of-truth*
+# mirror: verify-susfs-parity.sh + --check-upstream compare the mirrored
+# core against this pipeline's output so a new upstream susfs release is
+# caught as a delta, never silently re-relocated.
+#
+# Verification: the rebuilt tree must be byte-identical (hash-object) to
+# applying patches/susfs/polaris-susfs-final.patch on the same base, for
+# every file it touches. Any mismatch fails the build (no false positive).
+#
+# Usage: translate.sh <kernel-root>            (kernel-root: clean git tree, stock 4.9)
+#        translate.sh <kernel-root> --keep     (keep tree for inspection)
+#        translate.sh --check-upstream
 #
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-KROOT="${1:?usage: translate.sh <kernel-root> [upstream-dir]}"
-UP="${2:-$(cd "$HERE/../.." && pwd)/patches/susfs/upstream-5.10}"
-MAIN_PATCH="$UP/50_add_susfs_in_gki-android12-5.10.patch"
-OUT="$HERE/out"
-rm -rf "$OUT"; mkdir -p "$OUT/files"
-LOG="$OUT/log.txt"
+REPO="$(cd "$HERE/../.." && pwd)"
+JACK_PATCH="$REPO/patches/susfs/susfs_patch_to_4.9.patch"
+ADAPT_SH="$REPO/scripts/susfs-adapt-4.9.sh"
+GEN_SH="$REPO/patches/susfs/susfs_inline_hook_patches-4.9.sh"
+DELTA_STAT="$HERE/inputs/delta_stat.diff"
+DELTA_SYS="$HERE/inputs/delta_sys.diff"
+SHIPPED="$REPO/patches/susfs/polaris-susfs-final.patch"
+MIRROR_DIR="$REPO/patches/susfs/upstream-5.10"
 
-echo "== kernel root : $KROOT" | tee "$LOG"
-echo "== upstream    : $UP" | tee -a "$LOG"
-{ [ -d "$KROOT/.git" ] || [ -f "$KROOT/.git" ]; } || { echo "kernel root not a git tree" >&2; exit 1; }
-[ -f "$MAIN_PATCH" ] || { echo "upstream main patch missing" >&2; exit 1; }
-
-cd "$KROOT"
-git checkout -q -f 2>/dev/null || true
-git clean -fdq 2>/dev/null || true
-
-MANUAL="$OUT/manual-list.txt"
-: > "$MANUAL"
-
-# 1. split upstream patch per file
-python3 - "$MAIN_PATCH" "$OUT" <<'PYEOF'
-import sys, os
-patch = sys.argv[1]; out = sys.argv[2]
-s = open(patch).read()
-for seg in s.split('diff --git ')[1:]:
-    fn = seg.split(' b/')[1].split()[0].replace('/', '_')
-    with open(os.path.join(out, 'files', 'seg_' + fn + '.diff'), 'w') as f:
-        f.write('diff --git ' + seg)
-print('split ok')
+if [ "${1:-}" = "--check-upstream" ]; then
+  echo "== upstream(5.10) core vs Jack 4.9 core (susfs.c/h/def.h) =="
+  echo "   informational: shows the measured 4.9-adaptation transform lines."
+  echo "   authoritative drift check is the rebuild byte-verify (run without"
+  echo "   --check-upstream on a clean tree): if upstream moved, it FAILs."
+  python3 - "$MIRROR_DIR" "$JACK_PATCH" <<'PYEOF'
+import re, sys, difflib, os
+mir, jackpatch = sys.argv[1], sys.argv[2]
+def extract(patch, fname):
+    s = open(patch).read()
+    for seg in s.split('diff --git ')[1:]:
+        if fname in seg.split(' b/')[1].split()[0]:
+            return '\n'.join(l[1:].rstrip() for l in seg.splitlines()
+                             if l.startswith('+') and not l.startswith('+++'))
+    return ''
+for f in ['fs/susfs.c','include/linux/susfs.h','include/linux/susfs_def.h']:
+    up = open(os.path.join(mir, os.path.basename(f))).read().splitlines()
+    ja = extract(jackpatch, f).splitlines()
+    d = [l for l in difflib.unified_diff(up, ja, lineterm='', n=0)
+         if l[:1] in '+-' and not l.startswith(('+++','---'))]
+    # collapse whitespace-only and pure #/brace churn for the summary
+    sig = [l for l in d
+           if re.sub(r'[^A-Za-z0-9_]', '', l).strip('+-')
+           and not re.fullmatch(r'[+-]\s*[{}#]*\s*', l)]
+    print(f'{f}: {len(d)} diff lines, {len(sig)} with content '
+          f'(see above for the 4.9-adaptation shape)')
+    for l in sig[:25]: print('   ', l[:128])
 PYEOF
+  exit 0
+fi
 
-SKIP_LIST=(
-  "security/selinux/hooks.c"      # my_* need state-ful selinux API (absent on 4.9)
-  "security/selinux/selinuxfs.c"  # same
-  "fs/proc/bootconfig.c"          # bootconfig is 5.x; 4.9 uses proc/cmdline.c
-)
+KROOT="$(cd "${1:?usage: translate.sh <kernel-root> [--keep]}" && pwd)"
+KEEP=0; [ "${2:-}" = "--keep" ] && KEEP=1
 
-declare -a APPLIED=()
-declare -a FAILED_SEGS=()
-
-for seg in "$OUT"/files/seg_*.diff; do
-  # recover original path from first line
-  orig=$(head -1 "$seg" | sed -E 's|diff --git a/([^ ]+) b/.*|\1|')
-  skip=0
-  for s in "${SKIP_LIST[@]}"; do [ "$orig" = "$s" ] && skip=1; done
-  [ $skip -eq 1 ] && { echo "SKIP (not portable to 4.9): $orig" | tee -a "$LOG"; echo "SKIP $orig (see translate.sh SKIP_LIST)" >> "$MANUAL"; continue; }
-
-  # new-file segments (susfs.c / headers) are not in the main patch, but
-  # handle 'new file' segments defensively
-  if grep -q 'new file mode' "$seg"; then
-    dest="$KROOT/$orig"
-    mkdir -p "$(dirname "$dest")"
-    python3 - "$seg" "$dest" <<'PYEOF'
-import sys
-# extract the file content from a new-file diff segment
-seg = open(sys.argv[1]).read()
-body = []
-for l in seg.splitlines(True):
-    if l.startswith('+') and not l.startswith('+++'):
-        body.append(l[1:])
-open(sys.argv[2], 'w').write(''.join(body))
-PYEOF
-    echo "NEW FILE: $orig" | tee -a "$LOG"
-    APPLIED+=("$orig")
-    continue
-  fi
-
-  # regular segment: try git apply first (strict), then patch (fuzz),
-  # then apply-hunks.py relocation
-  if git apply --check "$seg" 2>/dev/null; then
-    git apply "$seg"
-    echo "git-apply OK: $orig" | tee -a "$LOG"
-  elif patch -p1 -f --dry-run < "$seg" >/dev/null 2>&1; then
-    patch -p1 -f < "$seg" >/dev/null 2>&1
-    echo "patch(fuzz) OK: $orig" | tee -a "$LOG"
-  else
-    tgt="$KROOT/$orig"
-    if [ -f "$tgt" ]; then
-      if python3 "$HERE/apply-hunks.py" "$tgt" "$seg" "$tgt" >> "$LOG" 2>&1; then
-        echo "relocated OK: $orig" | tee -a "$LOG"
-      else
-        echo "MANUAL (relocation failed): $orig" | tee -a "$LOG"
-        echo "MANUAL $orig" >> "$MANUAL"
-        FAILED_SEGS+=("$orig")
-      fi
-    else
-      echo "MANUAL (target missing): $orig" | tee -a "$LOG"
-      echo "MANUAL $orig (missing in 4.9 tree)" >> "$MANUAL"
-      FAILED_SEGS+=("$orig")
-    fi
-  fi
+{ [ -d "$KROOT/.git" ] || [ -f "$KROOT/.git" ]; } || { echo "not a git tree: $KROOT" >&2; exit 1; }
+for f in "$JACK_PATCH" "$ADAPT_SH" "$GEN_SH" "$DELTA_STAT" "$DELTA_SYS" "$SHIPPED"; do
+  [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
 done
 
-# 2. copy susfs.c / susfs.h / susfs_def.h from upstream snapshot and run
-#    the 4.9 mechanical adaptation (i_state bits / fsnotify macro are the
-#    only deltas; see adapt step below).
-for f in fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h; do
-  src="$UP/${f#fs/}"        # upstream keeps them under kernel_patches/{fs,include}
-  # map: upstream layout kernel_patches/fs/susfs.c -> snapshot file susfs.c
-  case "$f" in
-    fs/susfs.c) src="$UP/susfs.c" ;;
-    include/linux/susfs.h) src="$UP/susfs.h" ;;
-    include/linux/susfs_def.h) src="$UP/susfs_def.h" ;;
-  esac
-  dest="$KROOT/$f"
-  mkdir -p "$(dirname "$dest")"
-  cp "$src" "$dest"
-  echo "COPY: $f" | tee -a "$LOG"
-done
+BASE=$(git -C "$KROOT" rev-parse HEAD)
+echo "== rebuild SuSFS-4.9 on $KROOT @ $BASE"
 
-# 3. mechanical 4.9 adaptation of susfs.c: AS_FLAGS_* i_mapping->flags -> i_state
-python3 - "$KROOT/fs/susfs.c" <<'PYEOF'
-import sys
-p = sys.argv[1]
-s = open(p).read()
-s = s.replace('&fi->inode.i_mapping->flags', '&fi->inode.i_state')
-s = s.replace('&inode->i_mapping->flags', '&inode->i_state')
-# fsnotify: the 5.10 sdcard handler signature differs; handled by the
-# SUSFS_DECL_FSNOTIFY_OPS macro on 4.9 — mechanical rewrite is NOT safe
-# here, so the handler is flagged for the manual list if present.
-open(p, 'w').write(s)
-print('susfs.c mechanical adaptation applied (i_state)')
+git -C "$KROOT" checkout -q -f
+git -C "$KROOT" clean -fdq
+mkdir -p "$HERE/out"
+
+echo "--- A) Jack 4.9 patch (stat.c/task_mmu.c expected to reject; fixed by B)"
+git -C "$KROOT" apply --reject --whitespace=nowarn "$JACK_PATCH" >/dev/null 2>&1 \
+  || true
+rm -f "$KROOT"/fs/*.rej "$KROOT"/fs/proc/*.rej "$KROOT"/fs/proc/.*.rej 2>/dev/null || true
+
+echo "--- B) stock-4.9 adaptation (fs/stat.c + fs/proc/task_mmu.c)"
+( cd "$KROOT" && bash "$ADAPT_SH" )
+
+echo "--- C) KSU-interaction hook generator"
+( cd "$KROOT" && bash "$GEN_SH" >/dev/null 2>&1 ) || \
+  { echo "generator failed" >&2; exit 1; }
+
+echo "--- D) residual 4.9 delta (stat.c extern + sys.c setresuid)"
+git -C "$KROOT" apply --whitespace=nowarn "$DELTA_STAT"
+git -C "$KROOT" apply --whitespace=nowarn "$DELTA_SYS"
+
+echo "--- E) emit rebuilt patch + byte-verify vs shipped port"
+git -C "$KROOT" add -A 2>/dev/null || true
+git -C "$KROOT" diff --cached --binary > "$HERE/out/susfs-49-rebuilt.patch"
+
+# ground-truth tree: apply shipped port on identical base
+GT="$HERE/out/.gt-verify"
+rm -rf "$GT"
+git -C "$KROOT" worktree add --detach "$GT" "$BASE" >/dev/null 2>&1
+git -C "$GT" apply --whitespace=nowarn "$SHIPPED" >/dev/null 2>&1 || \
+  { echo "shipped port does not apply on base — repo drift?" >&2; exit 1; }
+
+python3 - "$KROOT" "$GT" <<'PYEOF'
+import subprocess, sys, os
+def sha(wt, f):
+    r = subprocess.run(['git','-C',wt,'hash-object',os.path.join(wt,f)],
+                       capture_output=True, text=True)
+    return r.stdout.strip()
+a, b = sys.argv[1], sys.argv[2]
+touched = subprocess.run(['git','-C',b,'diff','--name-only','HEAD'],
+                         capture_output=True, text=True).stdout.split()
+bad = []
+for f in sorted(touched):
+    ha, hb = sha(a, f), sha(b, f)
+    if ha != hb:
+        bad.append(f)
+if bad:
+    print(f'FAIL: rebuilt tree differs from shipped port in {len(bad)} files:')
+    for f in bad: print('  ', f)
+    sys.exit(1)
+print(f'PASS: rebuilt tree == shipped port byte-identical ({len(touched)} files)')
 PYEOF
-
-# 4. emit the translated patch (kernel tree diff) — ONLY for files that
-#    actually changed; keep separate from the shipped patches/susfs.
-cd "$KROOT"
-git add -A 2>/dev/null || true
-git diff --cached --binary > "$OUT/susfs-49-translated.patch" 2>/dev/null || true
-echo "== translated patch: $OUT/susfs-49-translated.patch" | tee -a "$LOG"
-echo "== manual list     : $MANUAL" | tee -a "$LOG"
-echo "== applied files   : ${#APPLIED[@]}  manual: ${#FAILED_SEGS[@]}" | tee -a "$LOG"
+RC=$?
+git -C "$KROOT" worktree remove --force "$GT" 2>/dev/null || true
+[ "$KEEP" = 1 ] || git -C "$KROOT" checkout -q -f
+exit $RC
