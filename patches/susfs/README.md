@@ -5,10 +5,17 @@
 
 ## 文件
 
-- `polaris-susfs-final.patch` — 自包含 4.9 快照：core（fs/susfs.c、
-  include/linux/susfs.h、susfs_def.h）+ 内核 hook 点 + stock-4.9 适配
-  （stat.c：2 参 vfs_getattr_nosec / 无 result_mask；task_mmu.c：两段式
-  show_map_vma）。CI 应用此文件。
+- `layers/` — CI 按序应用的模块化补丁（依 0001→0004 顺序）：
+  - `0001-core.patch` — core：fs/susfs.c、include/linux/susfs.h、susfs_def.h
+  - `0002-vfs-base.patch` — VFS hook 点（namespace/proc/readdir/statfs/
+    kallsyms/memory/avc 等 13 文件）
+  - `0003-ksu-hooks.patch` — KSU 交互 hook 调用点（exec/open/read_write/
+    input/reboot/hooks/services 等 7 文件）
+  - `0004-overlay.patch` — 叠加文件最终态（namei/stat/sys：VFS 基底与
+    KSU hook 同文件叠加，整文件归此层）
+  四层依序 git apply 的结果与整包快照逐字节一致（实测 23/23）。
+- `polaris-susfs-final.patch` — 上述 4 层合并的冻结快照（参考/回归
+  基准；与 test/vendor 的 reference 一致）。
 - `susfs_patch_to_4.9.patch` — 4.9 hook 点基底的冻结参考（其在重建管线
   中的角色见 test/susfs-510-to-49/README.md）。
 - `susfs_inline_hook_patches-4.9.sh` — KSU-inline-hook 调用点生成器
@@ -46,5 +53,5 @@ fallback 基于 backup policydb 提供。4.9 与上游的 parity 校验结果见
 
 ## CI 应用
 
-单步 `git apply polaris-susfs-final.patch` + config fragment
+依序 `git apply layers/000{1..4}-*.patch` + config fragment
 （CONFIG_KSU_SUSFS=y + 子项；hook_mode=susfs）。
