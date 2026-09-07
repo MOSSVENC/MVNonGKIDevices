@@ -149,13 +149,10 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          # Modular port layers (core / vfs-base / ksu-hooks / overlay),
-          # applied in order. ReSukiSU is already set up at this point.
-          for p in "$GITHUB_WORKSPACE"/patches/susfs/layers/*.patch; do
-            echo "apply: $(basename "$p")"
-            git apply --check "$p" || { echo "SuSFS layer does not apply cleanly: $p"; exit 1; }
-            git apply "$p"
-          done
+          # Core port (susfs.c/h/def.h + kernel hook points incl. uname
+          # spoof). ReSukiSU is already set up at this point.
+          git apply --check "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-final.patch" || { echo "SuSFS core patch does not apply cleanly"; exit 1; }
+          git apply "$GITHUB_WORKSPACE/patches/susfs/polaris-susfs-final.patch"
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
