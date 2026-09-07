@@ -71,3 +71,18 @@ fallback resolves against its backup policydb instead — same semantics,
 different plumbing. Compile-time integration of my_* into 4.9
 selinuxfs.c/hooks.c would be cosmetic (no behavior change) and is not
 done.
+
+### Parity verification (run 2026-09-07, upstream 7373f8d8 / v2.3.0)
+
+- Function inventory: all 40 upstream susfs.c functions exist in the
+  4.9 port; no missing functions. Port adds only `m_free` (fsnotify
+  old-API mark free callback, required on 4.9).
+- Per-function body line counts are identical after normalizing the two
+  known 4.9 adaptations: AS_FLAGS_* stored in `inode->i_state` high
+  bits (33/34/35/36/39, free on 4.9) instead of `i_mapping->flags`;
+  sdcard fsnotify handler declared via `SUSFS_DECL_FSNOTIFY_OPS`.
+- 9 core feature functions verified line-equal (sus_path, sus_kstat,
+  kstat_spoof_generic_fillattr, uname, open_redirect, sus_map,
+  avc_log_spoofing, enabled_features, is_inode_sus_path).
+- Remaining diff lines classified: only the two adaptations above +
+  `#include <linux/version.h>`; no un-adapted functional difference.
