@@ -37,8 +37,38 @@ grep -q 'obj-$(CONFIG_BBG) += baseband-guard/' security/Makefile || { echo "ERRO
 grep -q "security/baseband-guard/Kconfig" security/Kconfig || { echo "ERROR: security/Kconfig not wired" >&2; exit 1; }
 
 # --- 2. fragment ---
-cat > "$FRAG" <<'EOF'
+# Kernels with the modern LSM framework (DEFINE_LSM in lsm_hooks.h, i.e.
+# 5.1+ or 4.19 trees that backported it) require baseband_guard to be
+# listed in CONFIG_LSM; the BBG Makefile aborts otherwise. Emit the
+# kernel's default CONFIG_LSM list with baseband_guard appended.
+# Pre-5.1-style kernels (4.9) patch security/selinux directly and only
+# need CONFIG_BBG.
+if grep -q "#define DEFINE_LSM(lsm)" include/linux/lsm_hooks.h 2>/dev/null; then
+  echo "==> modern LSM framework detected; appending baseband_guard to CONFIG_LSM"
+  # extract the last unconditional 'default "..."' of 'config LSM'
+  LSM_DEFAULT=$(awk '
+    /^config LSM$/ { in_lsm=1; next }
+    in_lsm && /^[[:space:]]*config / { exit }
+    in_lsm && /^[[:space:]]*default "/ {
+      line=$0
+      if (line !~ /if[[:space:]]+/) last=line
+    }
+    END {
+      if (match(last, /"([^"]*)"/, m)) print m[1]
+    }' security/Kconfig)
+  if [ -z "${LSM_DEFAULT:-}" ]; then
+    echo "ERROR: could not extract CONFIG_LSM default from security/Kconfig" >&2
+    exit 1
+  fi
+  cat > "$FRAG" <<EOF
+CONFIG_BBG=y
+CONFIG_LSM="${LSM_DEFAULT},baseband_guard"
+EOF
+  echo "CONFIG_LSM=\"${LSM_DEFAULT},baseband_guard\""
+else
+  cat > "$FRAG" <<'EOF'
 CONFIG_BBG=y
 EOF
+fi
 echo "BBG fragment written: $FRAG"
 echo "integrate-bbg.sh: done"
