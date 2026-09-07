@@ -954,6 +954,7 @@ index 78692a8..6100839 100644
  	len = PTR_ERR(pathname);
  	if (IS_ERR(pathname))
 @@ -2476,6 +2494,10 @@ proc_map_files_readdir(struct file *file, struct dir_context *ctx)
+ 
  				vma = vma->vm_next) {
  			if (!vma->vm_file)
  				continue;
@@ -963,7 +964,6 @@ index 78692a8..6100839 100644
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
  			if (++pos <= ctx->pos)
  				continue;
- 
 diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
 index fa762c5..5c42eb6 100644
 --- a/fs/proc/cmdline.c
@@ -1207,6 +1207,7 @@ index 9e17d92..61f6ccb 100644
  	if (!mm || !mmget_not_zero(mm))
  		goto out;
 @@ -1612,7 +1670,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+ 
  		ret = down_read_killable(&mm->mmap_sem);
  		if (ret)
  			goto out_free;
@@ -1221,7 +1222,6 @@ index 9e17d92..61f6ccb 100644
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
  		up_read(&mm->mmap_sem);
  		start_vaddr = end;
- 
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
 index bd07f0f..40d82ef 100644
 --- a/fs/proc_namespace.c
@@ -1412,6 +1412,7 @@ index bd07f0f..40d82ef 100644
  {
 @@ -306,16 +470,34 @@ static int mounts_release(struct inode *inode, struct file *file)
  
+ 
  static int mounts_open(struct inode *inode, struct file *file)
  {
 +#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
@@ -1444,7 +1445,6 @@ index bd07f0f..40d82ef 100644
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
  	return mounts_open_common(inode, file, show_vfsstat);
  }
- 
 diff --git a/fs/readdir.c b/fs/readdir.c
 index 3c5ce8a..76b25d1 100644
 --- a/fs/readdir.c
@@ -3465,7 +3465,6 @@ index 000000000..69c66c867
 +/* No module exit is needed becuase it should never be a loadable kernel module */
 +//void __init susfs_exit(void)
 +
-
 diff --git a/include/linux/susfs.h b/include/linux/susfs.h
 new file mode 100644
 index 000000000..fc80b87b3
@@ -3713,7 +3712,6 @@ index 000000000..fc80b87b3
 +void susfs_init(void);
 +
 +#endif
-
 diff --git a/include/linux/susfs_def.h b/include/linux/susfs_def.h
 new file mode 100644
 index 000000000..2ac778b32
@@ -3930,7 +3928,6 @@ index 000000000..2ac778b32
 +		unlikely(test_bit(AS_FLAGS_OPEN_REDIRECT, &inode->i_state)) && \
 +		susfs_is_current_proc_umounted_app()
 +#endif // #ifndef KSU_SUSFS_DEF_H
-
 diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
 index b8ec1db..3a83a54 100644
 --- a/kernel/kallsyms.c
@@ -3946,6 +3943,7 @@ index b8ec1db..3a83a54 100644
  /*
   * These will be re-linked against their real values
 @@ -657,8 +660,36 @@ static int s_show(struct seq_file *m, void *p)
+ 
  		seq_printf(m, "%px %c %s\t[%s]\n", value,
  			   type, iter->name, iter->module_name);
  	} else
@@ -3981,7 +3979,6 @@ index b8ec1db..3a83a54 100644
 +#endif
  	return 0;
  }
- 
 diff --git a/kernel/sys.c b/kernel/sys.c
 index 6ac5d1b..ef8af78 100644
 --- a/kernel/sys.c
@@ -4018,7 +4015,7 @@ index 3189d79..56c3f9e 100644
 +#include <linux/susfs_def.h>
 +#endif
  #include "internal.h"
-@@ -4487,4 +4487,9 @@
+@@ -4487,4 +4487,7 @@
  	if (mmap_read_lock_killable(mm))
  		return 0;
  
@@ -4026,7 +4023,7 @@ index 3189d79..56c3f9e 100644
 +	vma = find_vma(mm, addr);
 +#endif
  	/* ignore errors, just check how much was successfully transferred */
-@@ -4494,3 +4494,8 @@
+@@ -4494,3 +4494,7 @@
  		struct page *page = NULL;
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
