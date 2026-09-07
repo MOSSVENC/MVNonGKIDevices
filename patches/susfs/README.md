@@ -1,7 +1,9 @@
 # patches/susfs — SuSFS for 4.9 (Non-GKI)
 
-4.9 SuSFS 移植资产：CI 依序应用的模块化补丁（0001-0004）、上游 gki-android12-5.10 镜像
-（功能来源基准）、以及从上游派生 4.9 形态的重建工具。
+4.9 SuSFS 移植资产：CI 依序应用的模块化补丁（0001-0004）、上游
+gki-android12-5.10 镜像（功能来源基准）、以及从上游派生 4.9 形态的
+重建工具。设备树差异（selinux state-ful 变体、树自带 KernelSU 等）
+的 per-device 参考在 test 树内维护（见下"设备参考"）。
 
 ## 文件
 
@@ -15,7 +17,7 @@
   - `0004-susfs-overlay.patch` — namei/stat/sys（VFS 与 KSU hook 同文件
     叠加，整文件归此层）
 - `polaris-susfs-final.patch` — 上述 4 补丁合并的冻结快照（参考/回归
-  基准）。依序应用 4 补丁与整包逐字节一致（实测 23/23）。
+  基准）。依序应用 4 补丁与整包逐字节一致（实测 26/26 文件）。
 - `susfs_patch_to_4.9.patch` — 4.9 hook 点基底的冻结参考（其在重建管线
   中的角色见 test/susfs-510-to-49/README.md）。
 - `susfs_inline_hook_patches-4.9.sh` — KSU-inline-hook 调用点生成器
@@ -50,6 +52,15 @@
 查询伪造（setprocattr/context/access/status 节点）由 ReSukiSU 内建
 fallback 基于 backup policydb 提供。4.9 与上游的 parity 校验结果见
 `scripts/verify-susfs-parity.sh`。
+
+## 设备参考
+
+本目录的 0001-0004 / `polaris-susfs-final.patch` 以 polaris 树为基准。
+其余设备树（beryllium/daisy/vince）的 SuSFS 4.9 参考存放在
+`test/susfs-510-to-49/vendor/`，由 test 树维护（生成角色、树差异与
+能力边界见 `test/susfs-510-to-49/ADAPTATION.md`）。CI 集成时经
+`hook_mode=susfs-test` 应用这些设备参考，与 hook_mode=susfs 的
+polaris 集成路径分离。
 
 ## CI 应用
 

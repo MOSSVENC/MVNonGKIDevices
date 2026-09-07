@@ -87,6 +87,14 @@ workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm�
   源码补丁，fragment 关掉三个 AUTO。
 - `auto` —— ReSukiSU **auto-hook 分支**：hook 由运行时 inline-hook 引擎完成；
   `auto_fix_49`（默认开）修正 auto-hook 分支对 4.x 的 `kasan_reset_tag` 门槛。
+- `susfs` —— SuSFS inline hook（**polaris** 支持）：应用
+  `patches/susfs/0001-0004`（shipped 移植）。
+- `susfs-test` —— SuSFS inline hook（**polaris/beryllium/daisy/vince**
+  支持）：应用 test 树里的设备 reference，用于验证 test 管线在各设备
+  树的移植产物。polaris 应用 `test/susfs-510-to-49/susfs-49-test.patch`
+  （test 重建产物，与 `vendor/reference-polaris-susfs-final.patch`
+  逐字一致）；beryllium/daisy/vince 应用各自
+  `test/susfs-510-to-49/vendor/reference-<设备>.patch`。
 
 ### 静态符号
 
@@ -113,8 +121,7 @@ Kconfig 树，再执行合并，否则 `olddefconfig` 看不到新符号会静�
 
 基线差异：polaris 用 `vendor/xiaomi/mi845_defconfig`（LOS 官方）+ polaris.config；
 beryllium 用自带 `beryllium_defconfig`（自包含，`CLEAR_LOCALVERSION=true` 清
-`-Helios™`）；daisy 用 `msm8953-perf_defconfig`（xiaomi/daisy.config 已核实
-完全冗余——每行都在基线里）；vince 用 `vince-perf_defconfig`（自包含）。
+`-Helios™`）；daisy 用 `msm8953-perf_defconfig`（xiaomi/daisy.config 各项均在基线内）；vince 用 `vince-perf_defconfig`（自包含）。
 
 ## 目录结构
 
@@ -123,6 +130,10 @@ patches/resukisu-manual-hook/common/  4 个通用 hook 补丁（stat/exec/open/r
 patches/resukisu-manual-hook/{daisy,vince}/  各设备专用 0004-reboot 变体（树里 reboot.c 上下文不同）
 patches/resukisu-manual-hook/alt-hooks/    可选 3 hook 源码补丁（hook_mode: manual-source 用）
 patches/vince/0000-remove-legacy-ksu-hooks.patch  清 vince 树旧 KernelSU 埋点（反向 eb0503）
+test/susfs-510-to-49/susfs-49-test.patch              polaris test 重建产物（susfs-test 应用对象）
+test/susfs-510-to-49/vendor/reference-polaris-susfs-final.patch   polaris 设备树 reference（冻结基准）
+test/susfs-510-to-49/vendor/reference-{beryllium,daisy,vince}.patch
+                                           各设备树 susfs reference（susfs-test 应用对象）
 patches/bbg/common/                   集成说明（无本地补丁，跑官方 setup.sh）
 patches/droidspace/common/            droidspace.config + cgroup 前缀 4.9 移植补丁（官方 02 的移植，4.9 设备共用）
 patches/sdcardfs/                     Android/data per-uid 隔离补丁（仅 polaris 启用）
@@ -183,7 +194,11 @@ CC_WERROR 的强制与断言见脚本内注释。
 
 ## 已知取舍 / 边界
 
-- **susfs**：经 hook_mode 集成（ReSukiSU manual / auto / susfs inline hook 三种，见特性开关表）。
+- **susfs**：经 hook_mode 集成（见上 `susfs` / `susfs-test`）。shipped 移植
+  以 polaris 树为基准；test 管线重建 polaris 产物并对各设备树产出
+  reference（polaris/beryllium/daisy/vince），设备树差异（selinux
+  state-ful 变体、树自带 KernelSU 等）见
+  `test/susfs-510-to-49/ADAPTATION.md`。
 - **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 默认关闭。
 - **vince 旧 KernelSU**：workflow 剥离树自带旧 KSU 后集成 ReSukiSU；上游若更新旧
   KSU 代码，`patches/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
