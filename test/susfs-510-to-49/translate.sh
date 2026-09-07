@@ -1,69 +1,57 @@
 #!/usr/bin/env bash
 #
-# translate.sh — reproducible 4.9 SuSFS builder + verifier.
+# translate.sh — self-contained 4.9 SuSFS builder + verifier (test tree).
 #
-# Rebuilds the shipped 4.9 SuSFS port (patches/susfs/polaris-susfs-final.patch)
-# on a clean stock-4.9 kernel from these inputs:
+# Rebuilds the 4.9 SuSFS port on a clean stock-4.9 kernel from inputs
+# that live entirely inside this test tree (vendor/ + inputs/):
 #
-#   Core (fs/susfs.c, include/linux/susfs.h, susfs_def.h):
-#     upstream gki-android12-5.10 mirror (patches/susfs/upstream-5.10/)
-#     + adaptation assets (inputs/susfs49-adapt.diff,
-#     inputs/def49-adapt.diff). susfs.h is used as mirrored.
+#   vendor/            frozen snapshot of the build inputs
+#     susfs.c susfs.h susfs_def.h         upstream gki-android12-5.10 core
+#     50_add_susfs_in_gki-android12-5.10.patch
+#     10_enable_susfs_for_ksu.patch       upstream patches (reference)
+#     susfs_patch_to_4.9.patch            frozen 4.9 VFS hook-point base
+#     susfs_inline_hook_patches-4.9.sh    KSU-interaction hook generator
+#     susfs-adapt-4.9.sh                  stock-4.9 stat.c/task_mmu.c fix
+#     reference-polaris-susfs-final.patch byte-verify ground truth
+#   inputs/
+#     susfs49-adapt.diff def49-adapt.diff core 4.9 adaptation assets
+#     delta_stat.diff delta_sys.diff      residual generator-skip delta
 #
-#   VFS hook points:
-#     - files whose 5.10 segment applies to stock 4.9 are taken from the
-#       mirror; the rest from the frozen reference patch
-#       patches/susfs/susfs_patch_to_4.9.patch
-#     - KSU-interaction hook sites:
-#       patches/susfs/susfs_inline_hook_patches-4.9.sh
-#       + inputs/delta_{stat,sys}.diff
-#     - stock-4.9 fixes for fs/stat.c and fs/proc/task_mmu.c:
-#       scripts/susfs-adapt-4.9.sh
+# No file outside this directory is read or written. Refreshing for a
+# new upstream release means updating vendor/susfs.c{,.h,_def.h} and the
+# upstream patches, then re-running; the byte-verify gate against
+# vendor/reference-polaris-susfs-final.patch reports drift.
 #
 # Verification: the rebuilt tree must be byte-identical (hash-object) to
-# applying patches/susfs/polaris-susfs-final.patch on the same base, for
-# every file it touches. Any mismatch fails the build.
+# applying vendor/reference-polaris-susfs-final.patch on the same base,
+# for every file it touches. Any mismatch fails the build.
 #
 # Usage: translate.sh <kernel-root>            (clean git tree, stock 4.9)
 #        translate.sh <kernel-root> --keep
-#        translate.sh --check-upstream
 #
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-REPO="$(cd "$HERE/../.." && pwd)"
-JACK_PATCH="$REPO/patches/susfs/susfs_patch_to_4.9.patch"
-ADAPT_SH="$REPO/scripts/susfs-adapt-4.9.sh"
-GEN_SH="$REPO/patches/susfs/susfs_inline_hook_patches-4.9.sh"
-CORE_ADAPT_SUSFS="$HERE/inputs/susfs49-adapt.diff"
-CORE_ADAPT_DEF="$HERE/inputs/def49-adapt.diff"
-DELTA_STAT="$HERE/inputs/delta_stat.diff"
-DELTA_SYS="$HERE/inputs/delta_sys.diff"
-SHIPPED="$REPO/patches/susfs/polaris-susfs-final.patch"
-MIRROR_DIR="$REPO/patches/susfs/upstream-5.10"
-MAIN_PATCH="$MIRROR_DIR/50_add_susfs_in_gki-android12-5.10.patch"
-
-if [ "${1:-}" = "--check-upstream" ]; then
-  echo "== upstream(5.10) core vs 4.9 core (mirror + own adapt assets) =="
-  echo "   informational: refresh path for a new upstream susfs release:"
-  echo "   1. sync-susfs-510.sh refresh        (update upstream-5.10 mirror)"
-  echo "   2. re-run this builder on a clean 4.9 tree"
-  echo "   3. byte-verify FAILS with the drifted files -> update assets"
-  echo "   (no silent pass: the hash gate is authoritative.)"
-  python3 - "$MIRROR_DIR" "$JACK_PATCH" <<'PYEOF'
-import sys
-print('core mirror files:', sys.argv[1] + '/susfs.c, susfs.h, susfs_def.h')
-print('(core derivation is mirror + own adapt assets, not Jack)')
-PYEOF
-  exit 0
-fi
+V="$HERE/vendor"
+I="$HERE/inputs"
+JACK_PATCH="$V/susfs_patch_to_4.9.patch"
+ADAPT_SH="$V/susfs-adapt-4.9.sh"
+GEN_SH="$V/susfs_inline_hook_patches-4.9.sh"
+CORE_SUSFS="$V/susfs.c"
+CORE_H="$V/susfs.h"
+CORE_DEF="$V/susfs_def.h"
+CORE_ADAPT_SUSFS="$I/susfs49-adapt.diff"
+CORE_ADAPT_DEF="$I/def49-adapt.diff"
+DELTA_STAT="$I/delta_stat.diff"
+DELTA_SYS="$I/delta_sys.diff"
+REFERENCE="$V/reference-polaris-susfs-final.patch"
 
 KROOT="$(cd "${1:?usage: translate.sh <kernel-root> [--keep]}" && pwd)"
 KEEP=0; [ "${2:-}" = "--keep" ] && KEEP=1
 
 { [ -d "$KROOT/.git" ] || [ -f "$KROOT/.git" ]; } || { echo "not a git tree: $KROOT" >&2; exit 1; }
-for f in "$JACK_PATCH" "$ADAPT_SH" "$GEN_SH" "$CORE_ADAPT_SUSFS" "$CORE_ADAPT_DEF" \
-         "$DELTA_STAT" "$DELTA_SYS" "$SHIPPED" "$MAIN_PATCH"; do
+for f in "$JACK_PATCH" "$ADAPT_SH" "$GEN_SH" "$CORE_SUSFS" "$CORE_H" "$CORE_DEF" \
+         "$CORE_ADAPT_SUSFS" "$CORE_ADAPT_DEF" "$DELTA_STAT" "$DELTA_SYS" "$REFERENCE"; do
   [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
 done
 
@@ -74,43 +62,39 @@ git -C "$KROOT" checkout -q -f
 git -C "$KROOT" clean -fdq
 mkdir -p "$HERE/out" "$KROOT/fs" "$KROOT/include/linux"
 
-echo "--- A0) core: upstream mirror + own 4.9 adaptation assets"
-cp "$MIRROR_DIR/susfs.c"      "$KROOT/fs/susfs.c"
-cp "$MIRROR_DIR/susfs.h"      "$KROOT/include/linux/susfs.h"
-cp "$MIRROR_DIR/susfs_def.h"  "$KROOT/include/linux/susfs_def.h"
+echo "--- 1) core: vendor susfs.c/h/def.h + 4.9 adaptation assets"
+cp "$CORE_SUSFS" "$KROOT/fs/susfs.c"
+cp "$CORE_H"     "$KROOT/include/linux/susfs.h"
+cp "$CORE_DEF"   "$KROOT/include/linux/susfs_def.h"
 git -C "$KROOT" add -f fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h
 git -C "$KROOT" apply --whitespace=nowarn "$CORE_ADAPT_SUSFS"
 git -C "$KROOT" apply --whitespace=nowarn "$CORE_ADAPT_DEF"
-echo "   core adapted (susfs.c + susfs_def.h), susfs.h unmodified"
 
-echo "--- A) tier-3 VFS reference base (Jack patch; core files skipped)"
-# apply the frozen patch but NOT its core copies (mirror+assets already did
-# those, and the Jack core is identical after adaptation)
-git -C "$KROOT" apply --reject --whitespace=nowarn "$JACK_PATCH" >/dev/null 2>&1 \
-  || true
+echo "--- 2) VFS hook-point base (vendor susfs_patch_to_4.9.patch)"
+git -C "$KROOT" apply --reject --whitespace=nowarn "$JACK_PATCH" >/dev/null 2>&1 || true
 git -C "$KROOT" checkout -q -f -- fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h
-rm -f "$KROOT"/fs/*.rej "$KROOT"/fs/proc/*.rej "$KROOT"/fs/proc/.*.rej 2>/dev/null || true
+rm -f "$KROOT"/fs/*.rej "$KROOT"/fs/proc/*.rej 2>/dev/null || true
 
-echo "--- B) stock-4.9 adaptation (fs/stat.c + fs/proc/task_mmu.c)"
+echo "--- 3) stock-4.9 adaptation (vendor susfs-adapt-4.9.sh)"
 ( cd "$KROOT" && bash "$ADAPT_SH" )
 
-echo "--- C) KSU-interaction hook generator"
+echo "--- 4) KSU-interaction hook generator (vendor)"
 ( cd "$KROOT" && bash "$GEN_SH" >/dev/null 2>&1 ) || \
   { echo "generator failed" >&2; exit 1; }
 
-echo "--- D) residual 4.9 delta (stat.c extern + sys.c setresuid)"
+echo "--- 5) residual delta (stat.c extern + sys.c setresuid)"
 git -C "$KROOT" apply --whitespace=nowarn "$DELTA_STAT"
 git -C "$KROOT" apply --whitespace=nowarn "$DELTA_SYS"
 
-echo "--- E) emit rebuilt patch + byte-verify vs shipped port"
+echo "--- 6) emit rebuilt patch + byte-verify vs vendor reference"
 git -C "$KROOT" add -A 2>/dev/null || true
 git -C "$KROOT" diff --cached --binary > "$HERE/out/susfs-49-rebuilt.patch"
 
 GT="$HERE/out/.gt-verify"
 rm -rf "$GT"
 git -C "$KROOT" worktree add --detach "$GT" "$BASE" >/dev/null 2>&1
-git -C "$GT" apply --whitespace=nowarn "$SHIPPED" >/dev/null 2>&1 || \
-  { echo "shipped port does not apply on base — repo drift?" >&2; exit 1; }
+git -C "$GT" apply --whitespace=nowarn "$REFERENCE" >/dev/null 2>&1 || \
+  { echo "reference patch does not apply on base — refresh vendor/" >&2; exit 1; }
 
 python3 - "$KROOT" "$GT" <<'PYEOF'
 import subprocess, sys, os
@@ -127,10 +111,10 @@ for f in sorted(touched):
     if ha != hb:
         bad.append(f)
 if bad:
-    print(f'FAIL: rebuilt tree differs from shipped port in {len(bad)} files:')
+    print(f'FAIL: rebuilt tree differs from reference in {len(bad)} files:')
     for f in bad: print('  ', f)
     sys.exit(1)
-print(f'PASS: rebuilt tree == shipped port byte-identical ({len(touched)} files)')
+print(f'PASS: rebuilt tree == reference byte-identical ({len(touched)} files)')
 PYEOF
 RC=$?
 git -C "$KROOT" worktree remove --force "$GT" 2>/dev/null || true
