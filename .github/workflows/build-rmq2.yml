@@ -173,9 +173,14 @@ jobs:
           # fragments, then asserts the ReSukiSU symbol chain
           # (CONFIG_DEBUG_KERNEL/KALLSYMS/KALLSYMS_ALL + KSU/SuSFS set).
           # MTK project defconfig k6853v1_64_6360 is the baseline.
+          # BBG / droidspace / sdcardfs data-isolation are not part of
+          # this build, so their feature asserts stay off.
           BASE_DEFCONFIG="arch/arm64/configs/k6853v1_64_6360_defconfig" \
           DEVICE_FRAGMENTS="" \
           ENABLE_RESUKISU="$([ "$HOOK_MODE" = "susfs-test" ] && echo true || echo false)" \
+          ENABLE_BBG=false \
+          ENABLE_DROIDSPACE=false \
+          ENABLE_DATA_ISOLATION=false \
           HOOK_TYPE="susfs" \
           bash "$GITHUB_WORKSPACE/scripts/merge-defconfig.sh" "$KROOT" "$RUNNER_TEMP/out" $FRAGS
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
