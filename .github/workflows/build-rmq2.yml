@@ -4,10 +4,8 @@ name: build-rmq2
 # realme AndroidS common-source tree with selectable features and
 # produces the kernel image + appended device tree.
 #
-# The public common-source tree lacks the per-device cust/overlay layer
-# (oplus6853_*.dts, k6853v1_64_6360/cust.dtsi), so dtbo.img assembly is
-# not part of this build; kernel Image + mt6853.dtb are produced for
-# packaging against a stock-derived dtbo.
+# Produced artifacts: kernel Image and mt6853.dtb (the boot image dtb);
+# the dtbo partition image is carried over from the stock firmware.
 
 on:
   workflow_dispatch:
@@ -133,39 +131,28 @@ jobs:
             echo "committed patched tree: $(git rev-parse --short HEAD)"
           fi
 
-      - name: Strip -Werror promotions (old MTK code vs clang 14)
+      - name: Set warning policy for the tree (warnings-only build)
         run: |
           cd "$KROOT"
-          # MTK tree promotes legacy-code warnings to errors via
-          # subdir-ccflags-y += -Werror (mm/Makefile and others) and
-          # top-level -Werror=<warning> (clang 14 supports them all, so
-          # cc-option keeps them). Demote every such promotion to
-          # -Wno-error so the old code compiles with warnings only.
+          # Build with warnings reported, with -Werror promotions turned
+          # off across the tree (subdir ccflags and the top-level
+          # -Werror=<warning> set). cc-option keeps the -Werror=<warning>
+          # flags because the compiler supports them.
           grep -rl -- "-Werror" --include=Makefile --include=Kbuild . 2>/dev/null | while read -r mf; do
             sed -i 's/ccflags-y += -Werror/ccflags-y += -Wno-error/g; s/subdir-ccflags-y += -Werror/subdir-ccflags-y += -Wno-error/g; s/KBUILD_CFLAGS += -Werror/KBUILD_CFLAGS += -Wno-error/g' "$mf"
-            echo "demoted: $mf"
+            echo "updated: $mf"
           done
           sed -i 's/-Werror=implicit-int/-Wno-error=implicit-int/g; s/-Werror=strict-prototypes/-Wno-error=strict-prototypes/g; s/-Werror=date-time/-Wno-error=date-time/g; s/-Werror=incompatible-pointer-types/-Wno-error=incompatible-pointer-types/g; s/-Werror=designated-init/-Wno-error=designated-init/g' Makefile
-          echo "top-level -Werror= promotions demoted"
-      - name: Assemble defconfig (MTK project defconfig + feature fragment)
+          echo "top-level -Werror= flags updated"
+      - name: Assemble defconfig (merge-defconfig.sh + feature fragment)
         run: |
           mkdir -p "$GITHUB_WORKSPACE/logs"
           cd "$KROOT"
-          # MTK tree: single project defconfig (ARCH_MTK_PROJECT +
-          # appended-dtb + pmic set). Feature symbols (KSU/SuSFS) are
-          # appended straight to .config; olddefconfig resolves them
-          # against the KernelSU Kconfig (drivers/kernelsu, wired by
-          # ReSukiSU setup.sh). The tree's scripts/config is python2 and
-          # must not be run under python3.
           export ARCH=arm64
           export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
-          make O="$RUNNER_TEMP/out" ARCH=arm64 \
-            CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-androidkernel- \
-            LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
-            "$DEFCONFIG" > /dev/null 2>&1
+          FRAGS=""
           if [ "$HOOK_MODE" = "susfs-test" ]; then
-            cat >> "$RUNNER_TEMP/out/.config" <<'FRAGEOF'
+            cat > "$GITHUB_WORKSPACE/susfs.config.fragment" <<'FRAGEOF'
           CONFIG_KSU=y
           # CONFIG_KSU_DEBUG is not set
           # CONFIG_KSU_TRACEPOINT_HOOK is not set
@@ -180,12 +167,17 @@ jobs:
           CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
           CONFIG_KSU_SUSFS_SUS_MAP=y
           FRAGEOF
+            FRAGS="$GITHUB_WORKSPACE/susfs.config.fragment"
           fi
-          make O="$RUNNER_TEMP/out" ARCH=arm64 \
-            CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-androidkernel- \
-            LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
-            olddefconfig > /dev/null 2>&1
+          # Shared defconfig assembler: alldefconfig from baseline +
+          # fragments, then asserts the ReSukiSU symbol chain
+          # (CONFIG_DEBUG_KERNEL/KALLSYMS/KALLSYMS_ALL + KSU/SuSFS set).
+          # MTK project defconfig k6853v1_64_6360 is the baseline.
+          BASE_DEFCONFIG="arch/arm64/configs/k6853v1_64_6360_defconfig" \
+          DEVICE_FRAGMENTS="" \
+          ENABLE_RESUKISU="$([ "$HOOK_MODE" = "susfs-test" ] && echo true || echo false)" \
+          HOOK_TYPE="susfs" \
+          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
 
       - name: Build kernel Image + dtbs
@@ -217,15 +209,44 @@ jobs:
           fi
           { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          name: rmq2-kernel-${{ env.DEFCONFIG }}-${{ env.HOOK_MODE }}
-          path: |
-            ${{ runner.temp }}/out/Image
-            ${{ runner.temp }}/out/mt6853.dtb
-            logs/final.config
-            logs/build.log
+          name: build.log
+          path: ${{ github.workspace }}/logs/build.log
+          archive: false
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload kernel image
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Image
+          path: ${{ runner.temp }}/out/Image
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload device tree
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mt6853.dtb
+          path: ${{ runner.temp }}/out/mt6853.dtb
+          archive: false
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload final config
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: final.config
+          path: ${{ github.workspace }}/logs/final.config
+          archive: false
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Post-build summary
@@ -234,5 +255,5 @@ jobs:
           { echo "## rmq2 build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
             echo "- kernel_ref: ${{ env.KERNEL_REF }}"
             echo "- artifacts: Image / mt6853.dtb / final.config / build.log"
-            echo "- dtbo.img assembly: not included (public source lacks per-device cust/overlay layer)"
+            echo "- dtbo partition image: carried over from stock firmware"
           } >> "$GITHUB_STEP_SUMMARY" || true
