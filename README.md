@@ -160,8 +160,9 @@ patches/
     susfs-shipped-4.9/       shipped 旧移植归档（0001-0004 模块、polaris-susfs-final、susfs_patch_to_4.9）
   sdcardfs/                  Android/data per-uid 隔离补丁（仅 polaris 启用）
   alioth/                    min-tool-version.sh（构建辅助，注入 4.19 树）
-localworkspace/              本机工作区（gitignored）：pipelines/ 存放 susfs 510-to-X 重建管线、
-                            kernels/ 内核树快照、rmq2/ 固件工程、maintain/ 维护工具等
+localworkspace/              本机工作区（gitignored）：kernels/ 基线树、pipelines/ susfs 重建管线
+                            （susfs-k4.9/4.14/4.19）、firmware/rmx2117-f12/ 固件、rmx2117/ 工程区、
+                            maintain/ 维护工具、reference/ 资料（布局见 localworkspace/README）
 scripts/                      编排脚本（见下）
 .github/workflows/build-<代号>.yml     每设备 CI
 ```
