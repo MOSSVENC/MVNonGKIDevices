@@ -127,10 +127,10 @@ jobs:
         run: |
           # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
           # the kernel root, so relative paths would not resolve.
-          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu-manual-hook/common"
+          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu/4.9"
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu-manual-hook/alt-hooks"
+            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu/4.9"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
@@ -165,7 +165,7 @@ jobs:
         run: |
           PORT=""
           if [ "$CGROUP_PORT" = "true" ]; then
-            PORT="$GITHUB_WORKSPACE/patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch"
+            PORT="$GITHUB_WORKSPACE/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
@@ -190,7 +190,7 @@ jobs:
           FRAGS=""
           [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
-          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/common/droidspace.config"
+          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
           BASE_DEFCONFIG="arch/arm64/configs/beryllium_defconfig" \
           DEVICE_FRAGMENTS="" \
           CLEAR_LOCALVERSION="true" \

@@ -1,6 +1,6 @@
 # 4.19 SuSFS 移植候选（test 区，面向 LOS sm8250 kona 树）
 
-目标：把 SuSFS（上游 gki-android12-5.10 素材，仓库 `patches/susfs/upstream-5.10/`）
+目标：把 SuSFS（上游 gki-android12-5.10 素材，仓库 `patches/susfs/upstream/`）
 移植到 LineageOS `android_kernel_xiaomi_sm8250` lineage-23.2（4.19.325 CAF kona）
 并最终经 CI（`build-alioth.yml` hook_mode=susfs-test）编译验证。
 
@@ -8,7 +8,7 @@
 
 - `vendor/reference-alioth.patch` — 候选落位补丁（19 文件）：
   - core（fs/susfs.c、include/linux/susfs.h、susfs_def.h）：与 4.9
-    shipped（`patches/susfs/0001-*`）逐字一致——同一份 5.10→老内核
+    shipped（`patches/test/susfs-shipped-4.9/0001-*`）逐字一致——同一份 5.10→老内核
     适配 core（AS_FLAGS_* 存 `i_state` 高位、版本条件头），4.19
     直接沿用；
   - 落位文件：按 5.10 素材的 4.19 落位形态排布；其中 12 个文件

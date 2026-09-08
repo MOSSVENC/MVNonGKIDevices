@@ -71,7 +71,7 @@ test/susfs-510-to-49/translate.sh <kernel-root> --keep   # 保留重建后的树
 
 - translate.sh 重建产物 == polaris 参考：26/26 文件 hash-object 一致
   （PASS，幂等，EXIT=0）
-- 产物 `out/susfs-49-rebuilt.patch` 与 `patches/susfs/polaris-susfs-final.patch`
+- 产物 `out/susfs-49-rebuilt.patch` 与 `patches/test/susfs-shipped-4.9/polaris-susfs-final.patch`
   逐字节一致（145092 B）
 - 语义漂移上报（保守，非阻断）：exec/open/namei/namespace/readdir/
   stat/task_mmu 等 16 文件的 5.10 独有 hook 或内容差异，记录于

@@ -139,7 +139,7 @@ jobs:
           # eb0503). Applied with git apply -R directly — NOT via
           # apply-patches.sh, whose idempotency check mis-detects a reverse
           # patch as already-applied on a tree that still contains the hooks.
-          git apply -R "$GITHUB_WORKSPACE/patches/vince/0000-remove-legacy-ksu-hooks.patch"
+          git apply -R "$GITHUB_WORKSPACE/patches/resukisu/4.9/vince/0000-remove-legacy-ksu-hooks.patch"
           rm -rf drivers/kernelsu scripts/kernelsu.sh
           sed -i '/kernelsu/d' drivers/Makefile
           sed -i '\|source "drivers/kernelsu/Kconfig"|d' drivers/Kconfig
@@ -156,14 +156,14 @@ jobs:
         run: |
           # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
           # the kernel root, so relative paths would not resolve.
-          C="$GITHUB_WORKSPACE/patches/resukisu-manual-hook"
+          C="$GITHUB_WORKSPACE/patches/resukisu/4.9"
           # vince: strip legacy-KSU hook blocks first, then the ReSukiSU
           # manual hooks with the vince-specific 0004 (reboot.c has the
           # unguarded pullDownReset decl — differs from common/0004).
-          PATCHES="$C/common/0001-fs-stat-ksu-manual-hook.patch $C/common/0002-fs-exec-ksu-manual-hook.patch $C/common/0003-fs-open-ksu-manual-hook.patch $C/vince/0004-kernel-reboot-ksu-manual-hook.patch"
+          PATCHES="$C/0001-fs-stat-ksu-manual-hook.patch $C/0002-fs-exec-ksu-manual-hook.patch $C/0003-fs-open-ksu-manual-hook.patch $C/vince/0004-kernel-reboot-ksu-manual-hook.patch"
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCHES="$PATCHES $(ls $C/alt-hooks/*.patch | sort)"
+            PATCHES="$PATCHES $(ls $C/001[0-2]-*.patch | sort)"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
@@ -198,7 +198,7 @@ jobs:
         run: |
           PORT=""
           if [ "$CGROUP_PORT" = "true" ]; then
-            PORT="$GITHUB_WORKSPACE/patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch"
+            PORT="$GITHUB_WORKSPACE/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
@@ -223,7 +223,7 @@ jobs:
           FRAGS=""
           [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
-          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/common/droidspace.config"
+          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
           BASE_DEFCONFIG="arch/arm64/configs/vince-perf_defconfig" \
           DEVICE_FRAGMENTS="" \
           CLEAR_LOCALVERSION="false" \

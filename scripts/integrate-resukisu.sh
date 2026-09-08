@@ -10,8 +10,8 @@
 #                                      source patches are applied and the three
 #                                      CONFIG_KSU_MANUAL_HOOK_AUTO_* are =y.
 #                    manual            — the 3 optional hooks are applied as real
-#                                      source patches (patches/resukisu-manual-
-#                                      hook/alt-hooks/0010..0012) and the three
+#                                      source patches (patches/resukisu/4.9/
+#                                      0010..0012) and the three
 #                                      AUTO options are turned OFF so ReSukiSU's
 #                                      compile-time check requires the manually
 #                                      added ksu_handle_* symbols instead.
@@ -134,7 +134,7 @@ EOF
 elif [ "$MODE" = "manual" ]; then
   # Manual extra hooks: AUTO off -> ReSukiSU requires ksu_handle_setresuid /
   # ksu_handle_sys_read / ksu_handle_input_handle_event present in the source
-  # (they are added by patches/resukisu-manual-hook/alt-hooks/0010..0012).
+  # (they are added by patches/resukisu/4.9/0010..0012).
   echo "==> hook_extra_mode=manual (source patches + AUTO off)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y

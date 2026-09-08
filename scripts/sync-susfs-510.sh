@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # sync-susfs-510.sh — check / refresh the gki-android12-5.10 upstream
-# snapshot stored in patches/susfs/upstream-5.10/.
+# snapshot stored in patches/susfs/upstream/.
 #
 # The 5.10 branch is the source of truth for the SuSFS feature set.
-# The 4.9 port (polaris-susfs-final.patch) tracks it: when upstream
-# bumps SUSFS_VERSION or changes susfs.c, re-derive the 4.9 port from
+# The 4.9 ports in patches/test/susfs-shipped-4.9/ track it: when
+# upstream bumps SUSFS_VERSION or changes susfs.c, re-derive them from
 # the refreshed snapshot (see patches/susfs/README.md).
 #
 # Usage:
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 BASE_URL="https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android12-5.10/kernel_patches"
-DEST="$(cd "$(dirname "$0")/.." && pwd)/patches/susfs/upstream-5.10"
+DEST="$(cd "$(dirname "$0")/.." && pwd)/patches/susfs/upstream"
 
 FILES=(
   "50_add_susfs_in_gki-android12-5.10.patch"

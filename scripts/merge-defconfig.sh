@@ -7,7 +7,7 @@
 #   3. feature fragments (only the enabled ones; caller supplies paths):
 #        resukisu.config.fragment   (CONFIG_KSU / MANUAL_HOOK ...)
 #        bbg.config.fragment        (CONFIG_BBG ...)
-#        droidspace.config          (patches/droidspace/common/droidspace.config)
+#        droidspace.config          (patches/droidspace/4.9/droidspace.config)
 #
 # Usage:
 #   merge-defconfig.sh <kernel-root> <out-dir> <fragment1> [<fragment2> ...]

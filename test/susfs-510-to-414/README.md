@@ -1,7 +1,7 @@
 # 4.14 SuSFS 移植候选（test 区，面向 realme MTK 4.14.186 树）
 
 目标：把 SuSFS（上游 gki-android12-5.10 素材，仓库
-`patches/susfs/upstream-5.10/`）移植到 realme MTK AndroidS 综合源
+`patches/susfs/upstream/`）移植到 realme MTK AndroidS 综合源
 （`MOSSVENC/realme_...AndroidS-kernel-source`，4.14.186）并最终经 CI
 编译验证。落位骨架采用 simonpunk non-GKI 补丁家族的 4.14 版
 （JackA1ltman/NonGKI_Kernel_Build_2nd@mainline
@@ -15,7 +15,7 @@
 - `susfs-414-test.patch` — 对 realme MTK 4.14.186 树适配后的候选补丁
   （19 文件；CI 应用对象）。
   - core（fs/susfs.c、include/linux/susfs.h、susfs_def.h）：与 4.9
-    shipped（`patches/susfs/0001-*`）逐字一致（1491/241/210 行
+    shipped（`patches/test/susfs-shipped-4.9/0001-*`）逐字一致（1491/241/210 行
     全等）——同一份版本条件适配 core（AS_FLAGS_* 存 `i_state`
     高位、按 LINUX_VERSION_CODE 分派），4.14 落于通用分支，直接
     沿用；
@@ -45,9 +45,13 @@
   适配前 reference 原样应用失败于 4 文件
   （namespace/fdinfo/task_mmu/memory），失败 hunk 与上述差异一一
   对应。
-- 编译验证将经 CI（`.github/workflows/build-RMX2117.yml`，
-  workflow_dispatch, hook_mode=susfs-test）进行；首轮报错按 `.rej`
-  迭代修正本候选。当前为候选状态，未经编译。
+- 编译验证（CI，`.github/workflows/build-RMX2117.yml`,
+  workflow_dispatch, hook_mode=susfs-test）：vmlinux/Image/mt6853.dtb
+  全链路产出，fs/susfs.o 与 drivers/kernelsu 各目标编译通过
+  （build.log 实测）。
+- 补丁本体已提升至 `patches/susfs/4.14/susfs-414-test.patch`
+  （仓库补丁集合按版本分置；本 test 目录保留落位记录与
+  reference）。
 
 ## manual hook（ReSukiSU 文档，4.17- 内核形态）
 
@@ -62,7 +66,7 @@ ReSukiSU 手册（resukisu.org manual-integrate）对 4.14（4.17-
 - sys_read：hook `SYSCALL_DEFINE3(read)`（4.19- 形态）；
 - reboot：`kernel/reboot.c` `SYSCALL_DEFINE4(reboot)`（3.11+
   位置）；
-- 上述调用点由 `susfs_inline_hook_patches.sh`（shipped，
+- 上述调用点由 `susfs_inline_hook_patches.sh`（仓库 shipped，
   tested 列表含 4.14）在构建时注入，属 CI 步骤而非本补丁
   内容；kernel/sys.c 的 4.14 hook 落点与 4.9 参考一致。
 

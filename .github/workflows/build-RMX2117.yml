@@ -105,17 +105,17 @@ jobs:
           { echo "### kernel clone"; tail -30 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       # --- ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source) ---
-      # 4.14 manual-hook source patches (patches/resukisu-manual-hook/414,
-      # + 414-alt for manual-source) applied to the MTK tree, then
-      # ReSukiSU main + config fragment via integrate-resukisu.sh.
+      # 4.14 tree-adapted manual-hook patches (patches/resukisu/4.14,
+      # 0010-0012 applied for manual-source) + ReSukiSU main + config
+      # fragment via integrate-resukisu.sh.
       - name: Integrate ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source)
         if: env.HOOK_TYPE == 'manual'
         run: |
           cd "$KROOT"
-          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu-manual-hook/414"
+          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu/4.14"
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: applying alt manual hooks (input/setuid/sys_read)"
-            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu-manual-hook/414-alt"
+            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu/4.14"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
@@ -125,17 +125,17 @@ jobs:
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" manual
 
       # --- SuSFS 4.14 (hook_mode=susfs-test) ---
-      # Candidate port test/susfs-510-to-414/susfs-414-test.patch (git
+      # Tree-adapted port patches/susfs/4.14/susfs-414-test.patch (git
       # apply-verified on MTK 4.14.186 snapshots) + ReSukiSU main +
-      # the shipped 4.x inline-hook generator (supports 4.14).
+      # the 4.x inline-hook generator (susfs_inline_hook_patches-4.9.sh).
       - name: Integrate ReSukiSU + SuSFS 4.14 port (hook_mode=susfs-test)
         if: env.HOOK_MODE == 'susfs-test'
         run: |
           cd "$KROOT"
           # ReSukiSU setup (main branch; wires drivers/kernelsu + Kconfig)
           curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
-          # SuSFS 4.14 kernel-side port (test tree candidate)
-          P="$GITHUB_WORKSPACE/test/susfs-510-to-414/susfs-414-test.patch"
+          # SuSFS 4.14 kernel-side port (patches/susfs/4.14/)
+          P="$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-414-test.patch"
           git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
           git apply "$P"
           echo "SuSFS 4.14 port applied:"
@@ -170,7 +170,7 @@ jobs:
         if: env.ENABLE_DROIDSPACE == 'true'
         run: |
           cd "$KROOT"
-          P02="$GITHUB_WORKSPACE/patches/droidspace/4.14/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
+          P02="$GITHUB_WORKSPACE/patches/droidspace/upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
           git apply --check "$P02" && git apply "$P02" || \
             { echo "!! droidspace cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.14 patches done (config merged below)"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # verify-susfs-parity.sh — verify the 4.9 SuSFS port stays in parity with
-# the upstream gki-android12-5.10 snapshot (patches/susfs/upstream-5.10/).
+# the upstream gki-android12-5.10 snapshot (patches/susfs/upstream/).
 #
 # Run after an upstream refresh (scripts/sync-susfs-510.sh refresh) to
 # detect feature drift before re-deriving the port:
@@ -21,9 +21,9 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-UP="$REPO/patches/susfs/upstream-5.10"
+UP="$REPO/patches/susfs/upstream"
 MAIN_UP="$UP/50_add_susfs_in_gki-android12-5.10.patch"
-PORT="$REPO/patches/susfs/polaris-susfs-final.patch"
+PORT="$REPO/patches/test/susfs-shipped-4.9/polaris-susfs-final.patch"
 
 fail=0
 note() { echo "== $*"; }

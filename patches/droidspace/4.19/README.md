@@ -16,11 +16,11 @@ config fragment instead of carrying a local port.
   `CONFIG_NETFILTER_XT_TARGET_MASQUERADE`). Explicit `=y` entries also
   override the kona stock baseline, which ships namespaces mostly off
   (e.g. `# CONFIG_PID_NS is not set`).
-- `0001-official-fix-kernel-panic-in-xt_qtaguid.patch` — official
+- `../upstream/0001-official-fix-kernel-panic-in-xt_qtaguid.patch`（唯一副本） — official
   non-GKI patch 1/2 (net/netfilter/xt_qtaguid.c). The LOS kona/sm8250
   4.19 tree does not contain xt_qtaguid at all, so this patch is inert
   on alioth; it is kept for other 4.19 trees that still carry qtaguid.
-- `0002-official-fix-restore-cgroup-file-prefix-handling.patch` —
+- `../upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch`（唯一副本） —
   official non-GKI patch 2/2 (kernel/cgroup/cgroup.c): re-creates the
   `subsys.name` kernfs symlink for files on `CGRP_ROOT_NOPREFIX`
   mounts, so runc/crun-style mounts see both names. The hunk context
@@ -38,4 +38,4 @@ done
 
 The config fragment is merged by `scripts/merge-defconfig.sh` (pass
 `patches/droidspace/4.19/droidspace.config` as a fragment), following
-the same flow as the 4.9 devices' `patches/droidspace/common/`.
+the same flow as the 4.9 devices' `patches/droidspace/4.9/`.

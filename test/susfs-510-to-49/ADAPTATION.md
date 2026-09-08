@@ -55,7 +55,7 @@
   `struct selinux_ss` 内，services.c 无改动段。
 - vince 树自带 KernelSU su 放行块于 `check_nnp_nosuid`，参考不重复
   注入 hooks.c 段；剥离旧 KernelSU 布线由 CI 步骤完成（
-  `patches/vince/0000-remove-legacy-ksu-hooks.patch`）。
+  `patches/resukisu/4.9/vince/0000-remove-legacy-ksu-hooks.patch`）。
 - daisy 与 polaris 同为非 stateful；daisy 树原生带 KSU su 放行块
   （check_nnp_nosuid 内），参考段集合同 polaris（26 段），其中
   hooks.c 段与树原生块内容一致。

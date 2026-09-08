@@ -113,14 +113,14 @@ jobs:
       - name: Apply ReSukiSU manual-hook source patches (4.19 variants)
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
-          # 4.19 tree: patches/resukisu-manual-hook/419/ carries the
+          # 4.19 tree: patches/resukisu/4.19/ carries the
           # 4.19-shaped mandatory hooks (stat/faccessat host-context and
           # call-shape differ from the 4.9 common/ set; exec/reboot are
           # the same). Apply 419 only — never common/ on this tree.
-          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu-manual-hook/419"
+          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu/4.19"
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying 4.19 alt manual hooks (input/setuid/sys_read)"
-            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu-manual-hook/419-alt"
+            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu/4.19"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
@@ -178,7 +178,7 @@ jobs:
           # as-is on the 4.19 kona tree; patch 1/2 (xt_qtaguid) is a
           # no-op here because LOS sm8250 has no qtaguid — skip it.
           cd "$KROOT"
-          P02="$GITHUB_WORKSPACE/patches/droidspace/4.19/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
+          P02="$GITHUB_WORKSPACE/patches/droidspace/upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
           git apply --check "$P02" && git apply "$P02" || \
             { echo "!! official cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.19 patches done (config merged below)"

@@ -88,17 +88,19 @@ manual hook 共 7 类；4 类必须改内核源码，3 类可选。以下补丁�
 | sys_read(initrc) | fs/read_write.c | 可选 | `manual-lsm` → LSM AUTO；`manual-source` → `alt-hooks/0012` |
 
 workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm）。
-4.9 设备用 `patches/resukisu-manual-hook/common/`（+ `alt-hooks/`）；
-alioth（4.19）用 `patches/resukisu-manual-hook/419/`（+ `419-alt/`）：
+4.9 设备用 `patches/resukisu/4.9/`（daisy/vince 换用其 `daisy`/`vince`
+设备子目录的 0004 变体）；alioth（4.19）用 `patches/resukisu/4.19/`；
+RMX2117（4.14）用 `patches/resukisu/4.14/`（跨版本相同形态以 symlink
+共享唯一副本）：
 - `manual-lsm`（默认）—— 源码补丁 + 3 个可选 hook 由 ReSukiSU 的
   LSM / input_handler AUTO 机制接管（fragment 置 `CONFIG_KSU_MANUAL_HOOK_AUTO_*=y`，
   < 6.8 适用）。
 - `manual-source` —— 源码补丁 + 打可选 3 hook 源码补丁
-  （4.9：`alt-hooks/0010~0012`；4.19：`419-alt/0010~0012`），fragment 关掉三个 AUTO。
+  （各版本目录内 `0010~0012`），fragment 关掉三个 AUTO。
 - `auto` —— ReSukiSU **auto-hook 分支**：hook 由运行时 inline-hook 引擎完成；
   `auto_fix_49`（默认开）修正 auto-hook 分支对 4.x 的 `kasan_reset_tag` 门槛。
 - `susfs` —— SuSFS inline hook（**polaris** 支持）：应用
-  `patches/susfs/0001-0004`（shipped 移植）。
+  `patches/test/susfs-shipped-4.9/0001-0004`（shipped 移植归档）。
 - `susfs-test` —— SuSFS inline hook（**polaris/beryllium/daisy/vince**
   支持）：应用 test 树里的设备 reference，用于验证 test 管线在各设备
   树的移植产物。polaris 应用 `test/susfs-510-to-49/susfs-49-test.patch`
@@ -106,8 +108,8 @@ alioth（4.19）用 `patches/resukisu-manual-hook/419/`（+ `419-alt/`）：
   逐字一致）；beryllium/daisy/vince 应用各自
   `test/susfs-510-to-49/vendor/reference-<设备>.patch`；alioth（4.19）
   应用 `test/susfs-510-to-419/susfs-419-test.patch`（4.19 候选移植）；
-  RMX2117（4.14）应用 `test/susfs-510-to-414/susfs-414-test.patch`
-  （4.14 候选移植，susfs-test 编译产物见 build-RMX2117.yml 日志）。
+  RMX2117（4.14）应用 `patches/susfs/4.14/susfs-414-test.patch`
+  （4.14 树适配，susfs-test 编译产物见 build-RMX2117.yml 日志）。
 
 ### 静态符号
 
@@ -139,33 +141,29 @@ beryllium 用自带 `beryllium_defconfig`（自包含，`CLEAR_LOCALVERSION=true
 ## 目录结构
 
 ```
-patches/resukisu-manual-hook/common/  4 个通用 hook 补丁（stat/exec/open/reboot；静态符号靠 KALLSYMS_ALL，不导出）
-patches/resukisu-manual-hook/{daisy,vince}/  各设备专用 0004-reboot 变体（树里 reboot.c 上下文不同）
-patches/resukisu-manual-hook/alt-hooks/    可选 3 hook 源码补丁（hook_mode: manual-source 用）
-patches/vince/0000-remove-legacy-ksu-hooks.patch  清 vince 树旧 KernelSU 埋点（反向 eb0503）
-patches/resukisu-manual-hook/419/           4.19 必加 manual hook（stat/faccessat 按 4.19 形态；exec/reboot 同 common）
-patches/resukisu-manual-hook/419-alt/       4.19 可选 3 hook 源码补丁（manual-source 用；setuid/sysread 按 4.17+/4.19+ 形态）
-patches/droidspace/4.19/                    Droidspace 4.19：官方 non-GKI 补丁集 + 官方 mandatory config（kona 及 4.19 树）
-patches/droidspace/4.14/                    Droidspace 4.14（MTK）：官方 cgroup 前缀补丁 + 4.14 修正 config
-test/susfs-510-to-414/                      SuSFS 4.14 移植候选（MTK realme 树落位；编译产物见 build-RMX2117.yml）
-test/susfs-510-to-419/                      SuSFS 4.19 移植候选（LOS sm8250 落位；CI 验证中）
-test/susfs-510-to-49/susfs-49-test.patch              polaris test 重建产物（susfs-test 应用对象）
-test/susfs-510-to-49/vendor/reference-polaris-susfs-final.patch   polaris 设备树 reference（冻结基准）
-test/susfs-510-to-49/vendor/reference-{beryllium,daisy,vince}.patch
-                                           各设备树 susfs reference（susfs-test 应用对象）
-patches/bbg/common/                   集成说明（无本地补丁，跑官方 setup.sh）
-patches/droidspace/common/            droidspace.config + cgroup 前缀 4.9 移植补丁（官方 02 的移植，4.9 设备共用）
-patches/sdcardfs/                     Android/data per-uid 隔离补丁（仅 polaris 启用）
-scripts/                              编排脚本（见下）
+patches/
+  droidspace/
+    upstream/                 官方 non-GKI 补丁唯一副本（0001 xt_qtaguid / 0002 cgroup 前缀）
+    4.9/ 4.14/ 4.19/          各内核版本 droidspace.config（符号差异按版本）
+  resukisu/
+    upstream/manualhook/      ReSukiSU 文档形态（stat/execve/faccessat/sys_reboot/input/setuid/sys_read
+                              hook 目录 + 版本五级目录 3.14±/4.17±/4.19±；弃置 execve 接法收录其内）
+    4.9/                     4.9 树适配 manual hook（0001-0004 必加 + 0010-0012 可选）
+       daisy/ vince/         设备专属 0004-reboot 变体 + vince 旧 KernelSU 埋点清理补丁
+    4.14/ 4.19/              4.14/4.19 树适配（跨版本相同形态经 symlink 共享 4.9 唯一副本）
+  susfs/
+    upstream/                gki-android12-5.10 上游素材（50_add/10_enable/susfs.c/.h 唯一副本）
+    4.14/                    susfs-414-test.patch（4.14 树适配，CI 编译通过）
+    两个 inline-hook 生成脚本
+  bbg/                       集成说明（无本地补丁，跑官方 setup.sh）
+  test/
+    susfs-shipped-4.9/       shipped 旧移植归档（0001-0004 模块、polaris-susfs-final、susfs_patch_to_4.9）
+  sdcardfs/                  Android/data per-uid 隔离补丁（仅 polaris 启用）
+  alioth/                    min-tool-version.sh（构建辅助，注入 4.19 树）
+test/                        susfs 510-to-X 重建管线（vendor reference / inputs / tools / 候选产物）
+scripts/                      编排脚本（见下）
 .github/workflows/build-<代号>.yml     每设备 CI
 ```
-
-CI 里所有补丁应用后会先 `git commit` 一次内核树，`setlocalversion` 基于
-干净的 git 状态生成版本串：`<内核版本>-perf-g<sha>`（如 4.9 设备
-`4.9.337-perf-g<sha>`、alioth `4.19.325-perf-g<sha>`；内核版本 + `git
-describe` 提交号）。
-
-
 ## 手动复现
 
 以 polaris 为例（其他设备换 clone 源/分支/defconfig，见各 workflow）：
@@ -176,8 +174,8 @@ KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xia
 # 1. ReSukiSU manual hook 源码补丁（daisy/vince 用各自设备目录的 0004 变体；
 #    hook_mode=auto 时跳过本步）
 bash scripts/apply-patches.sh "$KROOT" \
-  patches/resukisu-manual-hook/common          # polaris/beryllium
-# daisy/vince: 传 common/0001-0003 单文件 + <dev>/0004
+  patches/resukisu/4.9                        # polaris/beryllium
+# daisy/vince: 传 4.9 目录 0001-0003 单文件 + <dev>/0004
 
 # 2. 集成 ReSukiSU / BBG / Droidspace
 # manual 模式（main 分支 + 源码补丁；hook_mode=manual-lsm / manual-source）
@@ -185,11 +183,11 @@ bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm manua
 # auto 模式（auto-hook 分支 + inline hook；跳过第 1 步源码补丁）
 # bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm auto true
 bash scripts/integrate-bbg.sh "$KROOT" ./bbg.config.fragment
-PORT=patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch
+PORT=patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch
 bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
 # 3. 合并 defconfig（基线/片段可用 env 覆盖，见下）
-FRAGS="./resukisu.config.fragment ./bbg.config.fragment patches/droidspace/common/droidspace.config"
+FRAGS="./resukisu.config.fragment ./bbg.config.fragment patches/droidspace/4.9/droidspace.config"
 BASE_DEFCONFIG=arch/arm64/configs/vendor/xiaomi/mi845_defconfig \
 DEVICE_FRAGMENTS="arch/arm64/configs/vendor/xiaomi/polaris.config" \
 CLEAR_LOCALVERSION=false \
@@ -251,22 +249,22 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
   `test/susfs-510-to-49/ADAPTATION.md`。
 - **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 固定 off，
   alioth 无 sdcardfs（4.19 kona 树）不适用。
-- **alioth（4.19）**：ReSukiSU manual hook 用 `patches/resukisu-manual-hook/419`
+- **alioth（4.19）**：ReSukiSU manual hook 用 `patches/resukisu/4.19`
   （+ `419-alt` 于 manual-source）；droidspace 用 `patches/droidspace/4.19/`
   官方补丁；susfs 走 `hook_mode=susfs-test` 应用
   `test/susfs-510-to-419/susfs-419-test.patch`（4.19 候选移植，
   编译验证状态见该目录 README）。产物为 `Image` + `dtbo.img`
   （boot header v3、dtbo 独立分区），AnyKernel3 按 slot 设备打包。
 - **RMX2117（4.14 MTK）**：susfs 走 `hook_mode=susfs-test` 应用
-  `test/susfs-510-to-414/susfs-414-test.patch`（4.14 候选移植，编译产物见
+  `patches/susfs/4.14/susfs-414-test.patch`（4.14 树适配，编译产物见
   build-RMX2117.yml 日志）；dtbo 分区内容沿用 stock 固件（源树不含项目 cust/overlay
   层），产物为 `Image` + `mt6853.dtb`。BBG/Droidspace 集成入口已接
   入 workflow（默认 off），其 selinux/cgroup 落位见对应 patches
   目录 README。
 - **vince 旧 KernelSU**：workflow 剥离树自带旧 KSU 后集成 ReSukiSU；上游若更新旧
-  KSU 代码，`patches/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
+  KSU 代码，`patches/resukisu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
 - **Droidspace cgroup 移植补丁**：非致命；apply 失败自动跳过（见
-  patches/droidspace/common/README.md）。
+  patches/droidspace/4.9/README.md）。
 - ReSukiSU 与管理器（Manager APK）版本需自行匹配；setup.sh 按 hook_mode
   拉取：manual 用 `main` 分支，auto 用 `auto-hook` 分支（实验性，4.x 需
   `auto_fix_49`，见上）。

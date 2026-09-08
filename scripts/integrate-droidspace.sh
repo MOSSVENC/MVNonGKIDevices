@@ -6,13 +6,13 @@
 #
 # Steps:
 #   1. Apply the 4.9 cgroup prefix port
-#      (patches/droidspace/common/0001-cgroup-noprefix-4.9-port.patch,
+#      (patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch,
 #      shared by all supported 4.9 devices) so runc/crun see `subsys.file`
 #      symlinks on noprefix (systemd-style) cgroup mounts. Dry-run first;
 #      if it does not apply, warn and continue — the port matters only for
 #      noprefix mounts, and 4.9 already restores prefixed names otherwise.
 #   2. Kernel config support is merged by merge-defconfig.sh from
-#      patches/droidspace/common/droidspace.config.
+#      patches/droidspace/4.9/droidspace.config.
 #
 set -euo pipefail
 
