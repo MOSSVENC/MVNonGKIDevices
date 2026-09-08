@@ -177,7 +177,7 @@ jobs:
           DEVICE_FRAGMENTS="" \
           ENABLE_RESUKISU="$([ "$HOOK_MODE" = "susfs-test" ] && echo true || echo false)" \
           HOOK_TYPE="susfs" \
-          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
+          bash "$GITHUB_WORKSPACE/scripts/merge-defconfig.sh" "$KROOT" "$RUNNER_TEMP/out" $FRAGS
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
 
       - name: Build kernel Image + dtbs
