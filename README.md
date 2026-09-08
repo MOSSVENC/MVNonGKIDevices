@@ -154,7 +154,7 @@ patches/
     upstream/                gki-android12-5.10 上游素材（50_add/10_enable/susfs.c/.h 唯一副本）
     4.9/                     susfs-49-test.patch + ber/daisy/vince 设备子目录（4.9 树适配）
     4.14/ 4.19/              各树适配补丁（CI susfs-test 编译通过）
-    两个 inline-hook 生成脚本
+  （inline-hook 生成器为脚本，见 scripts/）
   bbg/                       集成说明（无本地补丁，跑官方 setup.sh）
   test/
     susfs-shipped-4.9/       shipped 旧移植归档（0001-0004 模块、polaris-susfs-final、susfs_patch_to_4.9）

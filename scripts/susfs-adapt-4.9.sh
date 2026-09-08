@@ -11,7 +11,7 @@
 #                        first block before show_vma_header_prefix().
 #
 # Run from the kernel root after the SuSFS hook-point base is applied and
-# before susfs_inline_hook_patches-4.9.sh. Idempotent.
+# before scripts/susfs_inline_hook_patches-nongki.sh. Idempotent.
 #
 set -euo pipefail
 

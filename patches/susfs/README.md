@@ -18,9 +18,12 @@ SuSFS 相关补丁资产按"上游素材 / 树适配"分置：
   补丁（编译产物见 build-RMX2117.yml susfs-test 日志）。
 - `4.19/susfs-419-test.patch` — LOS 4.19 树适配补丁（build-alioth.yml
   susfs-test 应用）。
-- `susfs_inline_hook_patches-4.9.sh` — KSU-inline-hook 调用点生成器
-  （ReSukiSU 签名，CI 内应用）。
-- `susfs_inline_hook_patches.sh` — 上游生成器镜像（参考）。
+KSU-inline-hook 调用点生成器（脚本，位于 `scripts/`）：
+- `scripts/susfs_inline_hook_patches-nongki.sh` — 树适配版（跨
+  4.9/4.14/4.19 等非 GKI 内核，运行时按目标树版本分派；CI 内应用）。
+- `scripts/susfs_inline_hook_patches.sh` — 上游原版镜像（源自
+  JackA1ltman/NonGKI_Kernel_Build_2nd@mainline `Patches/susfs_inline_hook_patches.sh`，
+  逐字节一致）。
 
 ## 重建与校验工具（scripts/）
 

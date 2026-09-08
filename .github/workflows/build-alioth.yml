@@ -154,8 +154,8 @@ jobs:
           # hook generator (ReSukiSU-adapted, handles the 4.19
           # __sys_setresuid split) injects them; run it from the kernel
           # root.
-          cp "$GITHUB_WORKSPACE/patches/susfs/susfs_inline_hook_patches-4.9.sh" ./
-          bash ./susfs_inline_hook_patches-4.9.sh 2>&1 | tail -30
+          cp "$GITHUB_WORKSPACE/scripts/susfs_inline_hook_patches-nongki.sh" ./
+          bash ./susfs_inline_hook_patches-nongki.sh 2>&1 | tail -30
           # verify the hooks ReSukiSU's inline_hook_check.mk demands
           MISSING=""
           for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \

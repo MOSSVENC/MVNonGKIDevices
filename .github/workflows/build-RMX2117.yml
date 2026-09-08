@@ -134,7 +134,7 @@ jobs:
       # --- SuSFS 4.14 (hook_mode=susfs-test) ---
       # Tree-adapted port patches/susfs/4.14/susfs-414-test.patch (git
       # apply-verified on MTK 4.14.186 snapshots) + ReSukiSU main +
-      # the 4.x inline-hook generator (susfs_inline_hook_patches-4.9.sh).
+      # the 4.x inline-hook generator (scripts/susfs_inline_hook_patches-nongki.sh).
       - name: Integrate ReSukiSU + SuSFS 4.14 port (hook_mode=susfs-test)
         if: env.HOOK_MODE == 'susfs-test'
         run: |
@@ -148,8 +148,8 @@ jobs:
           echo "SuSFS 4.14 port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
           # inline hook call sites (setresuid/execveat/faccessat/sys_read/stat)
-          cp "$GITHUB_WORKSPACE/patches/susfs/susfs_inline_hook_patches-4.9.sh" ./
-          bash ./susfs_inline_hook_patches-4.9.sh 2>&1 | tail -30
+          cp "$GITHUB_WORKSPACE/scripts/susfs_inline_hook_patches-nongki.sh" ./
+          bash ./susfs_inline_hook_patches-nongki.sh 2>&1 | tail -30
           MISSING=""
           for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
                       "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \

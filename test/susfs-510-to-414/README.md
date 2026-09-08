@@ -66,7 +66,7 @@ ReSukiSU 手册（resukisu.org manual-integrate）对 4.14（4.17-
 - sys_read：hook `SYSCALL_DEFINE3(read)`（4.19- 形态）；
 - reboot：`kernel/reboot.c` `SYSCALL_DEFINE4(reboot)`（3.11+
   位置）；
-- 上述调用点由 `susfs_inline_hook_patches.sh`（仓库 shipped，
+- 上述调用点由 `scripts/susfs_inline_hook_patches-nongki.sh`（仓库树适配版，
   tested 列表含 4.14）在构建时注入，属 CI 步骤而非本补丁
   内容；kernel/sys.c 的 4.14 hook 落点与 4.9 参考一致。
 
