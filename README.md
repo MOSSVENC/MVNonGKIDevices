@@ -12,7 +12,7 @@
 | Xiaomi Mi A2 Lite | `daisy` (msm8953) | 4.9.337 | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
 | Xiaomi Redmi Note 5 | `vince` (msm8953) | 4.9.337 | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
 | Xiaomi Redmi K40 / POCO F3 | `alioth` (sm8250) | 4.19.325 | [MOSSVENC/android_kernel_xiaomi_sm8250](https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250) @ `lineage-23.2` | `build-alioth.yml` |
-| realme Q2（国行） | `RMX2117` (mt6853) | 4.14.186 | [MOSSVENC/realme_X7_X7Pro_..._Narzo30pro-5G_7-5G-AndroidS-kernel-source](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source) @ `master` | `build-RMX2117.yml` |
+| realme Q2（国行） | `RMX2117` (mt6853) | 4.14.186 | [realme_X7_..._AndroidS-kernel-source](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source)（完整名见链接地址） @ `master` | `build-RMX2117.yml` |
 
 workflow_dispatch 输入控制各特性开关（enable_resukisu / enable_bbg /
 enable_droidspace / cgroup_port / enable_data_isolation / hook_mode /
@@ -236,8 +236,9 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
   （sdcardfs 隔离补丁是 mix2s 范围的特性）。
 - **产物**：`Image` + `mt6853.dtb`（boot 内 base dtb）。dtbo 分区
   overlay 内容沿用设备 stock 固件（源树不含项目 cust/overlay 层：
-  oplus6853_*.dts、k6853v1_64_6360/cust.dtsi）；boot 链 = boot 内 base
-  dtb + 独立 dtbo 分区，替换 boot 内 kernel 即可，dtbo 保持原厂。
+  oplus6853_*.dts、k6853v1_64_6360/cust.dtsi）。boot 链为 boot 内 base
+  dtb + 独立 dtbo 分区；只替换 boot 内 kernel、保留原 dtb 与 dtbo 的
+  刷法是否可行，属推断（未实机验证）。
 - 树内 Kconfig 文件带 CRLF 行尾与大量老代码告警（unused 变量等），
   编译以 warnings-only 进行（-Werror 提升在构建前关闭）。
 
