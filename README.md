@@ -160,7 +160,8 @@ patches/
     susfs-shipped-4.9/       shipped 旧移植归档（0001-0004 模块、polaris-susfs-final、susfs_patch_to_4.9）
   sdcardfs/                  Android/data per-uid 隔离补丁（仅 polaris 启用）
   alioth/                    min-tool-version.sh（构建辅助，注入 4.19 树）
-test/                        susfs 510-to-X 重建管线（vendor reference / inputs / tools / 候选产物）
+localworkspace/              本机工作区（gitignored）：pipelines/ 存放 susfs 510-to-X 重建管线、
+                            kernels/ 内核树快照、rmq2/ 固件工程、maintain/ 维护工具等
 scripts/                      编排脚本（见下）
 .github/workflows/build-<代号>.yml     每设备 CI
 ```
@@ -225,7 +226,7 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
   merge-defconfig.sh 合并 susfs fragment 并强制
   DEBUG_KERNEL/KALLSYMS/KALLSYMS_ALL 链（ReSukiSU 静态符号走 kallsyms
   表）。
-- **特性**：susfs-test（ReSukiSU main + `test/susfs-510-to-414/`
+- **特性**：susfs-test（ReSukiSU main + 管线（localworkspace/pipelines/susfs-510-to-414/）
   候选 + inline-hook 生成器），编译产物见 build-RMX2117.yml 日志；
   BBG 走 integrate-bbg.sh 官方
   setup.sh（pre-5.1 无 DEFINE_LSM 路径，自动 patch security/selinux）；
@@ -246,7 +247,7 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
   以 polaris 树为基准；test 管线重建 polaris 产物并对各设备树产出
   reference（polaris/beryllium/daisy/vince），设备树差异（selinux
   state-ful 变体、树自带 KernelSU 等）见
-  `test/susfs-510-to-49/ADAPTATION.md`。
+  管线文档（localworkspace/pipelines/susfs-510-to-49/ADAPTATION.md）。
 - **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 固定 off，
   alioth 无 sdcardfs（4.19 kona 树）不适用。
 - **alioth（4.19）**：ReSukiSU manual hook 用 `patches/resukisu/4.19`
