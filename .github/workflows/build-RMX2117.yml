@@ -1,4 +1,4 @@
-name: build-rmq2
+name: build-RMX2117
 
 # Builds a realme Q2 / RMX2117 (MT6853, MTK 4.14.186) kernel from the
 # realme AndroidS common-source tree with selectable features and
@@ -31,7 +31,7 @@ on:
         default: false
 
 concurrency:
-  group: rmq2-kernel
+  group: rmx2117-kernel
   cancel-in-progress: true
 
 jobs:
@@ -160,7 +160,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "no changes to commit (clean tree)"
           else
-            git commit -q -m "apply MVNonGKIDevices rmq2 feature patches"
+            git commit -q -m "apply MVNonGKIDevices RMX2117 feature patches"
             echo "committed patched tree: $(git rev-parse --short HEAD)"
           fi
 
@@ -295,7 +295,7 @@ jobs:
       - name: Post-build summary
         if: always()
         run: |
-          { echo "## rmq2 build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
+          { echo "## RMX2117 build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
             echo "- kernel_ref: ${{ env.KERNEL_REF }}"
             echo "- features: susfs-test=$([ "$HOOK_MODE" = susfs-test ] && echo on || echo off) bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE"
             echo "- artifacts: Image / mt6853.dtb / final.config / build.log"

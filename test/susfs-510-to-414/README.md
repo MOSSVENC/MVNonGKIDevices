@@ -45,7 +45,7 @@
   适配前 reference 原样应用失败于 4 文件
   （namespace/fdinfo/task_mmu/memory），失败 hunk 与上述差异一一
   对应。
-- 编译验证将经 CI（`.github/workflows/build-rmq2.yml`，
+- 编译验证将经 CI（`.github/workflows/build-RMX2117.yml`，
   workflow_dispatch, hook_mode=susfs-test）进行；首轮报错按 `.rej`
   迭代修正本候选。当前为候选状态，未经编译。
 
