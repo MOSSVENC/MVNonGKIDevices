@@ -3,7 +3,7 @@
 构建脚本 / 补丁 / 配置片段在本仓库维护，内核源码按设备固定在外部
 仓库（下表），由 GitHub Actions 检出后按特性开关集成并编译。
 
-## 支持设备（4.9 / 4.19，arm64）
+## 支持设备（4.9 / 4.14 / 4.19，arm64）
 
 | 设备 | 代号 | 内核 | 内核源 / 分支 | workflow |
 |---|---|---|---|---|
@@ -12,11 +12,18 @@
 | Xiaomi Mi A2 Lite | `daisy` (msm8953) | 4.9.337 | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
 | Xiaomi Redmi Note 5 | `vince` (msm8953) | 4.9.337 | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
 | Xiaomi Redmi K40 / POCO F3 | `alioth` (sm8250) | 4.19.325 | [MOSSVENC/android_kernel_xiaomi_sm8250](https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250) @ `lineage-23.2` | `build-alioth.yml` |
+| realme Q2（国行） | `RMX2117` (mt6853) | 4.14.186 | [MOSSVENC/realme_X7_X7Pro_..._Narzo30pro-5G_7-5G-AndroidS-kernel-source](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source) @ `master` | `build-RMX2117.yml` |
 
 workflow_dispatch 输入控制各特性开关（enable_resukisu / enable_bbg /
 enable_droidspace / cgroup_port / enable_data_isolation / hook_mode /
 auto_fix_49），默认值见各 workflow 的 input 定义。构建只通过
 workflow_dispatch 手动触发（无 push 自动触发）。
+
+RMX2117（MTK 4.14）的输入面不同：`hook_mode` 只有 `none` /
+`susfs-test`（默认 susfs-test），`enable_bbg` / `enable_droidspace`
+默认 off，无 cgroup_port / enable_data_isolation / enable_resukisu
+开关（ReSukiSU+SuSFS 由 susfs-test 一并承载），差异见下文
+"RMX2117（MTK 4.14）" 一节。
 
 ## 特性开关（workflow_dispatch 输入）
 
@@ -98,7 +105,9 @@ alioth（4.19）用 `patches/resukisu-manual-hook/419/`（+ `419-alt/`）：
   （test 重建产物，与 `vendor/reference-polaris-susfs-final.patch`
   逐字一致）；beryllium/daisy/vince 应用各自
   `test/susfs-510-to-49/vendor/reference-<设备>.patch`；alioth（4.19）
-  应用 `test/susfs-510-to-419/susfs-419-test.patch`（4.19 候选移植）。
+  应用 `test/susfs-510-to-419/susfs-419-test.patch`（4.19 候选移植）；
+  RMX2117（4.14）应用 `test/susfs-510-to-414/susfs-414-test.patch`
+  （4.14 候选移植，susfs-test 编译产物见 build-RMX2117.yml 日志）。
 
 ### 静态符号
 
@@ -137,6 +146,8 @@ patches/vince/0000-remove-legacy-ksu-hooks.patch  清 vince 树旧 KernelSU 埋�
 patches/resukisu-manual-hook/419/           4.19 必加 manual hook（stat/faccessat 按 4.19 形态；exec/reboot 同 common）
 patches/resukisu-manual-hook/419-alt/       4.19 可选 3 hook 源码补丁（manual-source 用；setuid/sysread 按 4.17+/4.19+ 形态）
 patches/droidspace/4.19/                    Droidspace 4.19：官方 non-GKI 补丁集 + 官方 mandatory config（kona 及 4.19 树）
+patches/droidspace/4.14/                    Droidspace 4.14（MTK）：官方 cgroup 前缀补丁 + 4.14 修正 config
+test/susfs-510-to-414/                      SuSFS 4.14 移植候选（MTK realme 树落位；编译产物见 build-RMX2117.yml）
 test/susfs-510-to-419/                      SuSFS 4.19 移植候选（LOS sm8250 落位；CI 验证中）
 test/susfs-510-to-49/susfs-49-test.patch              polaris test 重建产物（susfs-test 应用对象）
 test/susfs-510-to-49/vendor/reference-polaris-susfs-final.patch   polaris 设备树 reference（冻结基准）
@@ -201,6 +212,35 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 `CONFIG_LOCALVERSION=""`（beryllium 用，清 `-Helios™`）。KALLSYMS_ALL/
 CC_WERROR 的强制与断言见脚本内注释。
 
+## RMX2117（MTK 4.14）
+
+realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共用，
+4.14.186 MTK）。与骁龙 4.9/4.19 设备的差异：
+
+- **工具链**：官方 `build.config.mtk.aarch64` 配方 —— AOSP clang
+  r383902（clang 11）+ GCC 4.9 binutils 的 `aarch64-linux-androidkernel-`
+  前缀，`LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy`。
+- **源树布局**：clone 到 `kernel-4.14/` 目录（oplus 电源头文件经
+  `../../../../kernel-4.14/...` 相对路径引用 tcpm.h，依赖该目录名）。
+- **defconfig**：`k6853v1_64_6360_defconfig` 为单项目基线（含
+  CONFIG_ARCH_MTK_PROJECT / appended-dtb / mt6360 PMIC 集），经
+  merge-defconfig.sh 合并 susfs fragment 并强制
+  DEBUG_KERNEL/KALLSYMS/KALLSYMS_ALL 链（ReSukiSU 静态符号走 kallsyms
+  表）。
+- **特性**：susfs-test（ReSukiSU main + `test/susfs-510-to-414/`
+  候选 + inline-hook 生成器），编译产物见 build-RMX2117.yml 日志；
+  BBG 走 integrate-bbg.sh 官方
+  setup.sh（pre-5.1 无 DEFINE_LSM 路径，自动 patch security/selinux）；
+  Droidspace 用 `patches/droidspace/4.14/`（官方 0002 补丁对 MTK
+  cgroup.c 直接可应用 + 4.14 修正 config）。Android/data 隔离不适用
+  （sdcardfs 隔离补丁是 mix2s 范围的特性）。
+- **产物**：`Image` + `mt6853.dtb`（boot 内 base dtb）。dtbo 分区
+  overlay 内容沿用设备 stock 固件（源树不含项目 cust/overlay 层：
+  oplus6853_*.dts、k6853v1_64_6360/cust.dtsi）；boot 链 = boot 内 base
+  dtb + 独立 dtbo 分区，替换 boot 内 kernel 即可，dtbo 保持原厂。
+- 树内 Kconfig 文件带 CRLF 行尾与大量老代码告警（unused 变量等），
+  编译以 warnings-only 进行（-Werror 提升在构建前关闭）。
+
 ## 已知取舍 / 边界
 
 - **susfs**：经 hook_mode 集成（见上 `susfs` / `susfs-test`）。shipped 移植
@@ -216,6 +256,12 @@ CC_WERROR 的强制与断言见脚本内注释。
   `test/susfs-510-to-419/susfs-419-test.patch`（4.19 候选移植，
   编译验证状态见该目录 README）。产物为 `Image` + `dtbo.img`
   （boot header v3、dtbo 独立分区），AnyKernel3 按 slot 设备打包。
+- **RMX2117（4.14 MTK）**：susfs 走 `hook_mode=susfs-test` 应用
+  `test/susfs-510-to-414/susfs-414-test.patch`（4.14 候选移植，编译产物见
+  build-RMX2117.yml 日志）；dtbo 分区内容沿用 stock 固件（源树不含项目 cust/overlay
+  层），产物为 `Image` + `mt6853.dtb`。BBG/Droidspace 集成入口已接
+  入 workflow（默认 off），其 selinux/cgroup 落位见对应 patches
+  目录 README。
 - **vince 旧 KernelSU**：workflow 剥离树自带旧 KSU 后集成 ReSukiSU；上游若更新旧
   KSU 代码，`patches/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
 - **Droidspace cgroup 移植补丁**：非致命；apply 失败自动跳过（见
