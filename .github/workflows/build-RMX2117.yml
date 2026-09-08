@@ -15,10 +15,12 @@ on:
         required: false
         default: master
       hook_mode:
-        description: "none (stock defconfig) | susfs-test (ReSukiSU + SuSFS 4.14 port from test tree)"
+        description: "resukisu hook mode: manual-lsm (4.14 source patches + LSM AUTO) | manual-source (4.14 source patches + alt manual hooks) | susfs-test (ReSukiSU + SuSFS 4.14 port from test tree) | none (stock defconfig)"
         type: choice
         options:
           - none
+          - manual-lsm
+          - manual-source
           - susfs-test
         default: susfs-test
       enable_bbg:
@@ -41,6 +43,8 @@ jobs:
     env:
       KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
       HOOK_MODE: ${{ inputs.hook_mode || 'susfs-test' }}
+      HOOK_TYPE: ${{ (inputs.hook_mode == 'manual-lsm' || inputs.hook_mode == 'manual-source') && 'manual' || 'susfs' }}
+      HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       KERNEL_REPO: https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source.git
@@ -99,6 +103,26 @@ jobs:
           echo "KROOT=$RUNNER_TEMP/kernel-4.14" >> "$GITHUB_ENV"
           head -6 "$RUNNER_TEMP/kernel-4.14/Makefile"
           { echo "### kernel clone"; tail -30 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
+
+      # --- ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source) ---
+      # 4.14 manual-hook source patches (patches/resukisu-manual-hook/414,
+      # + 414-alt for manual-source) applied to the MTK tree, then
+      # ReSukiSU main + config fragment via integrate-resukisu.sh.
+      - name: Integrate ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source)
+        if: env.HOOK_TYPE == 'manual'
+        run: |
+          cd "$KROOT"
+          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu-manual-hook/414"
+          if [ "$HOOK_EXTRA" = "manual" ]; then
+            echo "hook_extra=manual: applying alt manual hooks (input/setuid/sys_read)"
+            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu-manual-hook/414-alt"
+          else
+            echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
+          fi
+          # NOTE: absolute patch-dir paths; apply-patches.sh cd's into KROOT
+          bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" $PATCH_DIRS
+          bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" manual
 
       # --- SuSFS 4.14 (hook_mode=susfs-test) ---
       # Candidate port test/susfs-510-to-414/susfs-414-test.patch (git
@@ -201,6 +225,8 @@ jobs:
           CONFIG_KSU_SUSFS_SUS_MAP=y
           FRAGEOF
             FRAGS="$GITHUB_WORKSPACE/susfs.config.fragment"
+          elif [ "$HOOK_TYPE" = "manual" ]; then
+            FRAGS="$GITHUB_WORKSPACE/resukisu.config.fragment"
           fi
           if [ "$ENABLE_BBG" = "true" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
@@ -215,11 +241,12 @@ jobs:
           # off for this build.
           BASE_DEFCONFIG="arch/arm64/configs/k6853v1_64_6360_defconfig" \
           DEVICE_FRAGMENTS="" \
-          ENABLE_RESUKISU="$([ "$HOOK_MODE" = "susfs-test" ] && echo true || echo false)" \
+          ENABLE_RESUKISU="$([ "$HOOK_MODE" = "susfs-test" ] || [ "$HOOK_TYPE" = "manual" ] && echo true || echo false)" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION=false \
-          HOOK_TYPE="susfs" \
+          HOOK_TYPE="$HOOK_TYPE" \
+          HOOK_EXTRA="$HOOK_EXTRA" \
           bash "$GITHUB_WORKSPACE/scripts/merge-defconfig.sh" "$KROOT" "$RUNNER_TEMP/out" $FRAGS
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
 
