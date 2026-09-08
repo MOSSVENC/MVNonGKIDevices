@@ -1,3 +1,6 @@
 # local diagnostic scratch (CI monitoring html etc.)
 .diag/
 localworkspace/
+
+# maintainer constraint notes (local only)
+AGENTS.md
