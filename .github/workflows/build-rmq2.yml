@@ -48,16 +48,32 @@ jobs:
             binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
             device-tree-compiler python3
 
-      - name: Download AOSP clang 14 + GCC 4.9 binutils
+      - name: Download AOSP clang 11 (r383902) + GCC 4.9 binutils
         run: |
-          git clone -q --depth=1 --single-branch \
-            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
-            -b android13-release "$RUNNER_TEMP/tc/clang"
-          CLANG_BIN="$RUNNER_TEMP/tc/clang/clang-r450784d/bin"
+          # Official toolchain per build.config.mtk.aarch64 in the kernel
+          # tree: clang-r383902 (clang 11) + aarch64-linux-android-4.9
+          # binutils with the androidkernel- prefix.
+          for br in android12-release android11-release android12L-release; do
+            if git ls-remote --heads \
+                https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+                "$br" >/dev/null 2>&1; then
+              echo "clang branch: $br"
+              git clone -q --depth=1 --single-branch --branch "$br" \
+                https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+                "$RUNNER_TEMP/tc/clang" && break
+            fi
+          done
+          if [ ! -d "$RUNNER_TEMP/tc/clang/clang-r383902/bin" ]; then
+            echo "clang-r383902 not found on android12/11 branches; fallback list:" >&2
+            ls "$RUNNER_TEMP/tc/clang" 2>/dev/null | head -20 || true
+            exit 1
+          fi
+          CLANG_BIN="$RUNNER_TEMP/tc/clang/clang-r383902/bin"
           ls "$CLANG_BIN/clang" >/dev/null
-          git clone -q --depth=1 --single-branch \
+          git clone -q --depth=1 --single-branch --branch android12L-release \
             https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
-            -b android12L-release "$RUNNER_TEMP/tc/gcc64"
+            "$RUNNER_TEMP/tc/gcc64"
+          ls "$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-androidkernel-gcc" >/dev/null || true
           echo "$RUNNER_TEMP/tc/gcc64/bin:$CLANG_BIN" >> "$GITHUB_PATH"
 
       - name: Clone kernel source (not part of this repo)
@@ -142,10 +158,11 @@ jobs:
           # ReSukiSU setup.sh). The tree's scripts/config is python2 and
           # must not be run under python3.
           export ARCH=arm64
-          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r450784d/bin:$PATH"
+          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
           make O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-android- \
+            CROSS_COMPILE=aarch64-linux-androidkernel- \
+            LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
             "$DEFCONFIG" > /dev/null 2>&1
           if [ "$HOOK_MODE" = "susfs-test" ]; then
             cat >> "$RUNNER_TEMP/out/.config" <<'FRAGEOF'
@@ -166,7 +183,8 @@ jobs:
           fi
           make O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-android- \
+            CROSS_COMPILE=aarch64-linux-androidkernel- \
+            LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
             olddefconfig > /dev/null 2>&1
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
 
@@ -174,19 +192,19 @@ jobs:
         run: |
           set -o pipefail
           cd "$KROOT"
-          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r450784d/bin:$PATH"
+          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-android- \
-            LD=ld.lld \
+            CROSS_COMPILE=aarch64-linux-androidkernel- \
+            LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
             Image \
             2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
           rc=${PIPESTATUS[0]}
           if [ "$rc" = 0 ]; then
             make O="$RUNNER_TEMP/out" ARCH=arm64 \
               CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-              CROSS_COMPILE=aarch64-linux-android- \
-              LD=ld.lld \
+              CROSS_COMPILE=aarch64-linux-androidkernel- \
+              LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
               dtbs >> "$GITHUB_WORKSPACE/logs/build.log" 2>&1
             rc=${PIPESTATUS[0]}
           fi
