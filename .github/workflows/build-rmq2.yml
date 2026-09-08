@@ -117,6 +117,20 @@ jobs:
             echo "committed patched tree: $(git rev-parse --short HEAD)"
           fi
 
+      - name: Strip -Werror promotions (old MTK code vs clang 14)
+        run: |
+          cd "$KROOT"
+          # MTK tree promotes legacy-code warnings to errors via
+          # subdir-ccflags-y += -Werror (mm/Makefile and others) and
+          # top-level -Werror=<warning> (clang 14 supports them all, so
+          # cc-option keeps them). Demote every such promotion to
+          # -Wno-error so the old code compiles with warnings only.
+          grep -rl -- "-Werror" --include=Makefile --include=Kbuild . 2>/dev/null | while read -r mf; do
+            sed -i 's/ccflags-y += -Werror/ccflags-y += -Wno-error/g; s/subdir-ccflags-y += -Werror/subdir-ccflags-y += -Wno-error/g; s/KBUILD_CFLAGS += -Werror/KBUILD_CFLAGS += -Wno-error/g' "$mf"
+            echo "demoted: $mf"
+          done
+          sed -i 's/-Werror=implicit-int/-Wno-error=implicit-int/g; s/-Werror=strict-prototypes/-Wno-error=strict-prototypes/g; s/-Werror=date-time/-Wno-error=date-time/g; s/-Werror=incompatible-pointer-types/-Wno-error=incompatible-pointer-types/g; s/-Werror=designated-init/-Wno-error=designated-init/g' Makefile
+          echo "top-level -Werror= promotions demoted"
       - name: Assemble defconfig (MTK project defconfig + feature fragment)
         run: |
           mkdir -p "$GITHUB_WORKSPACE/logs"
