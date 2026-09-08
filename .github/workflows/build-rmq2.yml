@@ -1,0 +1,204 @@
+name: build-rmq2
+
+# Builds a realme Q2 / RMX2117 (MT6853, MTK 4.14.186) kernel from the
+# realme AndroidS common-source tree with selectable features and
+# produces the kernel image + appended device tree.
+#
+# The public common-source tree lacks the per-device cust/overlay layer
+# (oplus6853_*.dts, k6853v1_64_6360/cust.dtsi), so dtbo.img assembly is
+# not part of this build; kernel Image + mt6853.dtb are produced for
+# packaging against a stock-derived dtbo.
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_ref:
+        description: kernel branch/ref to build
+        required: false
+        default: master
+      hook_mode:
+        description: "none (stock defconfig) | susfs-test (ReSukiSU + SuSFS 4.14 port from test tree)"
+        type: choice
+        options:
+          - none
+          - susfs-test
+        default: susfs-test
+
+concurrency:
+  group: rmq2-kernel
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    env:
+      KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
+      HOOK_MODE: ${{ inputs.hook_mode || 'susfs-test' }}
+      KERNEL_REPO: https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source.git
+      DEFCONFIG: k6853v1_64_6360_defconfig
+    steps:
+      - name: Checkout action repo
+        uses: actions/checkout@v7
+
+      - name: Install system binutils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
+            device-tree-compiler python3
+
+      - name: Download AOSP clang 14 + GCC 4.9 binutils
+        run: |
+          git clone -q --depth=1 --single-branch \
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+            -b android13-release "$RUNNER_TEMP/tc/clang"
+          CLANG_BIN="$RUNNER_TEMP/tc/clang/clang-r450784d/bin"
+          ls "$CLANG_BIN/clang" >/dev/null
+          git clone -q --depth=1 --single-branch \
+            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
+            -b android12L-release "$RUNNER_TEMP/tc/gcc64"
+          echo "$RUNNER_TEMP/tc/gcc64/bin:$CLANG_BIN" >> "$GITHUB_PATH"
+
+      - name: Clone kernel source (not part of this repo)
+        run: |
+          set -o pipefail
+          git config --global http.postBuffer 524288000
+          git clone --depth=1 --filter=blob:none \
+            --branch="$KERNEL_REF" \
+            "$KERNEL_REPO" \
+            "$RUNNER_TEMP/kernel" 2>&1 | tee /tmp/clone.log
+          echo "KROOT=$RUNNER_TEMP/kernel" >> "$GITHUB_ENV"
+          head -6 "$RUNNER_TEMP/kernel/Makefile"
+          { echo "### kernel clone"; tail -30 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
+
+      # --- SuSFS 4.14 (hook_mode=susfs-test) ---
+      # Candidate port test/susfs-510-to-414/susfs-414-test.patch (git
+      # apply-verified on MTK 4.14.186 snapshots) + ReSukiSU main +
+      # the shipped 4.x inline-hook generator (supports 4.14).
+      - name: Integrate ReSukiSU + SuSFS 4.14 port (hook_mode=susfs-test)
+        if: env.HOOK_MODE == 'susfs-test'
+        run: |
+          cd "$KROOT"
+          # ReSukiSU setup (main branch; wires drivers/kernelsu + Kconfig)
+          curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
+          # SuSFS 4.14 kernel-side port (test tree candidate)
+          P="$GITHUB_WORKSPACE/test/susfs-510-to-414/susfs-414-test.patch"
+          git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
+          git apply "$P"
+          echo "SuSFS 4.14 port applied:"
+          grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
+          # inline hook call sites (setresuid/execveat/faccessat/sys_read/stat)
+          cp "$GITHUB_WORKSPACE/patches/susfs/susfs_inline_hook_patches-4.9.sh" ./
+          bash ./susfs_inline_hook_patches-4.9.sh 2>&1 | tail -30
+          MISSING=""
+          for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
+                      "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
+                      "ksu_handle_stat:fs/stat.c"; do
+            sym="${spec%%:*}"; file="${spec##*:}"
+            grep -q "$sym" "$file" || MISSING="$MISSING $sym($file)"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "hook generator left missing:$MISSING" >&2
+            exit 1
+          fi
+          echo "SuSFS KSU-interaction hooks present"
+          echo "susfs feature symbols queued via scripts/config (merged in olddefconfig)"
+
+      - name: Commit patched kernel tree (drop -dirty from version)
+        run: |
+          cd "$KROOT"
+          git config user.email "action@localhost"
+          git config user.name "kernel-builder"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no changes to commit (clean tree)"
+          else
+            git commit -q -m "apply MVNonGKIDevices rmq2 feature patches"
+            echo "committed patched tree: $(git rev-parse --short HEAD)"
+          fi
+
+      - name: Assemble defconfig (MTK project defconfig + feature fragment)
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          cd "$KROOT"
+          # MTK tree: single project defconfig (ARCH_MTK_PROJECT +
+          # appended-dtb + pmic set). Feature fragment (KSU/SuSFS) is
+          # merged with scripts/config before olddefconfig.
+          export ARCH=arm64
+          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r450784d/bin:$PATH"
+          make O="$RUNNER_TEMP/out" ARCH=arm64 \
+            CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-android- \
+            "$DEFCONFIG" > /dev/null 2>&1
+          if [ "$HOOK_MODE" = "susfs-test" ]; then
+            python3 scripts/config --file "$RUNNER_TEMP/out/.config" \
+              --enable KSU \
+              --disable KSU_DEBUG \
+              --disable KSU_TRACEPOINT_HOOK \
+              --enable KSU_SUSFS \
+              --enable KSU_SUSFS_SUS_PATH \
+              --enable KSU_SUSFS_SUS_MOUNT \
+              --enable KSU_SUSFS_SUS_KSTAT \
+              --enable KSU_SUSFS_SPOOF_UNAME \
+              --enable KSU_SUSFS_ENABLE_LOG \
+              --enable KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
+              --enable KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
+              --enable KSU_SUSFS_OPEN_REDIRECT \
+              --enable KSU_SUSFS_SUS_MAP
+            # KSU_SUSFS Kconfig lives in the KernelSU tree (drivers/kernelsu)
+          fi
+          make O="$RUNNER_TEMP/out" ARCH=arm64 \
+            CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-android- \
+            olddefconfig > /dev/null 2>&1
+          cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
+
+      - name: Build kernel Image + dtbs
+        run: |
+          set -o pipefail
+          cd "$KROOT"
+          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r450784d/bin:$PATH"
+          make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
+            CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-android- \
+            LD=ld.lld \
+            Image \
+            2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" = 0 ]; then
+            make O="$RUNNER_TEMP/out" ARCH=arm64 \
+              CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+              CROSS_COMPILE=aarch64-linux-android- \
+              LD=ld.lld \
+              dtbs >> "$GITHUB_WORKSPACE/logs/build.log" 2>&1
+            rc=${PIPESTATUS[0]}
+          fi
+          cp -f "$RUNNER_TEMP/out/arch/arm64/boot/Image" "$RUNNER_TEMP/out/Image" 2>/dev/null || true
+          cp -f "$RUNNER_TEMP/out/arch/arm64/boot/dts/mediatek/mt6853.dtb" "$RUNNER_TEMP/out/mt6853.dtb" 2>/dev/null || true
+          [ -f "$RUNNER_TEMP/out/Image" ] || { echo "Image not produced"; rc=1; }
+          if [ "$rc" != 0 ]; then
+            { echo "### build kernel FAILED (rc=$rc)"; tail -120 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+            exit "$rc"
+          fi
+          { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rmq2-kernel-${{ env.DEFCONFIG }}-${{ env.HOOK_MODE }}
+          path: |
+            ${{ runner.temp }}/out/Image
+            ${{ runner.temp }}/out/mt6853.dtb
+            logs/final.config
+            logs/build.log
+          retention-days: 14
+
+      - name: Post-build summary
+        if: always()
+        run: |
+          { echo "## rmq2 build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
+            echo "- kernel_ref: ${{ env.KERNEL_REF }}"
+            echo "- artifacts: Image / mt6853.dtb / final.config / build.log"
+            echo "- dtbo.img assembly: not included (public source lacks per-device cust/overlay layer)"
+          } >> "$GITHUB_STEP_SUMMARY" || true
