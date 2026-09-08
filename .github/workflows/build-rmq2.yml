@@ -88,12 +88,16 @@ jobs:
         run: |
           set -o pipefail
           git config --global http.postBuffer 524288000
+          # Source tree lives in a kernel-4.14/ directory: oplus power
+          # headers (oplus_battery_mtk6853R.h) include tcpm.h through a
+          # ../../../../kernel-4.14/... relative path that assumes the
+          # OPPO build layout.
           git clone --depth=1 --filter=blob:none \
             --branch="$KERNEL_REF" \
             "$KERNEL_REPO" \
-            "$RUNNER_TEMP/kernel" 2>&1 | tee /tmp/clone.log
-          echo "KROOT=$RUNNER_TEMP/kernel" >> "$GITHUB_ENV"
-          head -6 "$RUNNER_TEMP/kernel/Makefile"
+            "$RUNNER_TEMP/kernel-4.14" 2>&1 | tee /tmp/clone.log
+          echo "KROOT=$RUNNER_TEMP/kernel-4.14" >> "$GITHUB_ENV"
+          head -6 "$RUNNER_TEMP/kernel-4.14/Makefile"
           { echo "### kernel clone"; tail -30 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       # --- SuSFS 4.14 (hook_mode=susfs-test) ---
