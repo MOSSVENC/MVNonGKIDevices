@@ -152,9 +152,9 @@ jobs:
         run: |
           cd "$KROOT"
           # ReSukiSU is already set up at this point. SUSFS_SOURCE selects
-          # the shipped modular patches or the test-tree pipeline output.
+          # the shipped modular patches or the rebuilt 4.9 pipeline output.
           if [ "$SUSFS_SOURCE" = "test" ]; then
-            echo "susfs-test: applying test-tree output"
+            echo "susfs-test: applying rebuilt 4.9 pipeline output"
             P="$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-49-test.patch"
             git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
             git apply "$P"
