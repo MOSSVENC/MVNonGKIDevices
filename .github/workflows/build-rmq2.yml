@@ -103,7 +103,6 @@ jobs:
             exit 1
           fi
           echo "SuSFS KSU-interaction hooks present"
-          echo "susfs feature symbols queued via scripts/config (merged in olddefconfig)"
 
       - name: Commit patched kernel tree (drop -dirty from version)
         run: |
@@ -123,8 +122,11 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/logs"
           cd "$KROOT"
           # MTK tree: single project defconfig (ARCH_MTK_PROJECT +
-          # appended-dtb + pmic set). Feature fragment (KSU/SuSFS) is
-          # merged with scripts/config before olddefconfig.
+          # appended-dtb + pmic set). Feature symbols (KSU/SuSFS) are
+          # appended straight to .config; olddefconfig resolves them
+          # against the KernelSU Kconfig (drivers/kernelsu, wired by
+          # ReSukiSU setup.sh). The tree's scripts/config is python2 and
+          # must not be run under python3.
           export ARCH=arm64
           export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r450784d/bin:$PATH"
           make O="$RUNNER_TEMP/out" ARCH=arm64 \
@@ -132,21 +134,21 @@ jobs:
             CROSS_COMPILE=aarch64-linux-android- \
             "$DEFCONFIG" > /dev/null 2>&1
           if [ "$HOOK_MODE" = "susfs-test" ]; then
-            python3 scripts/config --file "$RUNNER_TEMP/out/.config" \
-              --enable KSU \
-              --disable KSU_DEBUG \
-              --disable KSU_TRACEPOINT_HOOK \
-              --enable KSU_SUSFS \
-              --enable KSU_SUSFS_SUS_PATH \
-              --enable KSU_SUSFS_SUS_MOUNT \
-              --enable KSU_SUSFS_SUS_KSTAT \
-              --enable KSU_SUSFS_SPOOF_UNAME \
-              --enable KSU_SUSFS_ENABLE_LOG \
-              --enable KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
-              --enable KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
-              --enable KSU_SUSFS_OPEN_REDIRECT \
-              --enable KSU_SUSFS_SUS_MAP
-            # KSU_SUSFS Kconfig lives in the KernelSU tree (drivers/kernelsu)
+            cat >> "$RUNNER_TEMP/out/.config" <<'FRAGEOF'
+          CONFIG_KSU=y
+          # CONFIG_KSU_DEBUG is not set
+          # CONFIG_KSU_TRACEPOINT_HOOK is not set
+          CONFIG_KSU_SUSFS=y
+          CONFIG_KSU_SUSFS_SUS_PATH=y
+          CONFIG_KSU_SUSFS_SUS_MOUNT=y
+          CONFIG_KSU_SUSFS_SUS_KSTAT=y
+          CONFIG_KSU_SUSFS_SPOOF_UNAME=y
+          CONFIG_KSU_SUSFS_ENABLE_LOG=y
+          CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
+          CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
+          CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+          CONFIG_KSU_SUSFS_SUS_MAP=y
+          FRAGEOF
           fi
           make O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
