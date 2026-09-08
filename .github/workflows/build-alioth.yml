@@ -31,7 +31,7 @@ on:
         type: boolean
         default: true
       hook_mode:
-        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches) | susfs-test (SuSFS 4.19 from test-tree output)"
+        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches) | susfs-test (SuSFS inline hook, 4.19 port)"
         type: choice
         options:
           - manual-lsm
@@ -110,7 +110,7 @@ jobs:
           head -6 "$RUNNER_TEMP/kernel/Makefile"
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Apply ReSukiSU manual-hook source patches (4.19 variants)
+      - name: Apply ReSukiSU manual-hook patches
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
           # File-level list: shared shapes (stat/exec/reboot/input) live
@@ -139,7 +139,7 @@ jobs:
 
       # SuSFS 4.19 kernel-side port from the test-tree 5.10->4.19 pipeline,
       # applied AFTER ReSukiSU setup.sh (hook_mode=susfs-test).
-      - name: Apply SuSFS 4.19 test-tree port (hook_mode=susfs-test)
+      - name: Apply SuSFS 4.19 port (hook_mode=susfs-test)
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
@@ -176,7 +176,7 @@ jobs:
           bash scripts/integrate-bbg.sh "$KROOT" \
             "$GITHUB_WORKSPACE/bbg.config.fragment"
 
-      - name: Integrate Droidspace (4.19 official patches + config)
+      - name: Integrate Droidspace (patch + config)
         if: env.ENABLE_DROIDSPACE == 'true'
         run: |
           # Official non-GKI patch 2/2 (cgroup prefix symlink) applies
@@ -222,7 +222,7 @@ jobs:
             echo "committed patched tree: $(git rev-parse --short HEAD)"
           fi
 
-      - name: Assemble defconfig (kona + alioth + feature fragments)
+      - name: Assemble defconfig (baseline + feature fragments)
         run: |
           FRAGS=""
           [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"

@@ -34,7 +34,7 @@ on:
         type: boolean
         default: true
       hook_mode:
-        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches) | susfs-test (SuSFS inline hook from test-tree output)"
+        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO, default) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch, no source patches) | susfs-test (SuSFS inline hook, 4.9 ports)"
         type: choice
         options:
           - manual-lsm
@@ -122,7 +122,7 @@ jobs:
           # surface errors via step summary (readable through the API)
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Apply ReSukiSU manual-hook source patches
+      - name: Apply ReSukiSU manual-hook patches
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
           # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
@@ -144,7 +144,7 @@ jobs:
 
       # SuSFS kernel-side port from the test-tree beryllium reference,
       # applied AFTER ReSukiSU setup.sh (hook_mode=susfs-test).
-      - name: Apply SuSFS test-tree port (hook_mode=susfs-test)
+      - name: Apply SuSFS 4.9 port (hook_mode=susfs-test)
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
@@ -160,7 +160,7 @@ jobs:
           bash scripts/integrate-bbg.sh "$KROOT" \
             "$GITHUB_WORKSPACE/bbg.config.fragment"
 
-      - name: Integrate Droidspace (config fragment + cgroup port)
+      - name: Integrate Droidspace (patch + config)
         if: env.ENABLE_DROIDSPACE == 'true'
         run: |
           PORT=""
@@ -185,7 +185,7 @@ jobs:
             echo "committed patched tree: $(git rev-parse --short HEAD)"
           fi
 
-      - name: Assemble defconfig (beryllium + feature fragments)
+      - name: Assemble defconfig (baseline + feature fragments)
         run: |
           FRAGS=""
           [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"

@@ -15,7 +15,7 @@ on:
         required: false
         default: master
       hook_mode:
-        description: "resukisu hook mode: manual-lsm (4.14 source patches + LSM AUTO) | manual-source (4.14 source patches + alt manual hooks) | susfs-test (ReSukiSU + SuSFS 4.14 port from test tree) | none (stock defconfig)"
+        description: "resukisu hook mode: manual-lsm (4.14 source patches + LSM AUTO) | manual-source (4.14 source patches + alt manual hooks) | susfs-test (ReSukiSU + SuSFS, 4.14 port) | none (stock defconfig)"
         type: choice
         options:
           - none
@@ -53,7 +53,7 @@ jobs:
       - name: Checkout action repo
         uses: actions/checkout@v7
 
-      - name: Install system binutils
+      - name: Install binutils
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
@@ -173,7 +173,7 @@ jobs:
           bash "$GITHUB_WORKSPACE/scripts/integrate-bbg.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/bbg.config.fragment"
 
-      - name: Integrate Droidspace (4.14 cgroup prefix patch + config)
+      - name: Integrate Droidspace (patch + config)
         if: env.ENABLE_DROIDSPACE == 'true'
         run: |
           cd "$KROOT"
@@ -208,7 +208,7 @@ jobs:
           done
           sed -i 's/-Werror=implicit-int/-Wno-error=implicit-int/g; s/-Werror=strict-prototypes/-Wno-error=strict-prototypes/g; s/-Werror=date-time/-Wno-error=date-time/g; s/-Werror=incompatible-pointer-types/-Wno-error=incompatible-pointer-types/g; s/-Werror=designated-init/-Wno-error=designated-init/g' Makefile
           echo "top-level -Werror= flags updated"
-      - name: Assemble defconfig (merge-defconfig.sh + feature fragment)
+      - name: Assemble defconfig (baseline + feature fragments)
         run: |
           mkdir -p "$GITHUB_WORKSPACE/logs"
           cd "$KROOT"
