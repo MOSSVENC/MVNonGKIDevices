@@ -148,7 +148,7 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          P="$GITHUB_WORKSPACE/patches/susfs/4.9/beryllium/reference-beryllium.patch"
+          P="$GITHUB_WORKSPACE/patches/susfs/4.9/beryllium/susfs-beryllium-test.patch"
           git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
           git apply "$P"
           echo "SuSFS port applied:"

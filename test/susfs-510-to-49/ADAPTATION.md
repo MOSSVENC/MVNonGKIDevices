@@ -38,9 +38,9 @@
 | 参考 | 段数 | 相对 polaris 的差异 |
 |---|---|---|
 | `reference-polaris-susfs-final.patch` | 26 | 基线（LOS lineage-22.2，非 stateful selinux、树无 KSU su 放行块） |
-| `reference-beryllium.patch` | 25 | CI 树（Flyme66 thirteen @333bf83）为 stateful selinux：`avc_dump_query` 签名带 `struct selinux_state *state`，`security_sid_to_context(state, ...)`；avc/hooks 注入按该签名落位。树无原生 KSU su 放行块，hooks.c 段为注入。 |
-| `reference-daisy.patch` | 26 | CI 树（Flyme66 lineage-20）为非 stateful selinux，与 polaris 同签名；`fs/proc/cmdline.c` 基线形态不同，段按树落位。daisy 树 `security/selinux/hooks.c` 的 `check_nnp_nosuid` 原生带 KSU su 放行块（与 polaris 参考注入内容一致），参考的 hooks.c 段与之同内容。 |
-| `reference-vince.patch` | 24 | CI 树（OctaviOS 13，先剥离树自带旧 KernelSU 布线）为 stateful selinux：avc 注入按 stateful 签名落位。树已带 KSU su 放行块（hooks.c），该文件与 services.c 无改动段。 |
+| `susfs-beryllium-test.patch`（4.9 设备落位） | 25 | CI 树（Flyme66 thirteen @333bf83）为 stateful selinux：`avc_dump_query` 签名带 `struct selinux_state *state`，`security_sid_to_context(state, ...)`；avc/hooks 注入按该签名落位。树无原生 KSU su 放行块，hooks.c 段为注入。 |
+| `susfs-daisy-test.patch`（4.9 设备落位） | 26 | CI 树（Flyme66 lineage-20）为非 stateful selinux，与 polaris 同签名；`fs/proc/cmdline.c` 基线形态不同，段按树落位。daisy 树 `security/selinux/hooks.c` 的 `check_nnp_nosuid` 原生带 KSU su 放行块（与 polaris 参考注入内容一致），参考的 hooks.c 段与之同内容。 |
+| `susfs-vince-test.patch`（4.9 设备落位） | 24 | CI 树（OctaviOS 13，先剥离树自带旧 KernelSU 布线）为 stateful selinux：avc 注入按 stateful 签名落位。树已带 KSU su 放行块（hooks.c），该文件与 services.c 无改动段。 |
 
 说明：
 

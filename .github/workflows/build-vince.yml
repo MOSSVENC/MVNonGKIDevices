@@ -181,7 +181,7 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          P="$GITHUB_WORKSPACE/patches/susfs/4.9/vince/reference-vince.patch"
+          P="$GITHUB_WORKSPACE/patches/susfs/4.9/vince/susfs-vince-test.patch"
           git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
           git apply "$P"
           echo "SuSFS port applied:"
