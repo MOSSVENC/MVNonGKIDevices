@@ -29,8 +29,8 @@
 # reported for manual review — the reference is never silently replaced.
 # The KSU-interaction hook sites and stat.c/task_mmu.c stock-4.9
 # adaptation are part of the reference segments
-# (vendor/susfs_inline_hook_patches-4.9.sh and vendor/susfs-adapt-4.9.sh
-# document how those were produced).
+# (scripts/susfs_inline_hook_patches-nongki.sh and
+# scripts/susfs-adapt-4.9.sh document how those were produced).
 #
 # Verification: the rebuilt tree must be byte-identical (hash-object) to
 # applying vendor/reference-polaris-susfs-final.patch on the same base.
@@ -44,8 +44,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 V="$HERE/vendor"
 I="$HERE/inputs"
 T="$HERE/tools"
-ADAPT_SH="$V/susfs-adapt-4.9.sh"
-GEN_SH="$V/susfs_inline_hook_patches-4.9.sh"
+ADAPT_SH="$HERE/../../scripts/susfs-adapt-4.9.sh"
+GEN_SH="$HERE/../../scripts/susfs_inline_hook_patches-nongki.sh"
 CORE_SUSFS="$V/susfs.c"
 CORE_H="$V/susfs.h"
 CORE_DEF="$V/susfs_def.h"

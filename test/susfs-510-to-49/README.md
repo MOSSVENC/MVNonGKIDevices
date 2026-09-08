@@ -14,8 +14,8 @@
 |------|------|
 | `vendor/susfs.c` `susfs.h` `susfs_def.h` | 上游 gki-android12-5.10 core |
 | `vendor/50_add_susfs_in_gki-android12-5.10.patch` `10_enable_susfs_for_ksu.patch` | 上游补丁 |
-| `vendor/susfs_inline_hook_patches-4.9.sh` | KSU 交互 hook 生成器（参考） |
-| `vendor/susfs-adapt-4.9.sh` | stat.c/task_mmu.c stock 4.9 适配（参考） |
+| `scripts/susfs_inline_hook_patches-nongki.sh` | KSU 交互 hook 生成器（管线引用仓库真身） |
+| `scripts/susfs-adapt-4.9.sh` | stat.c/task_mmu.c stock 4.9 适配（管线引用仓库真身） |
 | `vendor/reference-polaris-susfs-final.patch` | polaris 参考：translate.sh 字节校验基准 + 翻译骨架来源；CI `hook_mode=susfs-test` 应用提升产物 `patches/susfs/4.9/susfs-49-test.patch`（本文件重建产物镜像） |
 | `patches/susfs/4.9/{beryllium,daisy,vince}/susfs-<设备>-test.patch` | b/d/v 设备树落位真身（源自已验收 4.9 移植；与 polaris 重建基线的差异即设备树属性，见 ADAPTATION.md） |
 | `inputs/susfs49-adapt.diff` `def49-adapt.diff` | core 的 4.9 形态适配（i_state 位域、fsnotify 回调声明等；susfs.h 原样） |
