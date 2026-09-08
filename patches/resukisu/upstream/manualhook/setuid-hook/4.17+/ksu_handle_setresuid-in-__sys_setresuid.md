@@ -1,18 +1,28 @@
+# setuid-hook 4.17+ — ReSukiSU manual-integrate doc excerpt (reference)
+
+Source: https://resukisu.org/zh-Hans/guide/manual-integrate.html
+Note: 4.17+ shape (hook __sys_setresuid)
+
+```diff
 diff --git a/kernel/sys.c b/kernel/sys.c
-index a3bef5bd..0b116d7c 100644
+index 4a87dc5fa..aac25df8c 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -835,6 +843,9 @@ error:
-        return retval;
+@@ -679,6 +679,10 @@
  }
+
+
 +#ifdef CONFIG_KSU_MANUAL_HOOK
 +extern int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid);
 +#endif
++
  /*
   * This function implements a generic ability to update ruid, euid,
-@@ -848,6 +859,10 @@ SYSCALL_DEFINE3(setresuid, uid_t, ruid, uid_t, euid, uid_t, suid)
-        int retval;
+  * and suid.  This allows you to implement the 4.4 compatible seteuid().
+@@ -692,6 +696,10 @@
         kuid_t kruid, keuid, ksuid;
+        bool ruid_new, euid_new, suid_new;
+
 +#ifdef CONFIG_KSU_MANUAL_HOOK
 +       (void)ksu_handle_setresuid(ruid, euid, suid);
 +#endif
@@ -20,4 +30,4 @@ index a3bef5bd..0b116d7c 100644
         kruid = make_kuid(ns, ruid);
         keuid = make_kuid(ns, euid);
         ksuid = make_kuid(ns, suid);
-在这部分中，你需要在内核源码中找到 __sys_setresuid 并 hook 它。注意对于 4.17- 内核，你需要 hook setresuid 而不是 __sys_setresuid。
+```

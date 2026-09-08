@@ -1,9 +1,17 @@
+# sys_reboot-hook 3.11- — ReSukiSU manual-integrate doc excerpt (reference)
+
+Source: https://resukisu.org/zh-Hans/guide/manual-integrate.html
+Note: 3.11- shape (reboot in kernel/sys.c)
+
+```diff
 diff --git a/kernel/sys.c b/kernel/sys.c
 index a3bef5bd..08d196f5 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -455,6 +455,10 @@ EXPORT_SYMBOL_GPL(kernel_power_off);
+@@ -455,6 +455,10 @@
+
  static DEFINE_MUTEX(reboot_mutex);
+
 +#ifdef CONFIG_KSU_MANUAL_HOOK
 +extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg);
 +#endif
@@ -11,9 +19,10 @@ index a3bef5bd..08d196f5 100644
  /*
   * Reboot system call: for obvious reasons only root may call it,
   * and even root needs to set up some magic numbers in the registers
-@@ -470,6 +474,10 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+@@ -470,6 +474,10 @@
         char buffer[256];
         int ret = 0;
+
 +#ifdef CONFIG_KSU_MANUAL_HOOK
 +       ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
 +#endif
@@ -21,4 +30,4 @@ index a3bef5bd..08d196f5 100644
         /* We only trust the superuser with rebooting the system. */
         if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
                 return -EPERM;
-在这部分中，你需要在内核源码中找到 reboot 的 SYSCALL 并 hook 它。注意对于 3.11- 内核，你需要在 kernel/sys.c 中 hook reboot，而不是在 kernel/reboot.c 中。
+```

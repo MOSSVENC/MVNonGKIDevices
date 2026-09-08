@@ -113,18 +113,23 @@ jobs:
       - name: Apply ReSukiSU manual-hook source patches (4.19 variants)
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
-          # 4.19 tree: patches/resukisu/4.19/ carries the
-          # 4.19-shaped mandatory hooks (stat/faccessat host-context and
-          # call-shape differ from the 4.9 common/ set; exec/reboot are
-          # the same). Apply 419 only — never common/ on this tree.
-          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu/4.19"
+          # File-level list: shared shapes (stat/exec/reboot/input) live
+          # in resukisu/4.9 as the single copy; 4.19-local files cover the
+          # 4.19-shaped parts (faccessat wrapper, __sys setresuid, ksys_read
+          # wrapper).
+          PATCHES="$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0003-fs-open-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
           if [ "$HOOK_EXTRA" = "manual" ]; then
-            echo "hook_extra=manual: also applying 4.19 alt manual hooks (input/setuid/sys_read)"
-            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu/4.19"
+            echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0010-input-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0011-setuid-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0012-sysread-manual-hook.patch"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
-          bash scripts/apply-patches.sh "$KROOT" $PATCH_DIRS
+          bash scripts/apply-patches.sh "$KROOT" $PATCHES
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
         if: env.ENABLE_RESUKISU == 'true'
@@ -138,7 +143,7 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          P="$GITHUB_WORKSPACE/test/susfs-510-to-419/susfs-419-test.patch"
+          P="$GITHUB_WORKSPACE/patches/susfs/4.19/susfs-419-test.patch"
           git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
           git apply "$P"
           echo "SuSFS 4.19 port applied:"

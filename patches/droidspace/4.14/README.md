@@ -5,12 +5,12 @@
 
 ## 组成
 
-- `0002-official-fix-restore-cgroup-file-prefix-handling.patch` —
-  symlink 至 `../upstream/` 官方 non-GKI 补丁唯一副本（ravindu644/
-  Droidspaces-OSS），对 MTK 4.14 树 kernel/cgroup/cgroup.c 直接可应用
-  （真实 git apply 验证，落位在 `cgroup_add_file`）。NOPREFIX 挂载下
-  为子系统文件补回 `subsys.name` 前缀名 symlink，供容器工具链按带前缀
-  名查找。
+- 补丁 `0002-official-fix-restore-cgroup-file-prefix-handling.patch`
+  为官方 non-GKI 补丁唯一副本，位于 `../upstream/`（版本目录不放
+  副本；workflow 直接引用 upstream 路径）。对 MTK 4.14 树
+  kernel/cgroup/cgroup.c 直接可应用（真实 git apply 验证，落位在
+  `cgroup_add_file`）。NOPREFIX 挂载下为子系统文件补回 `subsys.name`
+  前缀名 symlink，供容器工具链按带前缀名查找。
 - `droidspace.config` — 官方 Kernel-Configuration.md 的 4.14 落位；
   相对 4.9 片段（`patches/droidspace/4.9/droidspace.config`）的差异见文件头。
 

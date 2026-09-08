@@ -4,8 +4,9 @@ Droidspaces (https://github.com/ravindu644/Droidspaces-OSS) container
 support for the 4.19 non-GKI kernel family (kona/sm8250 and other
 4.19 CAF trees). The official Droidspaces "Non-GKI" instructions cover
 4.19 directly (Kernel-Configuration.md: "Applies to: Kernel 3.18, 4.4,
-4.9, 4.14, 4.19"), so this directory mirrors the official patch set and
-config fragment instead of carrying a local port.
+4.9, 4.14, 4.19"). The official patches live once in `../upstream/`
+(the version directory holds the config fragment only and references
+the upstream files from workflows).
 
 ## Contents
 

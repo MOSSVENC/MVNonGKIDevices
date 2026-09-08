@@ -17,7 +17,7 @@
     已按 LOS 的 `mmap_read_lock_killable` 形态适配；`fs/namespace.c`
     大部分 hunk 可经 3-way 容错应用，`fs/Makefile`、`fs/proc/task_mmu.c`
     有 LOS 行差。
-- `susfs-419-test.patch` — 与 reference 同文件的 CI 应用副本
+- `susfs-419-test.patch` — 与 reference 同文件的 CI 应用副本（已提升至 `patches/susfs/4.19/susfs-419-test.patch`，build-alioth.yml susfs-test 应用）
   （build-alioth.yml 的 susfs-test 步骤应用对象）。
 - 已知缺口（候选状态，待适配）：`fs/namespace.c` 的 vfs_kern_mount
   SUS_MOUNT 分支——LOS kona 树该函数是 fs_context 版

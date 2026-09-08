@@ -16,10 +16,10 @@
 | `vendor/50_add_susfs_in_gki-android12-5.10.patch` `10_enable_susfs_for_ksu.patch` | 上游补丁 |
 | `vendor/susfs_inline_hook_patches-4.9.sh` | KSU 交互 hook 生成器（参考） |
 | `vendor/susfs-adapt-4.9.sh` | stat.c/task_mmu.c stock 4.9 适配（参考） |
-| `vendor/reference-polaris-susfs-final.patch` | polaris 参考：translate.sh 字节校验基准 + 翻译骨架来源；CI `hook_mode=susfs-test` 应用 `susfs-49-test.patch`（本文件重建产物镜像） |
-| `vendor/reference-beryllium.patch` | beryllium 树参考（CI susfs-test 应用对象） |
-| `vendor/reference-daisy.patch` | daisy 树参考（CI susfs-test 应用对象） |
-| `vendor/reference-vince.patch` | vince 树参考（CI susfs-test 应用对象） |
+| `vendor/reference-polaris-susfs-final.patch` | polaris 参考：translate.sh 字节校验基准 + 翻译骨架来源；CI `hook_mode=susfs-test` 应用提升产物 `patches/susfs/4.9/susfs-49-test.patch`（本文件重建产物镜像） |
+| `vendor/reference-beryllium.patch` | beryllium 树参考（已提升至 `patches/susfs/4.9/beryllium/`，CI susfs-test 应用对象） |
+| `vendor/reference-daisy.patch` | daisy 树参考（已提升至 `patches/susfs/4.9/daisy/`，CI susfs-test 应用对象） |
+| `vendor/reference-vince.patch` | vince 树参考（已提升至 `patches/susfs/4.9/vince/`，CI susfs-test 应用对象） |
 | `inputs/susfs49-adapt.diff` `def49-adapt.diff` | core 的 4.9 形态适配（i_state 位域、fsnotify 回调声明等；susfs.h 原样） |
 | `tools/extract-anchors.py` | 从参考提取 5.10→4.9 hunk 锚点映射（上游变更时重跑） |
 | `tools/translate49.py` | 逐文件对照翻译：参考段为 4.9 参考，5.10 段用于差异对照 |
@@ -53,12 +53,13 @@
 ## 设备参考
 
 polaris/beryllium/daisy/vince 四份参考的生成角色与树差异见
-`ADAPTATION.md`。CI 各设备的 `hook_mode=susfs-test` 应用对象：
+`ADAPTATION.md`。CI 应用对象为提升产物（patches/susfs/4.9/）：
 
-- polaris：`test/susfs-510-to-49/susfs-49-test.patch`
+- polaris：`patches/susfs/4.9/susfs-49-test.patch`
   （translate.sh 重建产物镜像，与 `vendor/reference-polaris-susfs-final.patch`
   逐字一致）
-- beryllium / daisy / vince：各自 `vendor/reference-<设备>.patch`
+- beryllium / daisy / vince：各自
+  `patches/susfs/4.9/<设备>/reference-<设备>.patch`
 
 ## 用法
 

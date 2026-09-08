@@ -1,9 +1,15 @@
-diff --git a/fs/open.c b/fs/open.c
+# faccessat-hook 4.19- — ReSukiSU manual-integrate doc excerpt (reference)
+
+Source: https://resukisu.org/zh-Hans/guide/manual-integrate.html
+Note: 4.19- shape (inline SYSCALL_DEFINE3 body)
+
+```diff
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -450,8 +450,16 @@ long do_faccessat(int dfd, const char __user *filename, int mode)
+@@ -450,8 +450,16 @@
  	return res;
  }
+ 
 +#ifdef CONFIG_KSU_MANUAL_HOOK
 +__attribute__((hot)) 
 +extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
@@ -17,3 +23,4 @@ diff --git a/fs/open.c b/fs/open.c
 +#endif
  	return do_faccessat(dfd, filename, mode);
  }
+```

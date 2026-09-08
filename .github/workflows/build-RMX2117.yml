@@ -112,15 +112,22 @@ jobs:
         if: env.HOOK_TYPE == 'manual'
         run: |
           cd "$KROOT"
-          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu/4.14"
+          # File-level list: shared shapes (stat/reboot) live in
+          # resukisu/4.9 as the single copy; MTK-local files in 4.14.
+          PATCHES="$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0002-fs-exec-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0003-fs-open-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
           if [ "$HOOK_EXTRA" = "manual" ]; then
-            echo "hook_extra=manual: applying alt manual hooks (input/setuid/sys_read)"
-            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu/4.14"
+            echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0010-input-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0011-setuid-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0012-sysread-manual-hook.patch"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
-          # NOTE: absolute patch-dir paths; apply-patches.sh cd's into KROOT
-          bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" $PATCH_DIRS
+          # NOTE: absolute patch paths; apply-patches.sh cd's into KROOT
+          bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" $PATCHES
           bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" manual
 

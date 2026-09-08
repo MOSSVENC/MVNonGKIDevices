@@ -150,7 +150,7 @@ jobs:
         if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          P="$GITHUB_WORKSPACE/test/susfs-510-to-49/vendor/reference-daisy.patch"
+          P="$GITHUB_WORKSPACE/patches/susfs/4.9/daisy/reference-daisy.patch"
           git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
           git apply "$P"
           echo "SuSFS port applied:"

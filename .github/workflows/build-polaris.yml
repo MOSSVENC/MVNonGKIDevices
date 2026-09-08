@@ -155,7 +155,7 @@ jobs:
           # the shipped modular patches or the test-tree pipeline output.
           if [ "$SUSFS_SOURCE" = "test" ]; then
             echo "susfs-test: applying test-tree output"
-            P="$GITHUB_WORKSPACE/test/susfs-510-to-49/susfs-49-test.patch"
+            P="$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-49-test.patch"
             git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
             git apply "$P"
           else
