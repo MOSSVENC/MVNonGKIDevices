@@ -25,15 +25,15 @@ KSU-inline-hook 调用点生成器（脚本，位于 `scripts/`）：
 
 ## 重建与校验工具（scripts/）
 
-- `scripts/sync-susfs-510.sh` — 上游镜像 check / refresh。
-- `scripts/verify-susfs-parity.sh` — 上游刷新后的 parity 校验。
-- `scripts/susfs-adapt-4.9.sh` — 4.9 树适配。
+- `scripts/susfs-adapt-4.9.sh` — 4.9 树适配（管线 translate 引用）。
 
 4.9 重建管线与 shipped 旧移植归档见 `test/susfs-510-to-49/` 与
 `patches/test/susfs-shipped-4.9/`（README 各述其角色）。
 
 ## 上游跟踪
 
-当上游 gki-android12-5.10 更新（SUSFS_VERSION 变更、susfs.c 改动），
-执行 `scripts/sync-susfs-510.sh refresh` 更新 `upstream/`，随后按各
-树适配 README 重新落位。
+当上游 gki-android12-5.10 更新（SUSFS_VERSION 变更、susfs.c 改动）：
+更新 `upstream/` 素材与 parity 校验由维护者本机工具完成
+（`sync-susfs-510.sh` / `verify-susfs-parity.sh`，维护于仓库外
+`.work/maintain/`，不随仓库分发——本仓库内不做网络获取），完成后
+按各树适配 README 重新落位并提交。
