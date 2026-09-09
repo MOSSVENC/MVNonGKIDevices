@@ -148,7 +148,7 @@ jobs:
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
-      # Fork hook engine (syscall_table / branch_link) handles the sucompat
+      # Fork hook types (syscall_table / branch_link) handle the sucompat
       # call sites itself: no manual source patches, no inline-hook
       # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
@@ -185,11 +185,21 @@ jobs:
           if [ "$HOOK_TYPE" = "susfs" ]; then
             # SusFS over XXKSU: fork-side symbol bridge + tree patches
             # (core/vfs/overlay; the KSU callsite patch is not used - the
-            # fork engine already drives ksu_handle_*).
+            # fork hook already drives ksu_handle_*).
             cd "$RUNNER_TEMP/xxksu"
-            git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch" &&               git apply "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
+            # fork kernel/Kconfig has no SuSFS option; append the menu so
+            # the KSU_SUSFS fragment symbols resolve (idempotent).
+            if ! grep -q 'config KSU_SUSFS' "$RUNNER_TEMP/xxksu/kernel/Kconfig"; then
+              cat "$GITHUB_WORKSPACE/patches/susfs/fork/Kconfig-susfs-menu" >> \
+                "$RUNNER_TEMP/xxksu/kernel/Kconfig"
+            fi
+            git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
+            git apply "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
             cd "$KROOT"
-            for sp in "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0001-susfs-core.patch                       "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0002-susfs-vfs-hooks.patch                       "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0004-susfs-overlay.patch; do
+            for sp in \
+              "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0001-susfs-core.patch \
+              "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0002-susfs-vfs-hooks.patch \
+              "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0004-susfs-overlay.patch; do
               git apply --check "$sp" || { echo "SusFS tree patch failed: $sp"; exit 1; }
               git apply "$sp"
             done

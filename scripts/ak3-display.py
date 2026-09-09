@@ -57,7 +57,7 @@ else:
             engname = {'syscall_table': 'SYSCALL-TABLE-HOOK',
                        'branch_link': 'BRANCH-LINK-HOOK'}.get(eng, '')
             if engname:
-                desc = ['SusFS over {} engine'.format(engname)]
+                desc = ['SusFS over {} hook'.format(engname)]
         else:
             hook = {'syscall_table': 'SYSCALL-TABLE-HOOK',
                     'branch_link': 'BRANCH-LINK-HOOK'}.get(eng, 'HOOK')
