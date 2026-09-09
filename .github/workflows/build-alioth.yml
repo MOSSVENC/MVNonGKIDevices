@@ -57,11 +57,10 @@ jobs:
       KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-23.2' }}
       KERNEL_REPO: https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250.git
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
-      ROOT_ENGINE: ${{ contains(inputs.root_mode, 'branch_link') && 'branch_link' || 'syscall_table' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is a 4.9 sdm845 feature
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
@@ -164,7 +163,7 @@ jobs:
           {
             echo "CONFIG_KSU=y"
             echo "CONFIG_KSU_LSM_SECURITY_HOOKS=y"
-            if [ "$ROOT_ENGINE" = "branch_link" ]; then
+            if [ "$HOOK_TYPE" = "branch_link" ]; then
               echo "CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y"
               echo "# CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
             else
@@ -172,7 +171,7 @@ jobs:
               echo "# CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set"
             fi
           } > "$GITHUB_WORKSPACE/xxksu.config.fragment"
-          echo "xxksu engine selected: $ROOT_ENGINE"
+          echo "xxksu hook type: $HOOK_TYPE"
           cat "$GITHUB_WORKSPACE/xxksu.config.fragment"
 
       - name: Apply SuSFS 4.19 port (root_mode=resukisu-susfs)
@@ -271,7 +270,6 @@ jobs:
           BASE_DEFCONFIG="arch/arm64/configs/vendor/kona-perf_defconfig" \
           DEVICE_FRAGMENTS="arch/arm64/configs/vendor/debugfs.config arch/arm64/configs/vendor/xiaomi/sm8250-common.config arch/arm64/configs/vendor/xiaomi/alioth.config" \
           ROOT_MANAGER="$ROOT_MANAGER" \
-          ROOT_ENGINE="$ROOT_ENGINE" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \

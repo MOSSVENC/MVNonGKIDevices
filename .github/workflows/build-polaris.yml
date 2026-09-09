@@ -62,8 +62,7 @@ jobs:
       # option falls back to a default (lineage-22.2 + all features on).
       KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-22.2' }}
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
-      ROOT_ENGINE: ${{ contains(inputs.root_mode, 'branch_link') && 'branch_link' || 'syscall_table' }}
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
@@ -172,7 +171,7 @@ jobs:
           {
             echo "CONFIG_KSU=y"
             echo "CONFIG_KSU_LSM_SECURITY_HOOKS=y"
-            if [ "$ROOT_ENGINE" = "branch_link" ]; then
+            if [ "$HOOK_TYPE" = "branch_link" ]; then
               echo "CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y"
               echo "# CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
             else
@@ -204,7 +203,7 @@ jobs:
               echo "CONFIG_KSU_SUSFS_SUS_MAP=y"
             } >> "$GITHUB_WORKSPACE/xxksu.config.fragment"
           fi
-          echo "xxksu engine selected: $ROOT_ENGINE"
+          echo "xxksu hook type: $HOOK_TYPE"
           cat "$GITHUB_WORKSPACE/xxksu.config.fragment"
 
       # SuSFS kernel-side port must run AFTER ReSukiSU setup.sh: the hook
@@ -229,6 +228,10 @@ jobs:
       # transactions / killed, via netlink to the userspace tombstone.
         run: |
           bash scripts/apply-patches.sh "$KROOT" \
+          # survives the resukisu/xxksu integration that touches the same
+          # files). Context-based patches drift here, so inject directly.
+          fi
+          fi
           {
 
       - name: Integrate Baseband-guard (BBG)
@@ -279,7 +282,6 @@ jobs:
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
           ROOT_MANAGER="$ROOT_MANAGER" \
-          ROOT_ENGINE="$ROOT_ENGINE" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
