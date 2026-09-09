@@ -35,7 +35,7 @@ RMX2117（MTK 4.14）差异：`enable_bbg` / `enable_droidspace` 默认 off，
 | `resukisu-manual-source` | ReSukiSU main | 树内 manual-hook 源码补丁（必加组）+ alt manual hooks（input/setuid/sys_read，即 0010-0012） |
 | `resukisu-auto` | ReSukiSU auto-hook 分支 | 分支内建函数入口 inline hook 引擎（免源码补丁；4.x 需 `auto_fix_49` 的 kasan_reset_tag 门槛修正） |
 | `resukisu-susfs` | ReSukiSU main | SuSFS inline hook（应用各设备树适配补丁，见下表 susfs 路径） |
-| `xxksu-syscall_table` | Backslashxx KernelSU fork（tag v3.3.0-26） | tamper sys_call_table（arm64 与 compat 表项替换，hook 内调 ksu_handle_*） |
+| `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | tamper sys_call_table（arm64 与 compat 表项替换，hook 内调 ksu_handle_*） |
 | `xxksu-branch_link` | 同上 | ARM64 bl 调用点就地改写（patch 失败自动回退表 hook）；fork 机制细节与符号面见 `docs/eval-backslashxx-ksu.md` |
 | `none` | — | stock，无 root 集成 |
 
