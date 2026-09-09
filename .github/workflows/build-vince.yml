@@ -65,7 +65,7 @@ jobs:
       CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
-      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || 'lsm' }}
+      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
