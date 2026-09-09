@@ -24,13 +24,15 @@ Develop/librekernel）。上报前统一过滤：目标非冻结组
     binder_alloc.c async 空间不足段调 binder_overflow_handler
   - 0003：kernel/signal.c do_send_sig_info()（SIGKILL/TERM/ABRT/QUIT
     且目标冻结时经 rekernel_report(SIGNAL,...) 上报）
+  - 0004：drivers/Kconfig source + drivers/Makefile obj 挂接（REKERNEL
+    符号进内核 Kconfig 树的前提）
 
 调用点仅传参（proc/target 的 pid 与 tsk、oneway、tr）；uid 域与冻结
 判定集中在 drivers/rekernel/rekernel.c（rekernel_report 统一过滤）。
 
 ## 接入（build-polaris.yml）
 
-`enable_rekernel`（默认 off）：apply 4.9/0001-0003 + fragment
+`enable_rekernel`（默认 off）：apply 4.9/0001-0004 + fragment
 `CONFIG_REKERNEL=y`（`# CONFIG_REKERNEL_NETWORK is not set`——接收
 解冻面默认关）；merge 断言 REKERNEL=y。
 

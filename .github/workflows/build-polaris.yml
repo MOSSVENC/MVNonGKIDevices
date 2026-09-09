@@ -65,7 +65,7 @@ jobs:
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       ROOT_ENGINE: ${{ contains(inputs.root_mode, 'branch_link') && 'branch_link' || 'syscall_table' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
-      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || 'lsm' }}
+      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       ENABLE_REKERNEL: ${{ inputs.enable_rekernel }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
@@ -210,7 +210,7 @@ jobs:
         if: env.ENABLE_REKERNEL == 'true'
         run: |
           bash scripts/apply-patches.sh "$KROOT" \
-            "$GITHUB_WORKSPACE"/patches/rekernel/4.9/000[1-3]-*.patch
+            "$GITHUB_WORKSPACE"/patches/rekernel/4.9/000[1-4]-*.patch
           {
             echo "CONFIG_REKERNEL=y"
             echo "# CONFIG_REKERNEL_NETWORK is not set"

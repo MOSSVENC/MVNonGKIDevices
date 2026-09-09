@@ -52,7 +52,7 @@ jobs:
       ROOT_ENGINE: ${{ contains(inputs.root_mode, 'branch_link') && 'branch_link' || 'syscall_table' }}
       HOOK_MODE: ${{ inputs.root_mode || 'resukisu-manual-lsm' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
-      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || 'lsm' }}
+      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
