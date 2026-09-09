@@ -227,12 +227,11 @@ jobs:
         run: |
           cd "$KROOT"
           # ReSukiSU is already set up at this point. The susfs mode applies
-          # the shipped modular 4.9 patches.
-          for p in "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/000[1-4]-*.patch; do
-            echo "apply: $(basename "$p")"
-            git apply --check "$p" || { echo "SuSFS patch does not apply cleanly: $p"; exit 1; }
-            git apply "$p"
-          done
+          # the full 4.9 tree-adapted port (26 files incl. kallsyms/avc/
+          # readdir/statfs/memory hide surfaces).
+          git apply --check "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch" || {
+            echo "SuSFS port does not apply cleanly"; exit 1; }
+          git apply "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 

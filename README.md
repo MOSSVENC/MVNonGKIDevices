@@ -49,8 +49,8 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | Re:Kernel | `enable_rekernel` | 冻结（墓碑）进程 binder/被杀事件 netlink 上报（GPL，Sakion-Team/Re-Kernel；手动补丁，见 patches/rekernel/） | off |
 | Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） | polaris on |
 
-susfs 各设备应用路径：polaris 用 shipped 模块补丁
-（`patches/test/susfs-shipped-4.9/`）；beryllium/daisy/vince 用
+susfs 应用路径（全部为树适配 port）：polaris 用
+`patches/susfs/4.9/susfs-port.patch`；beryllium/daisy/vince 用
 `patches/susfs/4.9/<设备>/susfs-port.patch`；alioth 用
 `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
 `patches/susfs/4.14/susfs-port.patch`。
