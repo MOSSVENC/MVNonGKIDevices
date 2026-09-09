@@ -103,3 +103,16 @@ env 推导 `KSU_SOURCE`；susfs/manual 集成步骤按 `KSU_SOURCE` 分支。
   沿官方；syscall-table/branch-link 为其 downstream 扩展
 - 第三方跟进 fork：col83/backslashxx-KernelSU（arm32/arm64 打包镜像）
   表明社区使用面存在（非我们实测依据）
+
+## 4. 落地状态（mix2s）
+
+- build-polaris.yml 增加 `root_manager`（none/resukisu/xxksu）与
+  `hook_engine`（syscall_table/branch_link）输入；xxksu 分支锁 fork tag
+  v3.3.0-26，fragment 写 CONFIG_KSU=y + KSU_LSM_SECURITY_HOOKS=y + 所选
+  引擎；跳过 manual 源码补丁与 inline 注入器（fork 引擎代调
+  ksu_handle_*）。susfs 组合在 xxksu 分支暂未提供（需符号适配层，见
+  上文 1.3）。
+- scripts/merge-defconfig.sh 支持 ROOT_MANAGER/ROOT_ENGINE 分支断言
+  （缺省按 ENABLE_RESUKISU 推导，其它设备向后兼容）。
+- CI 验收：root_manager=xxksu + syscall_table / branch_link 两条路径
+  编译通过记录待填（workflow_dispatch 手动触发）。
