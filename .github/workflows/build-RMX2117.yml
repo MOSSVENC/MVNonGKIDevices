@@ -34,6 +34,10 @@ on:
         description: enable Droidspaces/LXC kernel support (4.14 cgroup prefix patch + config)
         type: boolean
         default: false
+      auto_fix_49:
+        description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
+        type: boolean
+        default: true
 concurrency:
   group: rmx2117-kernel
   cancel-in-progress: true
@@ -49,6 +53,7 @@ jobs:
       HOOK_MODE: ${{ inputs.root_mode || 'resukisu-manual-lsm' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || 'lsm' }}
+      AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       KERNEL_REPO: https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source.git
@@ -142,7 +147,7 @@ jobs:
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'auto'
         run: |
           bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" lsm auto
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" lsm auto "$AUTO_FIX_49"
 
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
       # Fork hook engine (syscall_table / branch_link) handles the sucompat
