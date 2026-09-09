@@ -136,7 +136,7 @@ assert_cfg CONFIG_KALLSYMS || rc=1
 assert_cfg CONFIG_KALLSYMS_ALL || rc=1
 
 # Root manager dispatch: resukisu (ReSukiSU main, manual/susfs hooks),
-# xxksu (Backslashxx fork hook engine) or none. Workflows that predate
+# xxksu (Backslashxx fork hook types) or none. Workflows that predate
 # root_manager pass ENABLE_RESUKISU only and are mapped here.
 if [ -z "${ROOT_MANAGER:-}" ]; then
   if [ "${ENABLE_RESUKISU:-true}" = "true" ]; then ROOT_MANAGER=resukisu; else ROOT_MANAGER=none; fi

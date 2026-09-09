@@ -145,7 +145,7 @@ jobs:
       # SuSFS kernel-side port from the test-tree daisy reference, applied
       # AFTER ReSukiSU setup.sh (hook_mode=susfs).
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
-      # Fork hook engine (syscall_table / branch_link) handles the sucompat
+      # Fork hook types (syscall_table / branch_link) handle the sucompat
       # call sites itself: no manual source patches, no inline-hook
       # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
