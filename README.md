@@ -34,7 +34,7 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | `none` | — | stock，无 root 集成 |
 
 - 六设备值集相同（7 值）
-- xxksu 机制细节与 susfs 组合边界见 `docs/eval-backslashxx-ksu.md`
+- xxksu 的 hook 引擎与 susfs 组合边界以 CI 编译验证为准（维护评估文档在本地工作区）
 
 ## 特性开关
 
@@ -134,7 +134,6 @@ patches/
   test/susfs-shipped-4.9/   shipped 旧移植归档
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
                        ak3-display 等）
-docs/                  fork 评估等
 localworkspace/        本机工作区（gitignored；布局见 localworkspace/README）
 .github/workflows/     每设备 CI
 ```
