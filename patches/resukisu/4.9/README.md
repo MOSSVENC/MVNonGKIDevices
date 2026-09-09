@@ -1,25 +1,20 @@
-# ReSukiSU manual hooks — 4.9 trees
+# ReSukiSU manual hooks — 4.9 树
 
-Tree-adapted mandatory hook patches for 4.9 non-GKI kernels
-(polaris / beryllium / daisy / vince, LOS/CAF trees).
+面向 4.9 非 GKI 内核（polaris / beryllium / daisy / vince，LOS/CAF 树）
+的树适配必加 hook 补丁。
 
-- `0001-fs-stat` / `0002-fs-exec` / `0003-fs-open` / `0004-kernel-reboot`
-  — mandatory hook set in the shapes this kernel family needs (open uses
-  the inline `SYSCALL_DEFINE3(faccessat)` body).
-- `0010-input` / `0011-setuid` / `0012-sysread` — optional hooks, applied
-  in `hook_extra=manual` mode only; `hook_extra=lsm` (default) covers them
-  via ReSukiSU's LSM/input_handler AUTO machinery.
-- `daisy/0004` / `vince/0004` — device-tree variants of the reboot hook
-  (their reboot.c contexts differ); use them instead of `0004` for those
-  two trees. `vince/0000-remove-legacy-ksu-hooks.patch` strips the
-  tree's bundled legacy KernelSU hooks before integration.
+| 文件 | 说明 |
+|---|---|
+| `0001-fs-stat` / `0002-fs-exec` / `0003-fs-open` / `0004-kernel-reboot` | 必加组（本内核族所需形态；open 走内联 `SYSCALL_DEFINE3(faccessat)` 函数体） |
+| `0010-input` / `0011-setuid` / `0012-sysread` | 可选组，仅 `hook_extra=manual` 模式应用；`hook_extra=lsm`（默认）由 ReSukiSU 的 LSM / input_handler AUTO 机制覆盖 |
+| `daisy/0004` / `vince/0004` | reboot hook 的设备树变体（两者 reboot.c 上下文不同）；这两棵树用变体代替 `0004`。`vince/0000-remove-legacy-ksu-hooks.patch` 在集成前剥离树自带旧 KernelSU 埋点 |
 
-Doc-shape reference for the whole family lives in
-`../upstream/manualhook/`; the doc's version tabs map onto these
-files as follows: stat/exec/reboot are the 3.14+ shapes, open is the
-4.19- shape, setuid the 4.17- shape, sys_read the 4.19- shape.
+文档形态参考（网页摘录）见 `../upstream/manualhook/`；文档版本页与
+本目录文件的对应：stat/exec/reboot 为 3.14+ 形态，open 为 4.19- 形态，
+setuid 为 4.17- 形态，sys_read 为 4.19- 形态。
 
-Apply:
+## 应用
+
 ```bash
 bash scripts/apply-patches.sh <kernel-root> \
   patches/resukisu/4.9 [patches/resukisu/4.9/<device>]
