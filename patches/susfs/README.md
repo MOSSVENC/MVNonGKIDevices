@@ -12,9 +12,7 @@ SuSFS 补丁资产按"上游素材 / 树适配"分置：
 KSU-inline-hook 调用点生成器为脚本（见 `scripts/susfs_inline_hook_patches-nongki.sh`：
 跨 4.9/4.14/4.19 等非 GKI 内核的树适配版，运行时按目标树版本分派，CI 内应用）。
 
-4.9 重建管线与 shipped 旧移植归档见本地管线
-（localworkspace/pipelines/susfs-k4.9/）与 `patches/test/susfs-shipped-4.9/`
-（README 各述其角色）。
+4.9 重建管线见本地 localworkspace/pipelines/susfs-k4.9/。
 
 ## 上游跟踪
 

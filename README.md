@@ -47,8 +47,8 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） | on |
 | Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） | polaris on |
 
-susfs 各设备应用路径：polaris 用 shipped 模块补丁
-（`patches/test/susfs-shipped-4.9/`）；beryllium/daisy/vince 用
+susfs 应用路径（全部为树适配 port）：polaris 用
+`patches/susfs/4.9/susfs-port.patch`；beryllium/daisy/vince 用
 `patches/susfs/4.9/<设备>/susfs-port.patch`；alioth 用
 `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
 `patches/susfs/4.14/susfs-port.patch`。
