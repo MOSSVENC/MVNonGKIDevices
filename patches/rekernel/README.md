@@ -41,8 +41,8 @@ Develop/librekernel）。上报前统一过滤：目标非冻结组
 
 - 4.9 树 API 核对：frozen()/freezing 原生、binder_alloc.c 分离、
   file_operations（无 proc_ops）。
-- README 上游提示的 JOBCTL_TRAP_FREEZE include 缺口（cgroup freezer
-  v2 backport 树）：缺 include 时在 drivers/rekernel/rekernel.h 顶部补
-  `<linux/sched/jobctl.h>`（4.9 如需则收敛进 0001 适配面）。
+- JOBCTL_TRAP_FREEZE：4.9 树无此宏，`jobctl_frozen()` 在
+  `#ifdef JOBCTL_TRAP_FREEZE` 兜底（预 freezer-v2 树退化为
+  `cgroup_freezing()` 判定），已在 0001 内处理。
 - 用户态墓碑与 librekernel 对接不在本仓库（引上游 Develop/）。
 - 其余设备同法接入：4.9 系同树族共用本补丁；树差异再适配。
