@@ -142,12 +142,12 @@ jobs:
       # Fork hook engine (syscall_table / branch_link) handles the sucompat
       # call sites itself: no manual source patches, no inline-hook
       # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
-      # symlinked as drivers/kernelsu). Tag-locked for reproducibility.
+      # symlinked as drivers/kernelsu). Tracks the fork master branch.
       - name: Integrate XXKSU kernel (Backslashxx fork)
         if: env.ROOT_MANAGER == 'xxksu'
         run: |
           git clone -q --depth=1 --single-branch \
-            --branch=v3.3.0-26 \
+            --branch=master \
             https://github.com/Backslashxx/KernelSU "$RUNNER_TEMP/xxksu"
           # 4.x kconfig has no '=' comparison; the LKM-only default line
           # would abort alldefconfig. In-tree KSU=y is set by the fragment.
@@ -360,20 +360,11 @@ jobs:
           # virtual A/B device: kernel Image goes to the boot partition of
           # the current slot; dtbo.img (if produced) is flashed by AK3's
           # flash_generic dtbo from the zip root.
-          FEATS=""
-          if [ "$ROOT_MANAGER" = "resukisu" ]; then
-            if [ "$HOOK_TYPE" = "auto" ]; then
-              FEATS="$FEATS ResukiSU-AutoHook"
-            else
-              FEATS="$FEATS ResukiSU"
-            fi
-          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
-            FEATS="$FEATS XXKSU-$ROOT_ENGINE"
-          fi
-          [ "$ENABLE_BBG" = "true" ] && FEATS="$FEATS BBG"
-          [ "$ENABLE_DROIDSPACE" = "true" ] && FEATS="$FEATS Droidspace"
-          [ -z "$FEATS" ] && FEATS=" Stock"
-          sed -i "s/^\(\s*\)kernel.string=.*/\1kernel.string=K40${FEATS} Kernel/" "$RUNNER_TEMP/ak3/anykernel.sh"
+          # feature display composed by the shared script (root / hook
+          # type / feature level; manual-hook detail lines follow)
+          python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
+            "$RUNNER_TEMP/ak3/anykernel.sh" "K40"
+
           sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=alioth/"          "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                 "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name3=.*/\1device.name3=/"                 "$RUNNER_TEMP/ak3/anykernel.sh"
