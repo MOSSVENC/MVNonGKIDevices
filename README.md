@@ -14,44 +14,43 @@
 | Xiaomi Redmi K40 / POCO F3 | `alioth` (sm8250) | 4.19.325 | [MOSSVENC/android_kernel_xiaomi_sm8250](https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250) @ `lineage-23.2` | `build-alioth.yml` |
 | realme Q2（国行） | `RMX2117` (mt6853) | 4.14.186 | [realme_X7_..._AndroidS-kernel-source](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source)（完整名见链接地址） @ `master` | `build-RMX2117.yml` |
 
-workflow_dispatch 输入控制各特性开关（enable_resukisu / enable_bbg /
-enable_droidspace / cgroup_port / enable_data_isolation / hook_mode /
-auto_fix_49），默认值见各 workflow 的 input 定义。构建只通过
-workflow_dispatch 手动触发（无 push 自动触发）。
+六设备的 workflow_dispatch 输入编排一致：`kernel_ref` + `root_mode`
+（root 管理器与 hook 组合，见 "root_mode" 一节）+ 特性开关
+（`enable_bbg` / `enable_droidspace`，另按设备出现 `cgroup_port` /
+`enable_data_isolation` / `auto_fix_49`），默认值见各 workflow 的
+input 定义。构建只通过 workflow_dispatch 手动触发（无 push 自动触发）。
 
-RMX2117（MTK 4.14）与其它设备的输入编排一致（kernel_ref /
-enable_resukisu / enable_bbg / enable_droidspace / hook_mode），
-`hook_mode` 默认 manual-lsm；`enable_bbg` / `enable_droidspace` 默认
-off；无 cgroup_port / enable_data_isolation / auto_fix_49 项
-（MTK 树不适用），差异见下文 "RMX2117（MTK 4.14）" 一节。
+RMX2117（MTK 4.14）差异：`enable_bbg` / `enable_droidspace` 默认 off，
+无 cgroup_port / enable_data_isolation / auto_fix_49 项（MTK 树不适用），
+其余见下文 "RMX2117（MTK 4.14）" 一节。
 
 ## 特性开关（workflow_dispatch 输入）
 
-polaris（mix2s）顶部为单一 `root_mode` 选择——root 管理器与 hook
-组合编码进选项值：
+全部设备的 workflow_dispatch 顶部为单一 `root_mode` 选择——root
+管理器与 hook 组合编码进选项值（值集与设备差异见下表）：
 
 | `root_mode` 值 | root 管理器 | hook 形态 |
 |---|---|---|
 | `resukisu-manual-lsm`（默认） | ReSukiSU main | 树内 manual-hook 源码补丁 + LSM AUTO（setuid/initrc/input 自动注册） |
 | `resukisu-manual-source` | ReSukiSU main | 树内 manual-hook 源码补丁（必加组）+ alt manual hooks（input/setuid/sys_read，即 0010-0012） |
 | `resukisu-auto` | ReSukiSU auto-hook 分支 | 分支内建函数入口 inline hook 引擎（免源码补丁；4.x 需 `auto_fix_49` 的 kasan_reset_tag 门槛修正） |
-| `resukisu-susfs` | ReSukiSU main | SuSFS inline hook：shipped 模块补丁（`patches/test/susfs-shipped-4.9/0001-0004`） |
+| `resukisu-susfs` | ReSukiSU main | SuSFS inline hook（应用各设备树适配补丁，见下表 susfs 路径） |
 | `xxksu-syscall_table` | Backslashxx KernelSU fork（tag v3.3.0-26） | tamper sys_call_table（arm64 与 compat 表项替换，hook 内调 ksu_handle_*） |
 | `xxksu-branch_link` | 同上 | ARM64 bl 调用点就地改写（patch 失败自动回退表 hook）；fork 机制细节与符号面见 `docs/eval-backslashxx-ksu.md` |
 | `none` | — | stock，无 root 集成 |
 
-- `enable_resukisu` 仅在该选择之外的其余设备使用；mix2s 用 `root_mode` 表达同义意图。
-- `enable_bbg`（Baseband-guard）在全部 root 分支（含 none）下可用；
-  `enable_droidspace` + `cgroup_port`（4.9 cgroup noprefix compat 补丁，
-  仅在 droidspace 开启时有意义）同理；`enable_data_isolation` 为 mix2s
-  专有的 sdcardfs per-uid Android/data 隔离（其余 app 对 Android/data
-  查找/stat 得到 ENOENT）；`auto_fix_49` 仅在 `resukisu-auto` 生效
-  （把 auto-hook 分支的 kasan_reset_tag 门槛从 <4.0 修为 <5.0，供 4.x
-  树链接）。
+**root_mode 值集**：六设备均为上述 7 值（RMX2117 的 `resukisu-auto` 走其
+已实现的 auto 步骤，恒启用 <5.0 门槛修正，无独立开关输入）。
+
+**特性开关设备矩阵**：`enable_bbg` 全部设备可用；`enable_droidspace`
+全部设备可用（各树 port 不同：4.9 系补丁 + `cgroup_port` 选项、alioth
+用官方补丁、RMX2117 用 4.14 补丁）；`enable_data_isolation`（sdcardfs
+per-uid Android/data 隔离，非 owner app 得 ENOENT）为 mix2s 专有，
+其余设备不提供；`auto_fix_49`（auto-hook 分支的 kasan_reset_tag 门槛
+<4.0→<5.0，供 4.x 树链接）仅在支持 `resukisu-auto` 的设备输入面出现。
 
 | 特性 | 输入 | 说明 | 默认 |
 |---|---|---|---|
-| ReSukiSU | `enable_resukisu`（polaris 用 `root_mode=resukisu-*`） | KernelSU 系 root（manual/auto 见 hook_mode） | on |
 | BBG | `enable_bbg` | Baseband-guard 防格机 LSM | on |
 | Droidspace | `enable_droidspace` | 容器/LXC/Docker 内核支持 | on |
 | Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 开启时生效） | on |
@@ -96,7 +95,7 @@ sdcardfs 自身 `derived_perm.c` 算 `d_uid` 同源。`Android/obb` 保持共享
 
 按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)，
 manual hook 共 7 类；4 类必须改内核源码，3 类可选。以下补丁清单适用于
-`hook_mode: manual-lsm / manual-source`；`hook_mode: auto` 不提供源码补丁，
+`root_mode` 的 resukisu-manual-* 值应用源码补丁；`resukisu-auto` 不提供源码补丁，
 由 ReSukiSU auto-hook 分支的 inline-hook 引擎替代。
 
 | hook | 内核文件 | 是否必打 | 本仓库做法 |
@@ -109,7 +108,7 @@ manual hook 共 7 类；4 类必须改内核源码，3 类可选。以下补丁�
 | setuid | kernel/sys.c | 可选 | `manual-lsm` → LSM AUTO；`manual-source` → `alt-hooks/0011` |
 | sys_read(initrc) | fs/read_write.c | 可选 | `manual-lsm` → LSM AUTO；`manual-source` → `alt-hooks/0012` |
 
-workflow_dispatch 的 `hook_mode` 选择控制集成方式（默认 manual-lsm）。
+workflow_dispatch 的 `root_mode` 选择控制集成方式（默认 resukisu-manual-lsm）。
 4.9 设备用 `patches/resukisu/4.9/`（daisy/vince 换用其 `daisy`/`vince`
 设备子目录的 0004 变体）；alioth（4.19）用 `patches/resukisu/4.19/`；
 RMX2117（4.14）用 `patches/resukisu/4.14/`（树区域相同者以单一真身
@@ -194,13 +193,13 @@ scripts/                      编排脚本（见下）
 KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xiaomi_sdm845
 
 # 1. ReSukiSU manual hook 源码补丁（daisy/vince 用各自设备目录的 0004 变体；
-#    hook_mode=auto 时跳过本步）
+#    root_mode=resukisu-auto 时跳过本步）
 bash scripts/apply-patches.sh "$KROOT" \
   patches/resukisu/4.9                        # polaris/beryllium
 # daisy/vince: 传 4.9 目录 0001-0003 单文件 + <dev>/0004
 
 # 2. 集成 ReSukiSU / BBG / Droidspace
-# manual 模式（main 分支 + 源码补丁；hook_mode=manual-lsm / manual-source）
+# manual 模式（main 分支 + 源码补丁；root_mode=resukisu-manual-lsm / manual-source）
 bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm manual true
 # auto 模式（auto-hook 分支 + inline hook；跳过第 1 步源码补丁）
 # bash scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm auto true
@@ -264,7 +263,7 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
 
 ## 已知取舍 / 边界
 
-- **susfs**：经 hook_mode 的 `susfs` 集成。polaris 以 shipped 移植为
+- **susfs**：经 root_mode 的 `resukisu-susfs` 集成。polaris 以 shipped 移植为
   基准；重建管线（localworkspace/pipelines/susfs-k4.9/）对 polaris 产
   出 susfs-port.patch 重建镜像并对各设备树产出落位件（设备树差异见
   管线 ADAPTATION.md）。
@@ -273,10 +272,10 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
 - **alioth（4.19）**：ReSukiSU manual hook 用 `patches/resukisu/4.19`
   （manual-source 时叠加 0010-0012）；droidspace 用
   `patches/droidspace/upstream/` 官方补丁 + `4.19/` config；susfs 走
-  `hook_mode=susfs` 应用 `patches/susfs/4.19/susfs-port.patch`
+  `root_mode=resukisu-susfs` 应用 `patches/susfs/4.19/susfs-port.patch`
   （4.19 树适配）。产物为 `Image` + `dtbo.img`（boot header v3、dtbo
   独立分区），AnyKernel3 按 slot 设备打包。
-- **RMX2117（4.14 MTK）**：susfs 走 `hook_mode=susfs` 应用
+- **RMX2117（4.14 MTK）**：susfs 走 `root_mode=resukisu-susfs` 应用
   `patches/susfs/4.14/susfs-port.patch`（4.14 树适配，编译产物见
   build-RMX2117.yml 日志）；dtbo 分区内容沿用 stock 固件（源树不含项目 cust/overlay
   层），产物为 `Image` + `mt6853.dtb`。BBG/Droidspace 集成入口已接
@@ -286,7 +285,7 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
   KSU 代码，`patches/resukisu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 需同步重新生成。
 - **Droidspace cgroup 移植补丁**：非致命；apply 失败自动跳过（见
   patches/droidspace/4.9/README.md）。
-- ReSukiSU 与管理器（Manager APK）版本需自行匹配；setup.sh 按 hook_mode
+- ReSukiSU 与管理器（Manager APK）版本需自行匹配；setup.sh 按 root_mode
   拉取：manual 用 `main` 分支，auto 用 `auto-hook` 分支（实验性，4.x 需
   `auto_fix_49`，见上）。
 - 32 位兼容：`CONFIG_COMPAT=y`，`fstat64/fstatat64` 的 hook 已包含在 0001。

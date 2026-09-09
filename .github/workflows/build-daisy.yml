@@ -16,10 +16,18 @@ on:
         description: kernel branch/ref to build
         required: false
         default: lineage-20
-      enable_resukisu:
-        description: integrate ReSukiSU (hook mode selected below)
-        type: boolean
-        default: true
+      root_mode:
+        description: "root manager & hook mode: see README section \"root_mode\""
+        type: choice
+        options:
+          - resukisu-manual-lsm
+          - resukisu-manual-source
+          - resukisu-auto
+          - resukisu-susfs
+          - xxksu-syscall_table
+          - xxksu-branch_link
+          - none
+        default: resukisu-manual-lsm
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
@@ -29,20 +37,11 @@ on:
         type: boolean
         default: true
       cgroup_port:
-        description: apply 4.9 cgroup noprefix compat patch (only when droidspace is on)
+        description: 4.9 cgroup noprefix compat patch (droidspace)
         type: boolean
         default: true
-      hook_mode:
-        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch) | susfs (SuSFS inline hook, 4.9 port)"
-        type: choice
-        options:
-          - manual-lsm
-          - manual-source
-          - auto
-          - susfs
-        default: manual-lsm
       auto_fix_49:
-        description: "fix auto-hook branch <5.0 kasan_reset_tag guard on 4.x (only effective when hook_mode=auto)"
+        description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
         default: true
 
@@ -59,14 +58,14 @@ jobs:
       # option falls back to a default (thirteen + all features on).
       KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-20' }}
       KERNEL_REPO: https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy.git
-      ENABLE_RESUKISU: ${{ inputs.enable_resukisu }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
+      ROOT_ENGINE: ${{ contains(inputs.root_mode, 'branch_link') && 'branch_link' || 'syscall_table' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
-      HOOK_TYPE: ${{ inputs.hook_mode == 'susfs' && 'susfs' || startsWith(inputs.hook_mode, 'auto') && 'auto' || 'manual' }}
-      SUSFS_SOURCE: test
-      HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || 'lsm' }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
@@ -122,7 +121,7 @@ jobs:
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Apply ReSukiSU manual-hook patches
-        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
+        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
           # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
           # the kernel root, so relative paths would not resolve.
@@ -139,15 +138,52 @@ jobs:
           bash scripts/apply-patches.sh "$KROOT" $PATCHES
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
-        if: env.ENABLE_RESUKISU == 'true'
+        if: env.ROOT_MANAGER == 'resukisu'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # SuSFS kernel-side port from the test-tree daisy reference, applied
       # AFTER ReSukiSU setup.sh (hook_mode=susfs).
-      - name: Apply SuSFS 4.9 port (hook_mode=susfs)
-        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'susfs'
+      # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
+      # Fork hook engine (syscall_table / branch_link) handles the sucompat
+      # call sites itself: no manual source patches, no inline-hook
+      # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
+      # symlinked as drivers/kernelsu). Tag-locked for reproducibility.
+      - name: Integrate XXKSU kernel (Backslashxx fork)
+        if: env.ROOT_MANAGER == 'xxksu'
+        run: |
+          git clone -q --depth=1 --single-branch \
+            --branch=v3.3.0-26 \
+            https://github.com/Backslashxx/KernelSU "$RUNNER_TEMP/xxksu"
+          # 4.x kconfig has no '=' comparison; the LKM-only default line
+          # would abort alldefconfig. In-tree KSU=y is set by the fragment.
+          sed -i '/default y if KSU = m/d' "$RUNNER_TEMP/xxksu/kernel/Kconfig"
+          cd "$KROOT"
+          mkdir -p KernelSU
+          ln -sfn "$RUNNER_TEMP/xxksu/kernel" KernelSU/kernel
+          # absolute target: a relative link would resolve under drivers/
+          ln -sfn "$RUNNER_TEMP/xxksu/kernel" drivers/kernelsu
+          grep -q "kernelsu" drivers/Makefile || \
+            printf '\nobj-$(CONFIG_KSU) += kernelsu/\n' >> drivers/Makefile
+          grep -q "drivers/kernelsu/Kconfig" drivers/Kconfig || \
+            sed -i "/endmenu/i\source \"drivers/kernelsu/Kconfig\"" drivers/Kconfig
+          {
+            echo "CONFIG_KSU=y"
+            echo "CONFIG_KSU_LSM_SECURITY_HOOKS=y"
+            if [ "$ROOT_ENGINE" = "branch_link" ]; then
+              echo "CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y"
+              echo "# CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
+            else
+              echo "CONFIG_KSU_TAMPER_SYSCALL_TABLE=y"
+              echo "# CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set"
+            fi
+          } > "$GITHUB_WORKSPACE/xxksu.config.fragment"
+          echo "xxksu engine selected: $ROOT_ENGINE"
+          cat "$GITHUB_WORKSPACE/xxksu.config.fragment"
+
+      - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
+        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
           P="$GITHUB_WORKSPACE/patches/susfs/4.9/daisy/susfs-port.patch"
@@ -190,13 +226,18 @@ jobs:
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
           FRAGS=""
-          [ "$ENABLE_RESUKISU" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          if [ "$ROOT_MANAGER" = "resukisu" ]; then
+            FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
+            FRAGS="$FRAGS $GITHUB_WORKSPACE/xxksu.config.fragment"
+          fi
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
           BASE_DEFCONFIG="arch/arm64/configs/msm8953-perf_defconfig" \
           DEVICE_FRAGMENTS="" \
           CLEAR_LOCALVERSION="false" \
-          ENABLE_RESUKISU="$ENABLE_RESUKISU" \
+          ROOT_MANAGER="$ROOT_MANAGER" \
+          ROOT_ENGINE="$ROOT_ENGINE" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
@@ -248,12 +289,14 @@ jobs:
           # --- device AK3 settings ---
           # device props inside properties() are indented; boot vars at top
           FEATS=""
-          if [ "$ENABLE_RESUKISU" = "true" ]; then
+          if [ "$ROOT_MANAGER" = "resukisu" ]; then
             if [ "$HOOK_TYPE" = "auto" ]; then
               FEATS="$FEATS ResukiSU-AutoHook"
             else
               FEATS="$FEATS ResukiSU"
             fi
+          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
+            FEATS="$FEATS XXKSU-$ROOT_ENGINE"
           fi
           [ "$ENABLE_BBG" = "true" ] && FEATS="$FEATS BBG"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FEATS="$FEATS Droidspace"
