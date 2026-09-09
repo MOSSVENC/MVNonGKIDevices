@@ -106,7 +106,11 @@ rm -f "$RAW"
 echo "    allconfig: $(wc -l < "$ALLCONFIG") config lines -> $ALLCONFIG"
 
 echo "==> 2/5 make KCONFIG_ALLCONFIG alldefconfig (O=$OUT)"
-make O="$OUT" ARCH=arm64 KCONFIG_ALLCONFIG="$ALLCONFIG" alldefconfig >/dev/null
+if ! make O="$OUT" ARCH=arm64 KCONFIG_ALLCONFIG="$ALLCONFIG" alldefconfig >/tmp/alldefconfig.log 2>&1; then
+  echo "alldefconfig failed:" >&2
+  tail -40 /tmp/alldefconfig.log >&2
+  exit 1
+fi
 
 echo "==> 3/5 olddefconfig"
 make O="$OUT" ARCH=arm64 olddefconfig >/dev/null
