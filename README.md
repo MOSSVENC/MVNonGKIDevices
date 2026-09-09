@@ -19,11 +19,11 @@ enable_droidspace / cgroup_port / enable_data_isolation / hook_mode /
 auto_fix_49），默认值见各 workflow 的 input 定义。构建只通过
 workflow_dispatch 手动触发（无 push 自动触发）。
 
-RMX2117（MTK 4.14）的输入面不同：`hook_mode` 只有 `none` /
-`susfs-test`（默认 susfs-test），`enable_bbg` / `enable_droidspace`
-默认 off，无 cgroup_port / enable_data_isolation / enable_resukisu
-开关（ReSukiSU+SuSFS 由 susfs-test 一并承载），差异见下文
-"RMX2117（MTK 4.14）" 一节。
+RMX2117（MTK 4.14）与其它设备的输入编排一致（kernel_ref /
+enable_resukisu / enable_bbg / enable_droidspace / hook_mode），
+`hook_mode` 默认 manual-lsm；`enable_bbg` / `enable_droidspace` 默认
+off；无 cgroup_port / enable_data_isolation / auto_fix_49 项
+（MTK 树不适用），差异见下文 "RMX2117（MTK 4.14）" 一节。
 
 ## 特性开关（workflow_dispatch 输入）
 
@@ -99,15 +99,13 @@ RMX2117（4.14）用 `patches/resukisu/4.14/`（树区域相同者以单一真�
   （各版本目录内 `0010~0012`），fragment 关掉三个 AUTO。
 - `auto` —— ReSukiSU **auto-hook 分支**：hook 由运行时 inline-hook 引擎完成；
   `auto_fix_49`（默认开）修正 auto-hook 分支对 4.x 的 `kasan_reset_tag` 门槛。
-- `susfs` —— SuSFS inline hook（**polaris** 支持）：应用
-  `patches/test/susfs-shipped-4.9/0001-0004`（shipped 移植归档）。
-- `susfs-test` —— SuSFS inline hook（**polaris/beryllium/daisy/vince/
-  alioth/RMX2117** 支持）：应用 patches/susfs/ 内按版本归档的树适配
-  补丁（4.9 系 polaris 用 `patches/susfs/4.9/susfs-port.patch`，
-  beryllium/daisy/vince 用各自 `patches/susfs/4.9/<设备>/`；alioth 用
-  `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
-  `patches/susfs/4.14/susfs-port.patch`）。编译产物见各设备
-  workflow susfs-test 日志。
+- `susfs` —— SuSFS inline hook（全部设备）：polaris 应用 shipped 模块
+  补丁（`patches/test/susfs-shipped-4.9/0001-0004`，重建产物可经维护
+  切换）；beryllium/daisy/vince 应用
+  `patches/susfs/4.9/<设备>/susfs-port.patch`；alioth 应用
+  `patches/susfs/4.19/susfs-port.patch`；RMX2117 应用
+  `patches/susfs/4.14/susfs-port.patch`。编译产物见各设备 workflow
+  susfs 日志。
 
 ### 静态符号
 
@@ -153,7 +151,7 @@ patches/
   susfs/
     upstream/                gki-android12-5.10 上游素材（50_add/10_enable/susfs.c/.h 唯一副本）
     4.9/                     susfs-port.patch + ber/daisy/vince 设备子目录（4.9 树适配）
-    4.14/ 4.19/              各树适配补丁（CI susfs-test 编译通过）
+    4.14/ 4.19/              各树适配补丁（CI susfs 编译通过）
   （inline-hook 生成器为脚本，见 scripts/）
   bbg/                       集成说明（无本地补丁，跑官方 setup.sh）
   test/
@@ -227,8 +225,8 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
   merge-defconfig.sh 合并 susfs fragment 并强制
   DEBUG_KERNEL/KALLSYMS/KALLSYMS_ALL 链（ReSukiSU 静态符号走 kallsyms
   表）。
-- **特性**：susfs-test（ReSukiSU main + 管线（localworkspace/pipelines/susfs-510-to-414/）
-  候选 + inline-hook 生成器），编译产物见 build-RMX2117.yml 日志；
+- **特性**：susfs（ReSukiSU main + `patches/susfs/4.14/susfs-port.patch`
+  树适配补丁 + inline-hook 生成器），编译产物见 build-RMX2117.yml 日志；
   BBG 走 integrate-bbg.sh 官方
   setup.sh（pre-5.1 无 DEFINE_LSM 路径，自动 patch security/selinux）；
   Droidspace 用 `patches/droidspace/4.14/`（官方 0002 补丁对 MTK
@@ -244,20 +242,19 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
 
 ## 已知取舍 / 边界
 
-- **susfs**：经 hook_mode 集成（见上 `susfs` / `susfs-test`）。shipped 移植
-  以 polaris 树为基准；test 管线重建 polaris 产物并对各设备树产出
-  reference（polaris/beryllium/daisy/vince），设备树差异（selinux
-  state-ful 变体、树自带 KernelSU 等）见
-  管线文档（localworkspace/pipelines/susfs-510-to-49/ADAPTATION.md）。
+- **susfs**：经 hook_mode 的 `susfs` 集成。polaris 以 shipped 移植为
+  基准；重建管线（localworkspace/pipelines/susfs-k4.9/）对 polaris 产
+  出 susfs-port.patch 重建镜像并对各设备树产出落位件（设备树差异见
+  管线 ADAPTATION.md）。
 - **Android/data 隔离**：验证于 polaris；beryllium/daisy/vince 固定 off，
   alioth 无 sdcardfs（4.19 kona 树）不适用。
 - **alioth（4.19）**：ReSukiSU manual hook 用 `patches/resukisu/4.19`
   （manual-source 时叠加 0010-0012）；droidspace 用
   `patches/droidspace/upstream/` 官方补丁 + `4.19/` config；susfs 走
-  `hook_mode=susfs-test` 应用 `patches/susfs/4.19/susfs-port.patch`
+  `hook_mode=susfs` 应用 `patches/susfs/4.19/susfs-port.patch`
   （4.19 树适配）。产物为 `Image` + `dtbo.img`（boot header v3、dtbo
   独立分区），AnyKernel3 按 slot 设备打包。
-- **RMX2117（4.14 MTK）**：susfs 走 `hook_mode=susfs-test` 应用
+- **RMX2117（4.14 MTK）**：susfs 走 `hook_mode=susfs` 应用
   `patches/susfs/4.14/susfs-port.patch`（4.14 树适配，编译产物见
   build-RMX2117.yml 日志）；dtbo 分区内容沿用 stock 固件（源树不含项目 cust/overlay
   层），产物为 `Image` + `mt6853.dtb`。BBG/Droidspace 集成入口已接
