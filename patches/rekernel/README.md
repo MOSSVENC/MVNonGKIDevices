@@ -14,7 +14,7 @@ Develop/librekernel）。上报前统一过滤：目标非冻结组
 
 ## 结构（上游素材与树适配分置）
 
-- `upstream/`：上游原味素材镜像（Integrate/rekernel/ 四件，逐字节）。
+- 本地工作区上游素材镜像：上游原味素材镜像（Integrate/rekernel/ 四件，逐字节）。
   上游更新 → 人工替换本目录 → 重新生成 4.9/ 适配补丁。
 - `4.9/`：4.9 树适配补丁（mix2s 先行，真实 git apply 校验过）：
   - 0001：新增 drivers/rekernel/（内容与 upstream 同源；4.9 无 proc_ops，

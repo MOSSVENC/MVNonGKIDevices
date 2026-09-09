@@ -196,13 +196,10 @@ jobs:
             git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
             git apply "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
             cd "$KROOT"
-            for sp in \
-              "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0001-susfs-core.patch \
-              "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0002-susfs-vfs-hooks.patch \
-              "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0004-susfs-overlay.patch; do
-              git apply --check "$sp" || { echo "SusFS tree patch failed: $sp"; exit 1; }
-              git apply "$sp"
-            done
+            # SusFS tree patches: full 4.9 port (tree-adapted single file);
+            # fork hook engine drives ksu_handle_* (3-way tolerates the
+            # selinux overlap left by the fork integration).
+            git apply --3way "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
             {
               echo "CONFIG_KSU_SUSFS=y"
               echo "CONFIG_KSU_SUSFS_SUS_PATH=y"

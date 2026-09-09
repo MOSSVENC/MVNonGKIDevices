@@ -127,16 +127,18 @@ kona-perf + 官方 device fragments；RMX2117 用 `k6853v1_64_6360_defconfig`。
 
 ```
 patches/
-  droidspace/          upstream/ 官方补丁唯一副本 + 4.9/4.14/4.19 config
-  resukisu/            upstream/manualhook/（文档网页摘录参考）+ 4.9/4.14/4.19 树适配
-  susfs/               upstream/ 5.10 素材 + 4.9/4.14/4.19 树适配（含设备子目录）
-  rekernel/            upstream/ 素材 + 4.9 树适配（墓碑哨兵）
+  droidspace/          official/ 官方 non-GKI 补丁 + 4.9/4.14/4.19 config
+  resukisu/            4.9/4.14/4.19 树适配补丁
+  susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
+  rekernel/            4.9 树适配补丁（墓碑哨兵）
   bbg/                 集成说明（无本地补丁）
   sdcardfs/            Android/data 隔离（仅 polaris）
   alioth/              min-tool-version.sh（构建辅助）
-  test/susfs-shipped-4.9/   shipped 旧移植归档
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
                        ak3-display 等）
+上游素材镜像（susfs/resukisu/rekernel）、旧 shipped 归档与维护工具
+（sync/parity/管线）均位于本地工作区（localworkspace/），不随仓库分发；
+官方补丁中 CI 直接应用的（droidspace）保留在 official/。
 localworkspace/        本机工作区（gitignored；布局见 localworkspace/README）
 .github/workflows/     每设备 CI
 ```

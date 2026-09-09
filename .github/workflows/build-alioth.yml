@@ -218,7 +218,7 @@ jobs:
           # as-is on the 4.19 kona tree; patch 1/2 (xt_qtaguid) is a
           # no-op here because LOS sm8250 has no qtaguid — skip it.
           cd "$KROOT"
-          P02="$GITHUB_WORKSPACE/patches/droidspace/upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
+          P02="$GITHUB_WORKSPACE/patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
           git apply --check "$P02" && git apply "$P02" || \
             { echo "!! official cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.19 patches done (config merged below)"

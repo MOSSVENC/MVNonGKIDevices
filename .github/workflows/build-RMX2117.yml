@@ -231,7 +231,7 @@ jobs:
         if: env.ENABLE_DROIDSPACE == 'true'
         run: |
           cd "$KROOT"
-          P02="$GITHUB_WORKSPACE/patches/droidspace/upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
+          P02="$GITHUB_WORKSPACE/patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
           git apply --check "$P02" && git apply "$P02" || \
             { echo "!! droidspace cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.14 patches done (config merged below)"
