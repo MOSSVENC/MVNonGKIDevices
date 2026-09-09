@@ -226,11 +226,16 @@ jobs:
           # ReSukiSU is already set up at this point. The susfs mode applies
           # the full 4.9 tree-adapted port (26 files incl. kallsyms/avc/
           # readdir/statfs/memory hide surfaces).
-          git apply --check "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch" || {
+          # 3-way: ReSukiSU setup already touched selinux files that the
+          # port's compat hunk also covers; -3 merges instead of failing.
+          git apply --3way "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch" || {
             echo "SuSFS port does not apply cleanly"; exit 1; }
-          git apply "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
-          echo "SuSFS port applied:"
-          grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
+          # post-execve su-compat call (su fd install path with current
+          # ReSukiSU su_fd): idempotent injections on fs/exec.c
+          python3 "$GITHUB_WORKSPACE/scripts/susfs-exec-post-sucompat.py" \
+            "$KROOT/fs/exec.c"
+          echo "SuSFS port + post-sucompat applied:"
+          grep -c 'ksu_handle_post_execveat_sucompat' fs/exec.c
 
 
       # In-kernel tombstone aid: report frozen processes touched by binder
