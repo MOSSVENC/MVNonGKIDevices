@@ -1,42 +1,30 @@
-# Droidspace on 4.19 (non-GKI, kona/sm8250)
+# Droidspace 4.19（非 GKI，kona/sm8250）
 
-Droidspaces (https://github.com/ravindu644/Droidspaces-OSS) container
-support for the 4.19 non-GKI kernel family (kona/sm8250 and other
-4.19 CAF trees). The official Droidspaces "Non-GKI" instructions cover
-4.19 directly (Kernel-Configuration.md: "Applies to: Kernel 3.18, 4.4,
-4.9, 4.14, 4.19"). The official patches live once in `../upstream/`
-(the version directory holds the config fragment only and references
-the upstream files from workflows).
+Droidspaces（<https://github.com/ravindu644/Droidspaces-OSS>）容器支持，
+面向 4.19 非 GKI 内核族（kona/sm8250 等 4.19 CAF 树）。官方
+"Non-GKI" 说明直接覆盖 4.19（Kernel-Configuration.md：
+"Applies to: Kernel 3.18, 4.4, 4.9, 4.14, 4.19"）。
 
-## Contents
+官方补丁的唯一副本位于 `../upstream/`；本版本目录只放 config 片段，
+workflow 直接引用 upstream 文件。
 
-- `droidspace.config` — official non-GKI mandatory configuration block
-  (Step 1), verbatim. 4.19 has every symbol in the official block,
-  including the 5.x-era names that 4.9 lacked (`CONFIG_SECCOMP_FILTER`,
-  `CONFIG_NF_CONNTRACK_NETLINK`, `CONFIG_NF_TABLES`,
-  `CONFIG_NETFILTER_XT_TARGET_MASQUERADE`). Explicit `=y` entries also
-  override the kona stock baseline, which ships namespaces mostly off
-  (e.g. `# CONFIG_PID_NS is not set`).
-- `../upstream/0001-official-fix-kernel-panic-in-xt_qtaguid.patch`（唯一副本） — official
-  non-GKI patch 1/2 (net/netfilter/xt_qtaguid.c). The LOS kona/sm8250
-  4.19 tree does not contain xt_qtaguid at all, so this patch is inert
-  on alioth; it is kept for other 4.19 trees that still carry qtaguid.
-- `../upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch`（唯一副本） —
-  official non-GKI patch 2/2 (kernel/cgroup/cgroup.c): re-creates the
-  `subsys.name` kernfs symlink for files on `CGRP_ROOT_NOPREFIX`
-  mounts, so runc/crun-style mounts see both names. The hunk context
-  matches the 4.19 `cgroup_add_file()` verbatim and applies as-is on
-  the LOS kona tree.
+## 组成
 
-## Integration (alioth / LOS sm8250)
+| 文件 | 作用 |
+|---|---|
+| `droidspace.config` | 官方 non-GKI 必需配置块（Step 1），逐字采用。4.19 具备官方块的全部符号，包括 4.9 缺失的 5.x 时代名（`CONFIG_SECCOMP_FILTER`、`CONFIG_NF_CONNTRACK_NETLINK`、`CONFIG_NF_TABLES`、`CONFIG_NETFILTER_XT_TARGET_MASQUERADE`）。显式 `=y` 同时覆盖 kona 出厂基线（命名空间多关闭，如 `# CONFIG_PID_NS is not set`） |
+| `../upstream/0001-official-fix-kernel-panic-in-xt_qtaguid.patch` | 官方 non-GKI 补丁 1/2（`net/netfilter/xt_qtaguid.c`）。LOS kona/sm8250 4.19 树不含 xt_qtaguid，对 alioth 为惰性（no-op）；保留供仍带 qtaguid 的其它 4.19 树 |
+| `../upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch` | 官方 non-GKI 补丁 2/2（`kernel/cgroup/cgroup.c`）：为 `CGRP_ROOT_NOPREFIX` 挂载上的文件重建 `subsys.name` kernfs 符号链接，使 runc/crun 式挂载两种名称都可见。hunk 上下文与 4.19 `cgroup_add_file()` 逐字匹配，在 LOS kona 树上原样可应用 |
+
+## 集成（alioth / LOS sm8250）
 
 ```bash
-# patch 02 applies cleanly; patch 01 is a no-op on trees without qtaguid
+# 补丁 02 干净应用；补丁 01 在无 qtaguid 的树上是 no-op
 for p in patches/droidspace/4.19/00*-*.patch; do
   git apply --check "$p" && git apply "$p" || echo "skip (no-op): $p"
 done
 ```
 
-The config fragment is merged by `scripts/merge-defconfig.sh` (pass
-`patches/droidspace/4.19/droidspace.config` as a fragment), following
-the same flow as the 4.9 devices' `patches/droidspace/4.9/`.
+config 片段由 `scripts/merge-defconfig.sh` 以 fragment 合并（传
+`patches/droidspace/4.19/droidspace.config`），流程与 4.9 设备
+（`patches/droidspace/4.9/`）相同。
