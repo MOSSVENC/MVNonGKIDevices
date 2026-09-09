@@ -19,9 +19,10 @@ Develop/librekernel）。上报前统一过滤：目标非冻结组
 - `4.9/`：4.9 树适配补丁（mix2s 先行，真实 git apply 校验过）：
   - 0001：新增 drivers/rekernel/（内容与 upstream 同源；4.9 无 proc_ops，
     走 file_operations，无需转换）
-  - 0002：drivers/android/binder.c binder_transaction()（reply 与
-    transaction 两处调 binder_reply_handler/binder_trans_handler）+
-    binder_alloc.c async 空间不足段调 binder_overflow_handler
+  - 0002：drivers/android/binder.c binder_transaction()（target_proc
+    建立后按 reply 标志分派 binder_reply_handler /
+    binder_trans_handler）+ binder_alloc.c async 空间不足段调
+    binder_overflow_handler
   - 0003：kernel/signal.c do_send_sig_info()（SIGKILL/TERM/ABRT/QUIT
     且目标冻结时经 rekernel_report(SIGNAL,...) 上报）
   - 0004（无）：drivers/Kconfig source 与 drivers/Makefile obj 由工作流
