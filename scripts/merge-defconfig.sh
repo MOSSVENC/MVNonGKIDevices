@@ -144,7 +144,7 @@ fi
 if [ "${ROOT_MANAGER:-none}" = "xxksu" ]; then
   assert_cfg CONFIG_KSU || rc=1
   assert_cfg CONFIG_KSU_LSM_SECURITY_HOOKS || rc=1
-  case "${ROOT_ENGINE:-syscall_table}" in
+  case "${HOOK_TYPE:-syscall_table}" in
     branch_link)
       assert_cfg CONFIG_KSU_HACK_ARM64_BRANCH_LINK || rc=1
       if grep -qE "^CONFIG_KSU_TAMPER_SYSCALL_TABLE=y$" "$CFG"; then
@@ -153,7 +153,7 @@ if [ "${ROOT_MANAGER:-none}" = "xxksu" ]; then
       else
         echo "   OK   CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
       fi ;;
-    syscall_table)
+    syscall_table|susfs)
       assert_cfg CONFIG_KSU_TAMPER_SYSCALL_TABLE || rc=1
       if grep -qE "^CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y$" "$CFG"; then
         echo "   FAIL CONFIG_KSU_HACK_ARM64_BRANCH_LINK (syscall_table wants it off)" >&2

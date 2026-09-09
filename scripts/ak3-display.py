@@ -3,7 +3,7 @@
 
 usage: ak3-display.py <anykernel.sh> <device-prefix>
 
-env: ROOT_MANAGER ROOT_ENGINE HOOK_TYPE HOOK_EXTRA
+env: ROOT_MANAGER HOOK_TYPE HOOK_EXTRA
      ENABLE_REKERNEL ENABLE_BBG ENABLE_DROIDSPACE ENABLE_DATA_ISOLATION
 
 Display order: root manager, hook type, features (BBG > REKERNEL >
@@ -16,7 +16,7 @@ import sys
 
 sh_path, dev = sys.argv[1], sys.argv[2]
 rm = os.environ.get('ROOT_MANAGER', 'none')
-eng = os.environ.get('ROOT_ENGINE', '')
+eng = os.environ.get('HOOK_TYPE', '')
 ht = os.environ.get('HOOK_TYPE', '')
 hx = os.environ.get('HOOK_EXTRA', '')
 
