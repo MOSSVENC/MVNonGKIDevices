@@ -346,9 +346,12 @@ jobs:
           fi
           { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Package AnyKernel3 zip (kernel only, stock dtb/dtbo kept)
+      - name: Package AnyKernel3 zip (Image.gz-dtb; dtbo partition untouched)
         run: |
           gzip -c "$RUNNER_TEMP/out/Image" > "$RUNNER_TEMP/out/Image.gz"
+          # appended base dtb: byte-identical to the dtb carried by the
+          # community Q2 build, self-contained boot kernel segment
+          cat "$RUNNER_TEMP/out/Image.gz" "$RUNNER_TEMP/out/mt6853.dtb" > "$RUNNER_TEMP/out/Image.gz-dtb"
           rm -rf "$RUNNER_TEMP/ak3"
           # full AnyKernel3 template (anykernel.sh + tools/ak3-core.sh,
           # magiskboot, META-INF ...) — not a hand-rolled minimal layout
@@ -358,10 +361,11 @@ jobs:
           rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
           # --- RMX2117 (realme Q2) settings ---
-          # zip ships Image.gz only: AK3 swaps the kernel segment of the
-          # on-device boot image and keeps its stock base dtb and ramdisk;
-          # the dtbo partition is never touched. Device-name check is
-          # skipped (fastboot product name not pinned on MTK).
+          # zip ships Image.gz-dtb (kernel + appended base dtb, the same
+          # form as the community Q2 build): AK3 swaps the kernel segment
+          # of the on-device boot image and keeps its ramdisk; the dtbo
+          # partition is never touched. Device-name check is skipped
+          # (fastboot product name not pinned on MTK).
           FEATS=""
           if [ "$ROOT_MANAGER" = "resukisu" ]; then
             if [ "$HOOK_TYPE" = "auto" ]; then
@@ -381,7 +385,7 @@ jobs:
           sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"             "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s|^BLOCK=.*|BLOCK=/dev/block/bootdevice/by-name/boot;|"     "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/"                    "$RUNNER_TEMP/ak3/anykernel.sh"
-          cp "$RUNNER_TEMP/out/Image.gz" "$RUNNER_TEMP/ak3/"
+          cp "$RUNNER_TEMP/out/Image.gz-dtb" "$RUNNER_TEMP/ak3/"
           ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/RMX2117-kernel.zip" . >/dev/null )
 
       - name: Upload build log
