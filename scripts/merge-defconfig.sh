@@ -197,6 +197,9 @@ elif [ "${ROOT_MANAGER:-none}" = "resukisu" ]; then
     fi
   fi
 fi
+if [ "${ENABLE_REKERNEL:-false}" = "true" ]; then
+  assert_cfg CONFIG_REKERNEL || rc=1
+fi
 if [ "${ENABLE_BBG:-true}" = "true" ]; then
   assert_cfg CONFIG_BBG || rc=1
 fi

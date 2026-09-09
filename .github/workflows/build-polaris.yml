@@ -25,6 +25,10 @@ on:
           - xxksu-branch_link
           - none
         default: resukisu-manual-lsm
+      enable_rekernel:
+        description: integrate Re:Kernel frozen-binder notify (see patches/rekernel/README)
+        type: boolean
+        default: false
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
@@ -62,6 +66,7 @@ jobs:
       ROOT_ENGINE: ${{ contains(inputs.root_mode, 'branch_link') && 'branch_link' || 'syscall_table' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || 'lsm' }}
+      ENABLE_REKERNEL: ${{ inputs.enable_rekernel }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
@@ -198,6 +203,19 @@ jobs:
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
 
+      # --- Re:Kernel frozen-binder notify (GPL, Sakion-Team/Re-Kernel) ---
+      # In-kernel tombstone aid: report frozen processes touched by binder
+      # transactions / killed, via netlink to the userspace tombstone.
+      - name: Integrate Re:Kernel (patches/rekernel/4.9)
+        if: env.ENABLE_REKERNEL == 'true'
+        run: |
+          bash scripts/apply-patches.sh "$KROOT" \
+            "$GITHUB_WORKSPACE"/patches/rekernel/4.9/000[1-3]-*.patch
+          {
+            echo "CONFIG_REKERNEL=y"
+            echo "# CONFIG_REKERNEL_NETWORK is not set"
+          } > "$GITHUB_WORKSPACE/rekernel.config.fragment"
+
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
         run: |
@@ -243,10 +261,12 @@ jobs:
           elif [ "$ROOT_MANAGER" = "xxksu" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/xxksu.config.fragment"
           fi
+          [ "$ENABLE_REKERNEL" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/rekernel.config.fragment"
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
           ROOT_MANAGER="$ROOT_MANAGER" \
           ROOT_ENGINE="$ROOT_ENGINE" \
+          ENABLE_REKERNEL="$ENABLE_REKERNEL" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
@@ -309,6 +329,7 @@ jobs:
           elif [ "$ROOT_MANAGER" = "xxksu" ]; then
             FEATS="$FEATS XXKSU-$ROOT_ENGINE"
           fi
+          [ "$ENABLE_REKERNEL" = "true" ] && FEATS="$FEATS ReKernel"
           [ "$ENABLE_BBG" = "true" ] && FEATS="$FEATS BBG"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FEATS="$FEATS Droidspace"
           [ -z "$FEATS" ] && FEATS=" Stock"

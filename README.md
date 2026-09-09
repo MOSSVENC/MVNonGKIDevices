@@ -51,6 +51,7 @@ per-uid Android/data 隔离，非 owner app 得 ENOENT）为 mix2s 专有，
 
 | 特性 | 输入 | 说明 | 默认 |
 |---|---|---|---|
+| Re:Kernel | `enable_rekernel` | 冻结（墓碑）进程 binder/被杀事件 netlink 上报（GPL，Sakion-Team/Re-Kernel） | off |
 | BBG | `enable_bbg` | Baseband-guard 防格机 LSM | on |
 | Droidspace | `enable_droidspace` | 容器/LXC/Docker 内核支持 | on |
 | Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 开启时生效） | on |

@@ -1,0 +1,72 @@
+diff --git a/drivers/android/binder.c b/drivers/android/binder.c
+index 20356105e..d78f31f1e 100644
+--- a/drivers/android/binder.c
++++ b/drivers/android/binder.c
+@@ -55,6 +55,9 @@
+ #include <linux/fdtable.h>
+ #include <linux/file.h>
+ #include <linux/freezer.h>
++#ifdef CONFIG_REKERNEL
++#include "../rekernel/rekernel.h"
++#endif /* CONFIG_REKERNEL */
+ #include <linux/fs.h>
+ #include <linux/list.h>
+ #include <linux/miscdevice.h>
+@@ -2188,6 +2191,12 @@ static void binder_send_failed_reply(struct binder_transaction *t,
+ 					target_thread->reply_error.cmd);
+ 			}
+ 			binder_inner_proc_unlock(target_thread->proc);
++			#ifdef CONFIG_REKERNEL
++			if (target_thread->proc && target_thread->proc->tsk)
++				binder_reply_handler(proc->pid, proc->tsk,
++						     target_thread->proc->pid,
++						     target_thread->proc->tsk, 0, tr);
++#endif /* CONFIG_REKERNEL */
+ 			binder_thread_dec_tmpref(target_thread);
+ 			binder_free_transaction(t);
+ 			return;
+@@ -3080,6 +3089,12 @@ static void binder_transaction(struct binder_proc *proc,
+ 		target_proc = target_thread->proc;
+ 		atomic_inc(&target_proc->tmp_ref);
+ 		binder_inner_proc_unlock(target_thread->proc);
++#ifdef CONFIG_REKERNEL
++		if (target_proc && target_proc->tsk)
++			binder_trans_handler(proc->pid, proc->tsk,
++					     target_proc->pid, target_proc->tsk,
++					     tr->flags & TF_ONE_WAY, tr);
++#endif /* CONFIG_REKERNEL */
+ 	} else {
+ 		if (tr->target.handle) {
+ 			struct binder_ref *ref;
+diff --git a/drivers/android/binder_alloc.c b/drivers/android/binder_alloc.c
+index 5addcd56a..3e183560c 100644
+--- a/drivers/android/binder_alloc.c
++++ b/drivers/android/binder_alloc.c
+@@ -29,6 +29,9 @@
+ #include <linux/sched.h>
+ #include <linux/list_lru.h>
+ #include <linux/uaccess.h>
++#ifdef CONFIG_REKERNEL
++#include "../rekernel/rekernel.h"
++#endif /* CONFIG_REKERNEL */
+ #include <linux/highmem.h>
+ #include "binder_alloc.h"
+ #include "binder_trace.h"
+@@ -395,6 +398,17 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
+ 				alloc->pid, extra_buffers_size);
+ 		return ERR_PTR(-EINVAL);
+ 	}
++#ifdef CONFIG_REKERNEL
++	if (is_async) {
++		struct task_struct *proc_task = NULL;
++		rcu_read_lock();
++		proc_task = find_task_by_vpid(alloc->pid);
++		rcu_read_unlock();
++		if (proc_task)
++			binder_overflow_handler(current->pid, current,
++						alloc->pid, proc_task, 1, NULL);
++	}
++#endif /* CONFIG_REKERNEL */
+ 	if (is_async &&
+ 	    alloc->free_async_space < size + sizeof(struct binder_buffer)) {
+ 		binder_alloc_debug(BINDER_DEBUG_BUFFER_ALLOC,
