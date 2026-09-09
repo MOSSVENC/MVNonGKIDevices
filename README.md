@@ -103,10 +103,10 @@ RMX2117（4.14）用 `patches/resukisu/4.14/`（树区域相同者以单一真�
   `patches/test/susfs-shipped-4.9/0001-0004`（shipped 移植归档）。
 - `susfs-test` —— SuSFS inline hook（**polaris/beryllium/daisy/vince/
   alioth/RMX2117** 支持）：应用 patches/susfs/ 内按版本归档的树适配
-  补丁（4.9 系 polaris 用 `patches/susfs/4.9/susfs-49-test.patch`，
+  补丁（4.9 系 polaris 用 `patches/susfs/4.9/susfs-port.patch`，
   beryllium/daisy/vince 用各自 `patches/susfs/4.9/<设备>/`；alioth 用
-  `patches/susfs/4.19/susfs-419-test.patch`；RMX2117 用
-  `patches/susfs/4.14/susfs-414-test.patch`）。编译产物见各设备
+  `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
+  `patches/susfs/4.14/susfs-port.patch`）。编译产物见各设备
   workflow susfs-test 日志。
 
 ### 静态符号
@@ -152,7 +152,7 @@ patches/
                               单一真身存 4.9/，workflow 以文件级清单跨目录引用）
   susfs/
     upstream/                gki-android12-5.10 上游素材（50_add/10_enable/susfs.c/.h 唯一副本）
-    4.9/                     susfs-49-test.patch + ber/daisy/vince 设备子目录（4.9 树适配）
+    4.9/                     susfs-port.patch + ber/daisy/vince 设备子目录（4.9 树适配）
     4.14/ 4.19/              各树适配补丁（CI susfs-test 编译通过）
   （inline-hook 生成器为脚本，见 scripts/）
   bbg/                       集成说明（无本地补丁，跑官方 setup.sh）
@@ -254,11 +254,11 @@ realme Q2 国行（RMX2117，MT6853）走 realme AndroidS 综合源（9 机共�
 - **alioth（4.19）**：ReSukiSU manual hook 用 `patches/resukisu/4.19`
   （manual-source 时叠加 0010-0012）；droidspace 用
   `patches/droidspace/upstream/` 官方补丁 + `4.19/` config；susfs 走
-  `hook_mode=susfs-test` 应用 `patches/susfs/4.19/susfs-419-test.patch`
+  `hook_mode=susfs-test` 应用 `patches/susfs/4.19/susfs-port.patch`
   （4.19 树适配）。产物为 `Image` + `dtbo.img`（boot header v3、dtbo
   独立分区），AnyKernel3 按 slot 设备打包。
 - **RMX2117（4.14 MTK）**：susfs 走 `hook_mode=susfs-test` 应用
-  `patches/susfs/4.14/susfs-414-test.patch`（4.14 树适配，编译产物见
+  `patches/susfs/4.14/susfs-port.patch`（4.14 树适配，编译产物见
   build-RMX2117.yml 日志）；dtbo 分区内容沿用 stock 固件（源树不含项目 cust/overlay
   层），产物为 `Image` + `mt6853.dtb`。BBG/Droidspace 集成入口已接
   入 workflow（默认 off），其 selinux/cgroup 落位见对应 patches

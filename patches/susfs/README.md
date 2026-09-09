@@ -9,14 +9,14 @@ SuSFS 相关补丁资产按"上游素材 / 树适配"分置：
   `10_enable_susfs_for_ksu.patch`、`fs/susfs.c`、
   `include/linux/susfs.h`、`include/linux/susfs_def.h`）。5.10 分支是
   功能集基准（SUSFS_VERSION 等）。
-- `4.9/` — LOS 4.9 树适配。`susfs-49-test.patch` 为 polaris 的
+- `4.9/` — LOS 4.9 树适配。`susfs-port.patch` 为 polaris 的
   gki5.10 重建产物镜像（管线 translate 输出，与已验收参考逐字一致）；
   `beryllium/ daisy/ vince/` 设备子目录为设备树落位真身（源自已验收
   4.9 移植，设备差异段为树属性如 stateful selinux）。编译产物见各
   设备 workflow 的 susfs-test 日志。
-- `4.14/susfs-414-test.patch` — realme AndroidS MTK 4.14.186 树适配
+- `4.14/susfs-port.patch` — realme AndroidS MTK 4.14.186 树适配
   补丁（编译产物见 build-RMX2117.yml susfs-test 日志）。
-- `4.19/susfs-419-test.patch` — LOS 4.19 树适配补丁（build-alioth.yml
+- `4.19/susfs-port.patch` — LOS 4.19 树适配补丁（build-alioth.yml
   susfs-test 应用）。
 KSU-inline-hook 调用点生成器（脚本，位于 `scripts/`）：
 - `scripts/susfs_inline_hook_patches-nongki.sh` — 树适配版（跨

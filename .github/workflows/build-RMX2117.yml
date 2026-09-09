@@ -14,15 +14,10 @@ on:
         description: kernel branch/ref to build
         required: false
         default: master
-      hook_mode:
-        description: "resukisu hook mode: manual-lsm (4.14 source patches + LSM AUTO) | manual-source (4.14 source patches + alt manual hooks) | susfs-test (ReSukiSU + SuSFS, 4.14 port) | none (stock defconfig)"
-        type: choice
-        options:
-          - none
-          - manual-lsm
-          - manual-source
-          - susfs-test
-        default: susfs-test
+      enable_resukisu:
+        description: integrate ReSukiSU (hook mode selected below)
+        type: boolean
+        default: true
       enable_bbg:
         description: integrate Baseband-guard (BBG, upstream setup.sh)
         type: boolean
@@ -32,6 +27,15 @@ on:
         type: boolean
         default: false
 
+      hook_mode:
+        description: "resukisu hook mode: manual-lsm (source patches + LSM AUTO) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch) | susfs (SuSFS inline hook, 4.14 port)"
+        type: choice
+        options:
+          - manual-lsm
+          - manual-source
+          - auto
+          - susfs
+        default: manual-lsm
 concurrency:
   group: rmx2117-kernel
   cancel-in-progress: true
@@ -42,9 +46,10 @@ jobs:
     timeout-minutes: 240
     env:
       KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
-      HOOK_MODE: ${{ inputs.hook_mode || 'susfs-test' }}
-      HOOK_TYPE: ${{ (inputs.hook_mode == 'manual-lsm' || inputs.hook_mode == 'manual-source') && 'manual' || 'susfs' }}
+      HOOK_MODE: ${{ inputs.hook_mode || 'manual-lsm' }}
+      HOOK_TYPE: ${{ (inputs.hook_mode == 'manual-lsm' || inputs.hook_mode == 'manual-source') && 'manual' || (inputs.hook_mode == 'auto' && 'auto' || 'susfs') }}
       HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
+      ENABLE_RESUKISU: ${{ inputs.enable_resukisu }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       KERNEL_REPO: https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source.git
@@ -109,7 +114,7 @@ jobs:
       # 0010-0012 applied for manual-source) + ReSukiSU main + config
       # fragment via integrate-resukisu.sh.
       - name: Integrate ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source)
-        if: env.HOOK_TYPE == 'manual'
+        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'manual'
         run: |
           cd "$KROOT"
           # File-level list: shared shapes (stat/reboot) live in
@@ -131,18 +136,27 @@ jobs:
           bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" manual
 
-      # --- SuSFS 4.14 (hook_mode=susfs-test) ---
-      # Tree-adapted port patches/susfs/4.14/susfs-414-test.patch (git
+      # --- ReSukiSU auto hooks (hook_mode=auto) ---
+      # ReSukiSU auto-hook branch via integrate-resukisu.sh (no source
+      # patches; hook calls come from the runtime inline-hook engine).
+      - name: Integrate ReSukiSU (auto-hook branch)
+        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_TYPE == 'auto'
+        run: |
+          bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
+            "$GITHUB_WORKSPACE/resukisu.config.fragment" lsm auto
+
+      # --- SuSFS 4.14 (hook_mode=susfs) ---
+      # Tree-adapted port patches/susfs/4.14/susfs-port.patch (git
       # apply-verified on MTK 4.14.186 snapshots) + ReSukiSU main +
       # the 4.x inline-hook generator (scripts/susfs_inline_hook_patches-nongki.sh).
-      - name: Integrate ReSukiSU + SuSFS 4.14 port (hook_mode=susfs-test)
-        if: env.HOOK_MODE == 'susfs-test'
+      - name: Integrate ReSukiSU + SuSFS 4.14 port (hook_mode=susfs)
+        if: env.ENABLE_RESUKISU == 'true' && env.HOOK_MODE == 'susfs'
         run: |
           cd "$KROOT"
           # ReSukiSU setup (main branch; wires drivers/kernelsu + Kconfig)
           curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
           # SuSFS 4.14 kernel-side port (patches/susfs/4.14/)
-          P="$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-414-test.patch"
+          P="$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
           git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
           git apply "$P"
           echo "SuSFS 4.14 port applied:"
@@ -215,7 +229,7 @@ jobs:
           export ARCH=arm64
           export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
           FRAGS=""
-          if [ "$HOOK_MODE" = "susfs-test" ]; then
+          if [ "$HOOK_MODE" = "susfs" ]; then
             cat > "$GITHUB_WORKSPACE/susfs.config.fragment" <<'FRAGEOF'
           CONFIG_KSU=y
           # CONFIG_KSU_DEBUG is not set
@@ -248,7 +262,7 @@ jobs:
           # off for this build.
           BASE_DEFCONFIG="arch/arm64/configs/k6853v1_64_6360_defconfig" \
           DEVICE_FRAGMENTS="" \
-          ENABLE_RESUKISU="$([ "$HOOK_MODE" = "susfs-test" ] || [ "$HOOK_TYPE" = "manual" ] && echo true || echo false)" \
+          ENABLE_RESUKISU="$ENABLE_RESUKISU" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION=false \
@@ -331,7 +345,7 @@ jobs:
         run: |
           { echo "## RMX2117 build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
             echo "- kernel_ref: ${{ env.KERNEL_REF }}"
-            echo "- features: susfs-test=$([ "$HOOK_MODE" = susfs-test ] && echo on || echo off) bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE"
+            echo "- features: hook=$HOOK_MODE bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE resukisu=$ENABLE_RESUKISU"
             echo "- artifacts: Image / mt6853.dtb / final.config / build.log"
             echo "- dtbo partition image: carried over from stock firmware"
           } >> "$GITHUB_STEP_SUMMARY" || true
