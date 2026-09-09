@@ -27,16 +27,16 @@ off；无 cgroup_port / enable_data_isolation / auto_fix_49 项
 
 ## 特性开关（workflow_dispatch 输入）
 
-polaris（mix2s）顶部为 `root_manager` 三选一：`resukisu`（默认，
-ReSukiSU main，`hook_mode` 选择 manual-lsm/manual-source/auto/susfs）|
-`xxksu`（Backslashxx KernelSU fork，`hook_engine` 选择
-syscall_table/branch_link）| `none`（无 root 集成）。BBG/Droidspace/
-data-isolation 等特性开关在三个 root 分支下均可用；其余设备沿用
-`enable_resukisu` 布尔。
+polaris（mix2s）顶部为单一 `root_mode` 选择（root 管理器与 hook 组合
+编码进选项值）：`resukisu-manual-lsm`（默认）/ `resukisu-manual-source` /
+`resukisu-auto` / `resukisu-susfs` / `xxksu-syscall_table` /
+`xxksu-branch_link` / `none`。BBG/Droidspace/cgroup/data-isolation 等
+特性开关在该选择的所有分支下均可用；其余设备沿用 `enable_resukisu`
+布尔。
 
 | 特性 | 输入 | 说明 | 默认 |
 |---|---|---|---|
-| ReSukiSU | `enable_resukisu`（polaris 用 `root_manager=resukisu`） | KernelSU 系 root（manual/auto 见 hook_mode） | on |
+| ReSukiSU | `enable_resukisu`（polaris 用 `root_mode=resukisu-*`） | KernelSU 系 root（manual/auto 见 hook_mode） | on |
 | BBG | `enable_bbg` | Baseband-guard 防格机 LSM | on |
 | Droidspace | `enable_droidspace` | 容器/LXC/Docker 内核支持 | on |
 | Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 开启时生效） | on |

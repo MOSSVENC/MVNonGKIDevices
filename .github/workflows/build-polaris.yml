@@ -13,14 +13,18 @@ on:
         description: kernel branch/ref to build
         required: false
         default: lineage-22.2
-      root_manager:
-        description: "root manager: resukisu (ReSukiSU main) | xxksu (Backslashxx KernelSU fork, hook engine below) | none (stock, no root integration)"
+      root_mode:
+        description: "root manager and hook selection: resukisu-manual-lsm (source patches + LSM AUTO) | resukisu-manual-source (source patches + alt manual hooks) | resukisu-auto (auto-hook branch) | resukisu-susfs (SuSFS inline hook, 4.9 port) | xxksu-syscall_table (Backslashxx KernelSU fork, tamper sys_call_table) | xxksu-branch_link (Backslashxx KernelSU fork, ARM64 bl callsite hijack) | none (stock, no root integration)"
         type: choice
         options:
+          - resukisu-manual-lsm
+          - resukisu-manual-source
+          - resukisu-auto
+          - resukisu-susfs
+          - xxksu-syscall_table
+          - xxksu-branch_link
           - none
-          - resukisu
-          - xxksu
-        default: resukisu
+        default: resukisu-manual-lsm
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
@@ -37,24 +41,8 @@ on:
         description: sdcardfs per-uid Android/data isolation (other apps get ENOENT on lookup/stat)
         type: boolean
         default: true
-      hook_mode:
-        description: "resukisu hook mode (root_manager=resukisu): manual-lsm (source patches + LSM AUTO) | manual-source (source patches + alt manual hooks) | auto (auto-hook branch) | susfs (SuSFS inline hook, 4.9 port)"
-        type: choice
-        options:
-          - manual-lsm
-          - manual-source
-          - auto
-          - susfs
-        default: manual-lsm
-      hook_engine:
-        description: "xxksu hook engine (root_manager=xxksu): syscall_table (tamper sys_call_table) | branch_link (ARM64 bl callsite hijack); both verified by the fork on this kernel, engine Kconfigs are exclusive"
-        type: choice
-        options:
-          - syscall_table
-          - branch_link
-        default: syscall_table
       auto_fix_49:
-        description: "fix auto-hook branch <5.0 kasan_reset_tag guard on 4.x (only effective when hook_mode=auto)"
+        description: "fix auto-hook branch <5.0 kasan_reset_tag guard on 4.x (only effective with root_mode=resukisu-auto)"
         type: boolean
         default: true
 
@@ -70,15 +58,14 @@ jobs:
       # workflow_dispatch inputs are empty on push-triggered runs, so every
       # option falls back to a default (lineage-22.2 + all features on).
       KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-22.2' }}
-      ROOT_MANAGER: ${{ inputs.root_manager || 'resukisu' }}
-      ROOT_ENGINE: ${{ inputs.hook_engine || 'syscall_table' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
+      ROOT_ENGINE: ${{ contains(inputs.root_mode, 'branch_link') && 'branch_link' || 'syscall_table' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || 'lsm' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation }}
-      HOOK_TYPE: ${{ inputs.hook_mode == 'susfs' && 'susfs' || inputs.hook_mode == 'auto' && 'auto' || 'manual' }}
-      SUSFS_SOURCE: 'shipped'  # rebuilt 4.9 pipeline output selectable by maintainers
-      HOOK_EXTRA: ${{ inputs.hook_mode == 'manual-source' && 'manual' || 'lsm' }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
@@ -155,7 +142,7 @@ jobs:
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
-      # --- XXKSU (root_manager=xxksu): Backslashxx KernelSU fork ---
+      # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
       # Fork hook engine (syscall_table / branch_link) handles the sucompat
       # call sites itself: no manual source patches, no inline-hook
       # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
@@ -191,24 +178,17 @@ jobs:
       # SuSFS kernel-side port must run AFTER ReSukiSU setup.sh: the hook
       # generator checks drivers/kernelsu/ for ksu_handle_* before wiring
       # kernel/sys.c etc.
-      - name: Apply SuSFS 4.9 port (hook_mode=susfs)
+      - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          # ReSukiSU is already set up at this point. SUSFS_SOURCE selects
-          # the shipped modular patches or the rebuilt 4.9 pipeline output.
-          if [ "$SUSFS_SOURCE" = "test" ]; then
-            echo "applying rebuilt 4.9 pipeline output"
-            P="$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
-            git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
-            git apply "$P"
-          else
-            for p in "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/000[1-4]-*.patch; do
-              echo "apply: $(basename "$p")"
-              git apply --check "$p" || { echo "SuSFS patch does not apply cleanly: $p"; exit 1; }
-              git apply "$p"
-            done
-          fi
+          # ReSukiSU is already set up at this point. The susfs mode applies
+          # the shipped modular 4.9 patches.
+          for p in "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/000[1-4]-*.patch; do
+            echo "apply: $(basename "$p")"
+            git apply --check "$p" || { echo "SuSFS patch does not apply cleanly: $p"; exit 1; }
+            git apply "$p"
+          done
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
