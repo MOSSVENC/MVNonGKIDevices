@@ -75,3 +75,4 @@ else:
 s = open(sh_path).read()
 s = re.sub(r'(?m)^kernel\.string=.*', 'kernel.string="' + text + '"', s, count=1)
 open(sh_path, 'w').write(s)
+print(text)

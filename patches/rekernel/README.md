@@ -38,12 +38,13 @@ Develop/librekernel）。上报前统一过滤：目标非冻结组
 `CONFIG_REKERNEL=y`（`# CONFIG_REKERNEL_NETWORK is not set`——接收
 解冻面默认关）；merge 断言 REKERNEL=y。
 
-## 边界
+## 维护范围
 
+- 当前维护点：polaris（4.9 试点）；其它设备不接入（`enable_rekernel`
+  默认 off，仅显式启用时编译）。
 - 4.9 树 API 核对：frozen()/freezing 原生、binder_alloc.c 分离、
   file_operations（无 proc_ops）。
 - JOBCTL_TRAP_FREEZE：4.9 树无此宏，`jobctl_frozen()` 在
   `#ifdef JOBCTL_TRAP_FREEZE` 兜底（预 freezer-v2 树退化为
   `cgroup_freezing()` 判定），已在 0001 内处理。
 - 用户态墓碑与 librekernel 对接不在本仓库（引上游 Develop/）。
-- 其余设备同法接入：4.9 系同树族共用本补丁；树差异再适配。

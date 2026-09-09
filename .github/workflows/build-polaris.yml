@@ -363,8 +363,13 @@ jobs:
           # (build inputs), not a fixed list.
           # feature display composed by the shared script (root / hook
           # type / feature level; manual-hook detail lines follow)
+                    # per-build feature display: to anykernel.sh (flash-time) and to a
+          # FEATURES.txt inside the zip for at-a-glance package inspection
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
-            "$RUNNER_TEMP/ak3/anykernel.sh" "Mix2S"
+            "$RUNNER_TEMP/ak3/anykernel.sh" "Mix2S" \
+            > "$RUNNER_TEMP/ak3/FEATURES.txt"
+          echo "=== Mix2S kernel features (this build) ==="
+          cat "$RUNNER_TEMP/ak3/FEATURES.txt"
 
           sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=polaris/"           "$RUNNER_TEMP/ak3/anykernel.sh"
           sed -i "s/^\(\s*\)device.name2=.*/\1device.name2=/"                  "$RUNNER_TEMP/ak3/anykernel.sh"
