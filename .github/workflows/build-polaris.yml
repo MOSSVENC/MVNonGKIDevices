@@ -25,6 +25,8 @@ on:
           - xxksu-branch_link
           - none
         default: resukisu-manual-lsm
+        type: boolean
+        default: false
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
@@ -197,6 +199,12 @@ jobs:
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
+
+      # In-kernel tombstone aid: report frozen processes touched by binder
+      # transactions / killed, via netlink to the userspace tombstone.
+        run: |
+          bash scripts/apply-patches.sh "$KROOT" \
+          {
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'

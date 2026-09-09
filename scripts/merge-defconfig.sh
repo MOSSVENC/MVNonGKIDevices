@@ -197,6 +197,7 @@ elif [ "${ROOT_MANAGER:-none}" = "resukisu" ]; then
     fi
   fi
 fi
+fi
 if [ "${ENABLE_BBG:-true}" = "true" ]; then
   assert_cfg CONFIG_BBG || rc=1
 fi
