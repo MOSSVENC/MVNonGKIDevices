@@ -21,6 +21,7 @@ on:
           - resukisu-manual-source
           - resukisu-auto
           - resukisu-susfs
+          - xxksu-susfs
           - xxksu-syscall_table
           - xxksu-branch_link
           - none
@@ -182,6 +183,30 @@ jobs:
               echo "# CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set"
             fi
           } > "$GITHUB_WORKSPACE/xxksu.config.fragment"
+          if [ "$HOOK_TYPE" = "susfs" ]; then
+            # SusFS over XXKSU: fork-side symbol bridge + tree patches
+            # (core/vfs/overlay; the KSU callsite patch is not used - the
+            # fork engine already drives ksu_handle_*).
+            cd "$RUNNER_TEMP/xxksu"
+            git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch" &&               git apply "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
+            cd "$KROOT"
+            for sp in "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0001-susfs-core.patch                       "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0002-susfs-vfs-hooks.patch                       "$GITHUB_WORKSPACE"/patches/test/susfs-shipped-4.9/0004-susfs-overlay.patch; do
+              git apply --check "$sp" || { echo "SusFS tree patch failed: $sp"; exit 1; }
+              git apply "$sp"
+            done
+            {
+              echo "CONFIG_KSU_SUSFS=y"
+              echo "CONFIG_KSU_SUSFS_SUS_PATH=y"
+              echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y"
+              echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y"
+              echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y"
+              echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y"
+              echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y"
+              echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y"
+              echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y"
+              echo "CONFIG_KSU_SUSFS_SUS_MAP=y"
+            } >> "$GITHUB_WORKSPACE/xxksu.config.fragment"
+          fi
           echo "xxksu engine selected: $ROOT_ENGINE"
           cat "$GITHUB_WORKSPACE/xxksu.config.fragment"
 
