@@ -160,7 +160,8 @@ jobs:
           cd "$KROOT"
           mkdir -p KernelSU
           ln -sfn "$RUNNER_TEMP/xxksu/kernel" KernelSU/kernel
-          ln -sfn KernelSU/kernel drivers/kernelsu
+          # absolute target: a relative link would resolve under drivers/
+          ln -sfn "$RUNNER_TEMP/xxksu/kernel" drivers/kernelsu
           grep -q "kernelsu" drivers/Makefile || \
             printf '\nobj-$(CONFIG_KSU) += kernelsu/\n' >> drivers/Makefile
           grep -q "drivers/kernelsu/Kconfig" drivers/Kconfig || \
