@@ -10,11 +10,11 @@ on:
   workflow_dispatch:
     inputs:
       kernel_ref:
-        description: kernel branch/ref to build
+        description: kernel branch or ref
         required: false
         default: lineage-22.2
       root_mode:
-        description: "root manager and hook selection: resukisu-manual-lsm (source patches + LSM AUTO) | resukisu-manual-source (source patches + alt manual hooks) | resukisu-auto (auto-hook branch) | resukisu-susfs (SuSFS inline hook, 4.9 port) | xxksu-syscall_table (Backslashxx KernelSU fork, tamper sys_call_table) | xxksu-branch_link (Backslashxx KernelSU fork, ARM64 bl callsite hijack) | none (stock, no root integration)"
+        description: "root manager & hook mode: see README section \"root_mode\""
         type: choice
         options:
           - resukisu-manual-lsm
@@ -34,15 +34,15 @@ on:
         type: boolean
         default: true
       cgroup_port:
-        description: apply 4.9 cgroup noprefix compat patch (only when droidspace is on)
+        description: 4.9 cgroup noprefix compat patch (droidspace)
         type: boolean
         default: true
       enable_data_isolation:
-        description: sdcardfs per-uid Android/data isolation (other apps get ENOENT on lookup/stat)
+        description: sdcardfs per-uid Android/data isolation
         type: boolean
         default: true
       auto_fix_49:
-        description: "fix auto-hook branch <5.0 kasan_reset_tag guard on 4.x (only effective with root_mode=resukisu-auto)"
+        description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
         default: true
 

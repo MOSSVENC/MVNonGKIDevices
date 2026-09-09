@@ -27,12 +27,27 @@ off；无 cgroup_port / enable_data_isolation / auto_fix_49 项
 
 ## 特性开关（workflow_dispatch 输入）
 
-polaris（mix2s）顶部为单一 `root_mode` 选择（root 管理器与 hook 组合
-编码进选项值）：`resukisu-manual-lsm`（默认）/ `resukisu-manual-source` /
-`resukisu-auto` / `resukisu-susfs` / `xxksu-syscall_table` /
-`xxksu-branch_link` / `none`。BBG/Droidspace/cgroup/data-isolation 等
-特性开关在该选择的所有分支下均可用；其余设备沿用 `enable_resukisu`
-布尔。
+polaris（mix2s）顶部为单一 `root_mode` 选择——root 管理器与 hook
+组合编码进选项值：
+
+| `root_mode` 值 | root 管理器 | hook 形态 |
+|---|---|---|
+| `resukisu-manual-lsm`（默认） | ReSukiSU main | 树内 manual-hook 源码补丁 + LSM AUTO（setuid/initrc/input 自动注册） |
+| `resukisu-manual-source` | ReSukiSU main | 树内 manual-hook 源码补丁（必加组）+ alt manual hooks（input/setuid/sys_read，即 0010-0012） |
+| `resukisu-auto` | ReSukiSU auto-hook 分支 | 分支内建函数入口 inline hook 引擎（免源码补丁；4.x 需 `auto_fix_49` 的 kasan_reset_tag 门槛修正） |
+| `resukisu-susfs` | ReSukiSU main | SuSFS inline hook：shipped 模块补丁（`patches/test/susfs-shipped-4.9/0001-0004`） |
+| `xxksu-syscall_table` | Backslashxx KernelSU fork（tag v3.3.0-26） | tamper sys_call_table（arm64 与 compat 表项替换，hook 内调 ksu_handle_*） |
+| `xxksu-branch_link` | 同上 | ARM64 bl 调用点就地改写（patch 失败自动回退表 hook）；fork 机制细节与符号面见 `docs/eval-backslashxx-ksu.md` |
+| `none` | — | stock，无 root 集成 |
+
+- `enable_resukisu` 仅在该选择之外的其余设备使用；mix2s 用 `root_mode` 表达同义意图。
+- `enable_bbg`（Baseband-guard）在全部 root 分支（含 none）下可用；
+  `enable_droidspace` + `cgroup_port`（4.9 cgroup noprefix compat 补丁，
+  仅在 droidspace 开启时有意义）同理；`enable_data_isolation` 为 mix2s
+  专有的 sdcardfs per-uid Android/data 隔离（其余 app 对 Android/data
+  查找/stat 得到 ENOENT）；`auto_fix_49` 仅在 `resukisu-auto` 生效
+  （把 auto-hook 分支的 kasan_reset_tag 门槛从 <4.0 修为 <5.0，供 4.x
+  树链接）。
 
 | 特性 | 输入 | 说明 | 默认 |
 |---|---|---|---|
