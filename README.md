@@ -28,11 +28,13 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | `resukisu-manual-source` | ReSukiSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read，0010-0012） |
 | `resukisu-auto` | ReSukiSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
 | `resukisu-susfs` | ReSukiSU main | SuSFS inline hook（应用各设备树适配补丁） |
+| `xxksu-susfs` | Backslashxx KernelSU fork（master） | SuSFS inline hook（SusFS 树件 + fork 域符号桥），引擎为 tamper sys_call_table |
 | `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | tamper sys_call_table（arm64 与 compat 表项替换） |
 | `xxksu-branch_link` | 同上 | ARM64 bl 调用点就地改写（失败自动回退表 hook） |
 | `none` | — | stock，无 root 集成 |
 
-- 六设备值集相同（7 值）
+- 值集：六设备共 8 值；`xxksu-susfs` 先行 polaris（SusFS 树件按树适配，
+  其余设备待树件落位后同值接入）
 - xxksu 的 hook 引擎与 susfs 组合边界以 CI 编译验证为准（维护评估文档在本地工作区）
 
 ## 特性开关

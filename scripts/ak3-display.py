@@ -49,8 +49,15 @@ else:
                     'SETUID/INITRC hooks: LSM AUTO',
                 ]
     else:
-        hook = {'syscall_table': 'SYSCALL-TABLE-HOOK',
-                'branch_link': 'BRANCH-LINK-HOOK'}.get(eng, 'HOOK')
+        if ht == 'susfs':
+            hook = 'SUSFS-INLINE-HOOK'
+            engname = {'syscall_table': 'SYSCALL-TABLE-HOOK',
+                       'branch_link': 'BRANCH-LINK-HOOK'}.get(eng, '')
+            if engname:
+                desc = ['SusFS over {} engine'.format(engname)]
+        else:
+            hook = {'syscall_table': 'SYSCALL-TABLE-HOOK',
+                    'branch_link': 'BRANCH-LINK-HOOK'}.get(eng, 'HOOK')
     head = '{} {} {}'.format(dev, root, hook)
     if feats:
         head += ' ' + ' '.join(feats)
