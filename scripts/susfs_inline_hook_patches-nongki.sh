@@ -43,6 +43,9 @@ for i in "${patch_files[@]}"; do
     # fs/ changes
     ## exec.c
     fs/exec.c)
+        if grep -q "ksu_handle_post_execveat_sucompat" "fs/exec.c"; then
+            echo "[+] fs/exec.c already carries the susfs exec faces (port); injection skipped."
+        else
         echo "======================================"
 
         if grep -q "vmalloc.h" "fs/exec.c"; then
@@ -66,6 +69,7 @@ for i in "${patch_files[@]}"; do
         fi
 
         echo "======================================"
+        fi
         ;;
     ## open.c
     fs/open.c)
