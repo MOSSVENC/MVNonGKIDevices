@@ -29,8 +29,8 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | `resukisu-auto` | ReSukiSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
 | `resukisu-susfs` | ReSukiSU main | SuSFS inline hook（应用各设备树适配补丁） |
 | `xxksu-susfs` | Backslashxx KernelSU fork（master） | SuSFS inline hook（hook 类型 `susfs`） |
-| `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | hook 类型 `syscall_table`（SYSCALL-TABLE-HOOK） |
-| `xxksu-branch_link` | Backslashxx KernelSU fork（master） | hook 类型 `branch_link`（BRANCH-LINK-HOOK） |
+| `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | hook 类型 `syscall_table` |
+| `xxksu-branch_link` | Backslashxx KernelSU fork（master） | hook 类型 `branch_link` |
 | `none` | — | stock，无 root 集成 |
 
 - 值集：六设备共 7 值（root 管理器 + hook 类型单选互斥：manual / auto /
