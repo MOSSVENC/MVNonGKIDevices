@@ -27,7 +27,7 @@ on:
           - xxksu-syscall_table
           - xxksu-branch_link
           - none
-        default: resukisu-manual-lsm
+        default: none
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean

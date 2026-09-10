@@ -25,7 +25,7 @@ on:
           - xxksu-syscall_table
           - xxksu-branch_link
           - none
-        default: resukisu-manual-lsm
+        default: none
       enable_bbg:
         description: integrate Baseband-guard (BBG, upstream setup.sh)
         type: boolean
@@ -49,7 +49,7 @@ jobs:
     env:
       KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
-      HOOK_MODE: ${{ inputs.root_mode || 'resukisu-manual-lsm' }}
+      HOOK_MODE: ${{ inputs.root_mode || 'none' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
