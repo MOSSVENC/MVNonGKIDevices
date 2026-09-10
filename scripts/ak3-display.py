@@ -3,15 +3,15 @@
 
 usage: ak3-display.py <ak3-dir> <device-codename> [name-out]
 
-env: ROOT_MANAGER HOOK_TYPE
+env: ROOT_MANAGER
      ENABLE_BBG ENABLE_DROIDSPACE ENABLE_DATA_ISOLATION
      CENTER_WIDTH (optional, default 60)
 
 Display: two centered lines —
-    <codename>  <manager>  <HOOK_TYPE>
+    <codename>  <manager>
     <feature>  <feature> ...
 features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
-omitted. Package name: <codename>_<manager>_<HOOK_TYPE>[_<feature>...].zip
+omitted. Package name: <codename>_<manager>[_<feature>...].zip
 
 Writes inside <ak3-dir>:
   banner        the two lines; AnyKernel3 prints this file line by line
@@ -39,7 +39,6 @@ dev = sys.argv[2]
 name_out = sys.argv[3] if len(sys.argv) > 3 else None
 
 rm = os.environ.get('ROOT_MANAGER', 'none')
-ht = os.environ.get('HOOK_TYPE', '')
 
 feat_flags = [
     ('BBG', os.environ.get('ENABLE_BBG') == 'true'),
@@ -50,18 +49,12 @@ feats = [name for name, on in feat_flags if on]
 
 if rm == 'resukisu':
     manager = 'ReSukiSU'
-    hook = {'auto': 'AUTO-HOOK', 'susfs': 'SUSFS-INLINE-HOOK'}.get(ht, 'MANUAL-HOOK')
 elif rm == 'xxksu':
     manager = 'XXKSU'
-    hook = 'SUSFS-INLINE-HOOK' if ht == 'susfs' else {
-        'syscall_table': 'SYSCALL-TABLE-HOOK',
-        'branch_link': 'BRANCH-LINK-HOOK',
-    }.get(ht, 'HOOK')
 else:
     manager = 'STOCK'
-    hook = ''
 
-line1 = '  '.join(x for x in (dev, manager, hook) if x)
+line1 = '  '.join(x for x in (dev, manager) if x)
 line2 = '  '.join(feats)
 
 
@@ -118,23 +111,24 @@ def strip_template_sample(text):
 one_line = line1 + ('  |  ' + line2 if line2 else '')
 sh_path = os.path.join(ak3_dir, 'anykernel.sh')
 s = strip_template_sample(open(sh_path).read())
-m = re.search(r'(?m)^kernel\.string=', s)
+m = re.search(r'(?m)^kernel\.string=(.*)$', s)
 if not m:
     sys.stderr.write('ak3-display: anykernel.sh has no kernel.string line\n')
     sys.exit(1)
-start = m.start()
-quote = s.find('"', m.end())
-end = s.find('\n', m.end())
-if quote != -1:
-    close = s.find('"', quote + 1)
+end = m.end()
+value = m.group(1)
+if value[:1] == '"':
+    # value opens with a quote on the kernel.string line: the matching
+    # closing quote ends it (a quoted value may span lines)
+    close = s.find('"', m.start(1) + 1)
     if close != -1:
         end = close + 1
-# no surrounding quotes: the properties() body is a single-quoted
-# string, and AnyKernel3 would show the quote characters otherwise
-s = s[:start] + 'kernel.string=' + one_line + s[end:]
+# no surrounding quotes in the written value: the properties() body is a
+# single-quoted string, and AnyKernel3 would show the quote characters
+s = s[:m.start()] + 'kernel.string=' + one_line + s[end:]
 open(sh_path, 'w').write(s)
 
-name = '_'.join(x for x in ([dev, manager, hook] + feats) if x) + '.zip'
+name = '_'.join(x for x in ([dev, manager] + feats) if x) + '.zip'
 if name_out:
     with open(name_out, 'w') as fh:
         fh.write(name + '\n')
