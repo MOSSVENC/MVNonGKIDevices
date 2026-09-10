@@ -39,26 +39,19 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 
 ## XXKSU hook 类型适用范围
 
-来自 [Backslashxx/KernelSU fork 的钩子文档](https://github.com/backslashxx/KernelSU/issues/5)
-与 fork 的 `kernel/Kconfig` 帮助文本（树内选项自带）：
+范围标注来自 fork 的 `kernel/Kconfig` 帮助文本（树内选项自带）：
 
-| 机制 | 适用内核 | 上游标注的验证/推荐范围 | 说明 |
-|---|---|---|---|
-| `KSU_TAMPER_SYSCALL_TABLE` | ARM / ARM64 | 验证 3.0~7.1；推荐 3.0~4.14 | syscall 表劫持，覆盖 execve/faccessat/newfstatat/newfstat_ret/reboot 的 sucompat |
-| `KSU_HACK_ARM64_BRANCH_LINK` | ARM64 + KALLSYMS | 验证 3.10~7.1；推荐 4.19+ | 直接改写调用方 bl 指令到钩子；打点失败会回退 syscall 表机制 |
-| `KSU_LSM_SECURITY_HOOKS` | 任意 | 默认 y | LSM 侧自动钩子（bprm/file_permission/task_fix_setuid 等）；关闭它只对 non-ARM64 且内核 > 6.8 有意义，且需在 `security/security.c` 手工实现 LSM 钩子（见 fork issue #7） |
+| 机制 | 适用内核 | 上游推荐范围 |
+|---|---|---|
+| `KSU_TAMPER_SYSCALL_TABLE` | ARM / ARM64 | 3.0 至 4.14（验证 3.0 至 7.1） |
+| `KSU_HACK_ARM64_BRANCH_LINK` | ARM64 + KALLSYMS | 4.19 及以上（验证 3.10 至 7.1） |
+| `KSU_LSM_SECURITY_HOOKS` | 任意 | 默认开启；仅 non-ARM64 且 >6.8 的构建关闭时才需手工 security.c 钩子 |
 
-本仓库设备的对应选择：
+本仓库对应：4.9/4.14 设备用 `syscall_table`，4.19（alioth）用
+`branch_link`；六机均为 ARM64 且 ≤4.19，保持 `KSU_LSM_SECURITY_HOOKS=y`。
 
-- 4.9 / 4.14 设备（polaris/beryllium/daisy/vince/RMX2117）→ `syscall_table`
-  （在推荐区间 3.0~4.14）
-- 4.19 设备（alioth）→ `branch_link`（在推荐区间 4.19+）
-- 六设备均为 ARM64 且 ≤4.19 → 保持 `KSU_LSM_SECURITY_HOOKS=y`，
-  由 fork 的 LSM 面覆盖（issue #7 的手工 security.c 钩子面向
-  non-ARM64 且 >6.8 且关闭该选项的构建）
-
-fork issue #5/#7 的正文（含各内核版本的分支补丁形态）与三份 DeepWiki
-页面收录于本地工作区 `localworkspace/reference/xxksu/docs/`。
+各内核版本的分支补丁形态见 fork issue #5/#7（收录于
+`localworkspace/reference/xxksu/docs/`）。
 
 ## 特性开关
 
