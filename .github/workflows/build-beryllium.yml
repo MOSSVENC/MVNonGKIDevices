@@ -202,8 +202,19 @@ jobs:
           git apply "$P"
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
-          # the port carries the post-execve su-compat extern and call site
-          grep -c 'ksu_handle_post_execveat_sucompat' fs/exec.c
+          # the port carries the KSU interaction faces (ReSukiSU inline
+          # hook set + the post-execve su fd call)
+          for spec in "ksu_handle_execveat:fs/exec.c" \
+                      "ksu_handle_post_execveat_sucompat:fs/exec.c" \
+                      "ksu_handle_faccessat:fs/open.c" "ksu_handle_stat:fs/stat.c" \
+                      "ksu_handle_vfs_fstat:fs/stat.c" \
+                      "ksu_handle_sys_read:fs/read_write.c" \
+                      "ksu_handle_setresuid:kernel/sys.c" \
+                      "ksu_handle_sys_reboot:kernel/reboot.c" \
+                      "ksu_handle_input_handle_event:drivers/input/input.c"; do
+            sym="${spec%%:*}"; file="${spec##*:}"
+            grep -q "$sym" "$file" || { echo "port face missing: $sym($file)" >&2; exit 1; }
+          done
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'

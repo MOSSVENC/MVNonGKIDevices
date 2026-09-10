@@ -205,14 +205,21 @@ jobs:
           # root.
           cp "$GITHUB_WORKSPACE/scripts/susfs_inline_hook_patches-nongki.sh" ./
           bash ./susfs_inline_hook_patches-nongki.sh 2>&1 | tail -30
-          # verify the hooks ReSukiSU's inline_hook_check.mk demands
+          # verify the faces ReSukiSU's inline_hook_check.mk demands, the
+          # port-carried exec face and the generator's ungated faces
           MISSING=""
           for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
+                      "ksu_handle_post_execveat_sucompat:fs/exec.c" \
                       "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
-                      "ksu_handle_stat:fs/stat.c"; do
+                      "ksu_handle_stat:fs/stat.c" "ksu_handle_vfs_fstat:fs/stat.c" \
+                      "ksu_handle_sys_reboot:kernel/reboot.c" \
+                      "ksu_handle_input_handle_event:drivers/input/input.c"; do
             sym="${spec%%:*}"; file="${spec##*:}"
             grep -q "$sym" "$file" || MISSING="$MISSING $sym($file)"
           done
+          # fs/open.c and fs/stat.c call filename_lookup(); the generator
+          # de-statics it for the 4.x trees
+          grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"
           if [ -n "$MISSING" ]; then
             echo "hook generator left missing:$MISSING" >&2
             exit 1
