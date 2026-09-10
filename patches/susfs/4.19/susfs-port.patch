@@ -3846,11 +3846,12 @@ new file mode 100644
 index 0000000..236d85e
 --- /dev/null
 +++ b/include/linux/susfs_def.h
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,198 @@
 +#ifndef KSU_SUSFS_DEF_H
 +#define KSU_SUSFS_DEF_H
 +
 +#include <linux/version.h>
++#include <linux/cred.h>
 +#include <linux/bits.h>
 +#include <linux/string.h>
 +
@@ -4008,9 +4009,10 @@ index 0000000..236d85e
 +		inode && inode->i_state && \
 +		unlikely(test_bit(AS_FLAGS_OPEN_REDIRECT, &inode->i_state)) && \
 +		susfs_is_current_proc_umounted_app()
-+/* File names reach fsnotify handlers either as a C string (< 4.18) or
-+ * as a qstr (>= 4.18); these helpers keep the handler body identical. */
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
++/* fsnotify passes the file name as a NUL-terminated C string on these
++ * trees (qstr form arrives with 5.9); the helpers below keep the
++ * handler body identical. */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0)
 +typedef const struct qstr *susfs_fname_t;
 +#define susfs_fname_len(f) ((f)->len)
 +#define susfs_fname_arg(f) ((f)->name)
