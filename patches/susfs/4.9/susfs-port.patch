@@ -1967,6 +1967,132 @@ index 1059f2a9b..4a0fb3c30 100644
 +#endif
  	return error;
  }
+diff --git a/fs/stat.c b/fs/stat.c
+index 068fdbcc9..cb807cbc9 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -17,6 +17,13 @@
+ 
+ #include <asm/uaccess.h>
+ #include <asm/unistd.h>
++#ifdef CONFIG_KSU_SUSFS
++#include <linux/susfs_def.h>
++#endif
++
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat);
++#endif
+ 
+ void generic_fillattr(struct inode *inode, struct kstat *stat)
+ {
+@@ -33,10 +40,17 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
+ 	stat->ctime = inode->i_ctime;
+ 	stat->blksize = i_blocksize(inode);
+ 	stat->blocks = inode->i_blocks;
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++	susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
++#endif
+ }
+ 
+ EXPORT_SYMBOL(generic_fillattr);
+ 
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat);
++#endif
++
+ /**
+  * vfs_getattr_nosec - getattr without security checks
+  * @path: file to get attributes from
+@@ -53,8 +67,14 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
+ {
+ 	struct inode *inode = d_backing_inode(path->dentry);
+ 
+-	if (inode->i_op->getattr)
+-		return inode->i_op->getattr(path->mnt, path->dentry, stat);
++	if (inode->i_op->getattr) {
++		int err = inode->i_op->getattr(path->mnt, path->dentry, stat);
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++		if (!err)
++			susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
++#endif
++		return err;
++	}
+ 
+ 	generic_fillattr(inode, stat);
+ 	return 0;
+@@ -74,6 +94,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
+ 
+ EXPORT_SYMBOL(vfs_getattr);
+ 
++#ifdef CONFIG_KSU_SUSFS
++extern struct static_key_true ksu_is_init_rc_hook_enabled;
++extern void ksu_handle_vfs_fstat(int fd, loff_t *kstat_size_ptr);
++#endif // #ifdef CONFIG_KSU_SUSFS
++
+ int vfs_fstat(unsigned int fd, struct kstat *stat)
+ {
+ 	struct fd f = fdget_raw(fd);
+@@ -81,12 +106,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
+ 
+ 	if (f.file) {
+ 		error = vfs_getattr(&f.file->f_path, stat);
++#ifdef CONFIG_KSU_SUSFS
++		if (static_branch_unlikely(&ksu_is_init_rc_hook_enabled))
++			ksu_handle_vfs_fstat(fd, &stat->size);
++#endif // #ifdef CONFIG_KSU_SUSFS
++
+ 		fdput(f);
+ 	}
+ 	return error;
+ }
+ EXPORT_SYMBOL(vfs_fstat);
+ 
++#ifdef CONFIG_KSU_SUSFS
++extern struct static_key_true ksu_su_compat_enabled;
++extern bool __ksu_is_allow_uid_for_current(uid_t uid);
++extern int ksu_handle_stat(int *dfd, struct filename **filename, int *flags);
++extern int filename_lookup(int dfd, struct filename *name, unsigned flags,
++				struct path *path, struct path *root);
++#endif
++
+ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+ 		int flag)
+ {
+@@ -94,6 +132,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+ 	int error = -EINVAL;
+ 	unsigned int lookup_flags = 0;
+ 
++#ifdef CONFIG_KSU_SUSFS
++	struct filename *fname = NULL;
++#endif
++
+ 	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
+ 		      AT_EMPTY_PATH)) != 0)
+ 		goto out;
+@@ -103,7 +145,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+ 	if (flag & AT_EMPTY_PATH)
+ 		lookup_flags |= LOOKUP_EMPTY;
+ retry:
++#ifdef CONFIG_KSU_SUSFS
++	fname = getname_flags(filename, lookup_flags, NULL);
++
++	if (likely(susfs_is_current_proc_no_su()))
++		goto orig_flow;
++
++	if (static_branch_likely(&ksu_su_compat_enabled)) {
++		if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val)))
++			ksu_handle_stat(&dfd, &fname, NULL);
++	}
++
++orig_flow:
++	error = filename_lookup(dfd, fname, lookup_flags, &path, NULL);
++	// no putname(fname) here as filename_lookup() has it done for us already;
++#else
+ 	error = user_path_at(dfd, filename, lookup_flags, &path);
++#endif
+ 	if (error)
+ 		goto out;
+ 
 diff --git a/fs/statfs.c b/fs/statfs.c
 index 083dc0ac9..38d76a15d 100644
 --- a/fs/statfs.c
