@@ -169,19 +169,9 @@ jobs:
             sed -i "/endmenu/i\source \"drivers/kernelsu/Kconfig\"" drivers/Kconfig
           # Hook engines are mutually exclusive at the Kconfig level
           # (KSU_HACK_ARM64_BRANCH_LINK depends on !KSU_TAMPER_SYSCALL_TABLE).
-          # SuSFS is a feature that rides on one engine, so the susfs mode
-          # names its engine from the kernel line: 4.9/4.14 use the syscall
-          # table, 4.19 and newer the arm64 branch link.
-          KVER="$(awk '/^VERSION =/{v=$3} /^PATCHLEVEL =/{p=$3} END{print v"."p}' "$KROOT/Makefile")"
           case "$HOOK_TYPE" in
             branch_link) ENGINE=branch_link ;;
             syscall_table) ENGINE=syscall_table ;;
-            susfs)
-              case "$KVER" in
-                4.19|4.2[0-9]|5.*|6.*) ENGINE=branch_link ;;
-                *) ENGINE=syscall_table ;;
-              esac
-              ;;
             *) ENGINE=none ;;
           esac
           {

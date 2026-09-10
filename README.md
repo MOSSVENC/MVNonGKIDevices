@@ -28,14 +28,12 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | `resukisu-manual-source` | ReSukiSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read，0010-0012） |
 | `resukisu-auto` | ReSukiSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
 | `resukisu-susfs` | ReSukiSU main | SuSFS inline hook（应用各设备树适配补丁） |
-| `xxksu-susfs` | Backslashxx KernelSU fork（master） | SuSFS 特性，引擎按内核选（4.9/4.14 `syscall_table`，4.19+ `branch_link`） |
 | `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | hook 类型 `syscall_table` |
 | `xxksu-branch_link` | Backslashxx KernelSU fork（master） | hook 类型 `branch_link` |
 | `none` | — | stock，无 root 集成 |
 
-- 值集：六设备共 7 值（root 管理器 + hook 类型单选互斥：manual / auto /
-  susfs / syscall_table / branch_link）
-- xxksu 的 hook 类型与 susfs 组合边界以 CI 编译验证为准（维护评估文档在本地工作区）
+- 值集：六设备一致，共 7 值（root 管理器与 hook 类型单选互斥：manual /
+  auto / susfs / syscall_table / branch_link）
 
 ## XXKSU hook 类型适用范围
 
@@ -112,12 +110,6 @@ susfs 应用路径（全部为树适配 port）：polaris 用
 `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
 `patches/susfs/4.14/susfs-port.patch`。
 
-`xxksu-susfs`（polaris）用 `patches/susfs/4.9/xxksu-susfs-port.patch`：
-同一套 4.9 susfs 面，去掉 KSU 调用点（sucompat 由 fork 引擎驱动），
-另加 fork 侧桥接 `patches/susfs/fork/`（su 域与 sid 符号、reboot 超调用的
-susfs 命令段、boot 完成后的 sdcard monitor 启动、susfs 核心初始化与
-setuid/umount 路径的进程状态标记）。
-
 ### 静态符号
 
 selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶段无条件强制）。
@@ -150,7 +142,7 @@ kona-perf + 官方 device fragments；RMX2117 用 `k6853v1_64_6360_defconfig`。
 patches/
   droidspace/          official/ 官方 non-GKI 补丁 + 4.9/4.14/4.19 config
   resukisu/            4.9/4.14/4.19 树适配补丁
-  susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录与 fork/ 面）
+  susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
   bbg/                 集成说明（无本地补丁）
   sdcardfs/            Android/data 隔离（仅 polaris）
   alioth/              min-tool-version.sh（构建辅助）

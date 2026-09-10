@@ -153,7 +153,7 @@ if [ "${ROOT_MANAGER:-none}" = "xxksu" ]; then
       else
         echo "   OK   CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
       fi ;;
-    syscall_table|susfs)
+    syscall_table)
       assert_cfg CONFIG_KSU_TAMPER_SYSCALL_TABLE || rc=1
       if grep -qE "^CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y$" "$CFG"; then
         echo "   FAIL CONFIG_KSU_HACK_ARM64_BRANCH_LINK (syscall_table wants it off)" >&2
@@ -162,14 +162,6 @@ if [ "${ROOT_MANAGER:-none}" = "xxksu" ]; then
         echo "   OK   CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set"
       fi ;;
   esac
-  if [ "${HOOK_TYPE:-none}" = "susfs" ]; then
-    assert_cfg CONFIG_KSU_SUSFS || rc=1
-    for s in CONFIG_KSU_SUSFS_SUS_PATH CONFIG_KSU_SUSFS_SUS_MOUNT \
-             CONFIG_KSU_SUSFS_SUS_KSTAT CONFIG_KSU_SUSFS_OPEN_REDIRECT \
-             CONFIG_KSU_SUSFS_SUS_MAP; do
-      assert_cfg "$s" || rc=1
-    done
-  fi
 elif [ "${ROOT_MANAGER:-none}" = "resukisu" ]; then
   assert_cfg CONFIG_KSU || rc=1
   if [ "${HOOK_TYPE:-manual}" = "susfs" ]; then

@@ -21,7 +21,6 @@ on:
           - resukisu-manual-source
           - resukisu-auto
           - resukisu-susfs
-          - xxksu-susfs
           - xxksu-syscall_table
           - xxksu-branch_link
           - none
@@ -168,19 +167,9 @@ jobs:
             sed -i "/endmenu/i\source \"drivers/kernelsu/Kconfig\"" drivers/Kconfig
           # Hook engines are mutually exclusive at the Kconfig level
           # (KSU_HACK_ARM64_BRANCH_LINK depends on !KSU_TAMPER_SYSCALL_TABLE).
-          # SuSFS is a feature that rides on one engine, so the susfs mode
-          # names its engine from the kernel line: 4.9/4.14 use the syscall
-          # table, 4.19 and newer the arm64 branch link.
-          KVER="$(awk '/^VERSION =/{v=$3} /^PATCHLEVEL =/{p=$3} END{print v"."p}' "$KROOT/Makefile")"
           case "$HOOK_TYPE" in
             branch_link) ENGINE=branch_link ;;
             syscall_table) ENGINE=syscall_table ;;
-            susfs)
-              case "$KVER" in
-                4.19|4.2[0-9]|5.*|6.*) ENGINE=branch_link ;;
-                *) ENGINE=syscall_table ;;
-              esac
-              ;;
             *) ENGINE=none ;;
           esac
           {
@@ -201,44 +190,6 @@ jobs:
                 ;;
             esac
           } > "$GITHUB_WORKSPACE/xxksu.config.fragment"
-          if [ "$HOOK_TYPE" = "susfs" ]; then
-            # SusFS over XXKSU: fork-side bridge (su domain symbol, reboot
-            # supercall command path) + the tree faces without the KSU
-            # callsites, which the fork engines drive themselves.
-            cd "$RUNNER_TEMP/xxksu"
-            # fork kernel/Kconfig has no SuSFS option; append the menu so
-            # the KSU_SUSFS fragment symbols resolve (idempotent).
-            if ! grep -q 'config KSU_SUSFS' "$RUNNER_TEMP/xxksu/kernel/Kconfig"; then
-              cat "$GITHUB_WORKSPACE/patches/susfs/fork/Kconfig-susfs-menu" >> \
-                "$RUNNER_TEMP/xxksu/kernel/Kconfig"
-            fi
-            # a description block that lost its help keyword aborts
-            # alldefconfig; reject that shape before the build starts
-            python3 "$GITHUB_WORKSPACE/scripts/check-kconfig-structure.py" \
-              "$RUNNER_TEMP/xxksu/kernel/Kconfig" || exit 1
-            for p in 0001-susfs-ksu-symbols 0002-susfs-supercall 0003-susfs-state; do
-              git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
-              git apply "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
-            done
-            grep -q 'SUSFS_MAGIC' "$RUNNER_TEMP/xxksu/kernel/supercall/supercall.c" || \
-              { echo "fork supercall bridge missing"; exit 1; }
-            cd "$KROOT"
-            # tree faces: susfs core, VFS/overlay and proc surfaces for 4.9
-            git apply --check "$GITHUB_WORKSPACE/patches/susfs/4.9/xxksu-susfs-port.patch" || exit 1
-            git apply "$GITHUB_WORKSPACE/patches/susfs/4.9/xxksu-susfs-port.patch" || exit 1
-            {
-              echo "CONFIG_KSU_SUSFS=y"
-              echo "CONFIG_KSU_SUSFS_SUS_PATH=y"
-              echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y"
-              echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y"
-              echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y"
-              echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y"
-              echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y"
-              echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y"
-              echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y"
-              echo "CONFIG_KSU_SUSFS_SUS_MAP=y"
-            } >> "$GITHUB_WORKSPACE/xxksu.config.fragment"
-          fi
           echo "xxksu mode: $HOOK_TYPE engine: $ENGINE"
           cat "$GITHUB_WORKSPACE/xxksu.config.fragment"
 
