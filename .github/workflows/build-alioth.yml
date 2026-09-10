@@ -363,8 +363,13 @@ jobs:
                     # per-build feature display: to anykernel.sh (flash-time) and to a
           # FEATURES.txt inside the zip for at-a-glance package inspection
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
-            "$RUNNER_TEMP/ak3/anykernel.sh" "K40" \
+            "$RUNNER_TEMP/ak3/anykernel.sh" "alioth" \
+            "$RUNNER_TEMP/ak3/zipname.txt" \
             > "$RUNNER_TEMP/ak3/FEATURES.txt"
+          # package name follows this build's inputs
+          # (codename_manager_hook_feature...)
+          AK3_ZIP="$(cat "$RUNNER_TEMP/ak3/zipname.txt")"
+          echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
           echo "=== K40 kernel features (this build) ==="
           cat "$RUNNER_TEMP/ak3/FEATURES.txt"
 
@@ -378,7 +383,7 @@ jobs:
           # partitions (kernel only, ramdisk lives in vendor_boot).
           cp "$RUNNER_TEMP/out/Image" "$RUNNER_TEMP/ak3/"
           [ -f "$RUNNER_TEMP/dtbo.img" ] && cp "$RUNNER_TEMP/dtbo.img" "$RUNNER_TEMP/ak3/"
-          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/alioth-kernel.zip" . >/dev/null )
+          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/$AK3_ZIP" . >/dev/null )
 
       - name: Upload build log
         if: always()
@@ -414,8 +419,8 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v7
         with:
-          name: alioth-kernel.zip
-          path: ${{ runner.temp }}/alioth-kernel.zip
+          name: ${{ env.AK3_ZIP }}
+          path: ${{ runner.temp }}/${{ env.AK3_ZIP }}
           archive: false
           if-no-files-found: error
           retention-days: 14

@@ -291,8 +291,13 @@ jobs:
                     # per-build feature display: to anykernel.sh (flash-time) and to a
           # FEATURES.txt inside the zip for at-a-glance package inspection
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
-            "$RUNNER_TEMP/ak3/anykernel.sh" "Daisy" \
+            "$RUNNER_TEMP/ak3/anykernel.sh" "daisy" \
+            "$RUNNER_TEMP/ak3/zipname.txt" \
             > "$RUNNER_TEMP/ak3/FEATURES.txt"
+          # package name follows this build's inputs
+          # (codename_manager_hook_feature...)
+          AK3_ZIP="$(cat "$RUNNER_TEMP/ak3/zipname.txt")"
+          echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
           echo "=== Daisy kernel features (this build) ==="
           cat "$RUNNER_TEMP/ak3/FEATURES.txt"
 
@@ -305,7 +310,7 @@ jobs:
           cp "$RUNNER_TEMP/out/Image.gz-dtb" "$RUNNER_TEMP/ak3/"
           # zip INSIDE ak3/ so the zip root is anykernel.sh/META-INF/tools/
           # (standard AnyKernel3 layout, no extra wrapper directory)
-          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/daisy-kernel.zip" . >/dev/null )
+          ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/$AK3_ZIP" . >/dev/null )
 
       # --- three SEPARATE artifacts, never nested/repacked into each other ---
       # 1) raw build log  2) raw kernel image  3) standard AnyKernel3 zip
@@ -333,8 +338,8 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v7
         with:
-          name: daisy-kernel.zip
-          path: ${{ runner.temp }}/daisy-kernel.zip
+          name: ${{ env.AK3_ZIP }}
+          path: ${{ runner.temp }}/${{ env.AK3_ZIP }}
           archive: false
           if-no-files-found: error
           retention-days: 14

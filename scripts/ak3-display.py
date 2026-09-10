@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
-"""Compose the AK3 kernel.string display from build inputs.
+"""Compose the AK3 flash-time display and the package name from build inputs.
 
-usage: ak3-display.py <anykernel.sh> <device-prefix>
+usage: ak3-display.py <anykernel.sh> <device-codename> [name-out]
 
 env: ROOT_MANAGER HOOK_TYPE HOOK_EXTRA
+     CENTER_WIDTH (optional, default 60)
 
-DROIDSPACE > SDCARDFS). Long content splits into one line per layer;
-manual-hook detail is appended as separated description lines.
+Display: two centered lines —
+    <codename>  <manager>  <HOOK_TYPE>
+    <feature>  <feature> ...
+omitted. Package name: <codename>_<manager>_<HOOK_TYPE>[_<feature>...].zip
 """
 import os
 import re
 import sys
 
-sh_path, dev = sys.argv[1], sys.argv[2]
+CENTER_WIDTH = int(os.environ.get('CENTER_WIDTH', '60'))
+
+sh_path = sys.argv[1]
+dev = sys.argv[2]
+name_out = sys.argv[3] if len(sys.argv) > 3 else None
+
 rm = os.environ.get('ROOT_MANAGER', 'none')
-eng = os.environ.get('HOOK_TYPE', '')
 ht = os.environ.get('HOOK_TYPE', '')
-hx = os.environ.get('HOOK_EXTRA', '')
 
 feat_flags = [
     ('BBG', os.environ.get('ENABLE_BBG') == 'true'),
@@ -25,51 +31,39 @@ feat_flags = [
 ]
 feats = [name for name, on in feat_flags if on]
 
-if rm == 'none':
-    text = dev + (' ' + ' '.join(feats) if feats else ' STOCK')
+if rm == 'resukisu':
+    manager = 'ReSukiSU'
+    hook = {'auto': 'AUTO-HOOK', 'susfs': 'SUSFS-INLINE-HOOK'}.get(ht, 'MANUAL-HOOK')
+elif rm == 'xxksu':
+    manager = 'XXKSU'
+    hook = 'SUSFS-INLINE-HOOK' if ht == 'susfs' else {
+        'syscall_table': 'SYSCALL-TABLE-HOOK',
+        'branch_link': 'BRANCH-LINK-HOOK',
+    }.get(ht, 'HOOK')
 else:
-    root = 'ReSukiSU' if rm == 'resukisu' else 'XXKSU'
+    manager = 'STOCK'
     hook = ''
-    desc = []
-    if rm == 'resukisu':
-        if ht == 'auto':
-            hook = 'AUTO-HOOK'
-            desc = ['auto-hook branch: inline-hook engine, no source patches']
-        elif ht == 'susfs':
-            hook = 'SUSFS-INLINE-HOOK'
-            desc = ['SuSFS inline hook (kernel-side susfs, KSU call sites)']
-        else:
-            hook = 'MANUAL-HOOK'
-            if hx == 'manual':
-                desc = ['source patches + alt manual hooks (input/setuid/sys_read 0010-0012)']
-            else:
-                desc = [
-                    'INPUT hook: auto-applied via kernel input_handler '
-                    '(CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK)',
-                    'SETUID/INITRC hooks: LSM AUTO',
-                ]
-    else:
-        if ht == 'susfs':
-            hook = 'SUSFS-INLINE-HOOK'
-            engname = {'syscall_table': 'SYSCALL-TABLE-HOOK',
-                       'branch_link': 'BRANCH-LINK-HOOK'}.get(eng, '')
-            if engname:
-                desc = ['SusFS over {} hook'.format(engname)]
-        else:
-            hook = {'syscall_table': 'SYSCALL-TABLE-HOOK',
-                    'branch_link': 'BRANCH-LINK-HOOK'}.get(eng, 'HOOK')
-    head = '{} {} {}'.format(dev, root, hook)
-    if feats:
-        head += ' ' + ' '.join(feats)
-    if len(head) <= 64 and not desc:
-        text = head
-    else:
-        text = '\n'.join([dev + ' ' + root, hook] +
-                         ([' '.join(feats)] if feats else []))
-        if desc:
-            text += '\n\n' + '\n'.join(desc)
+
+line1 = '  '.join(x for x in (dev, manager, hook) if x)
+line2 = '  '.join(feats)
+
+
+def centered(text):
+    if not text:
+        return ''
+    pad = max(0, (CENTER_WIDTH - len(text)) // 2)
+    return ' ' * pad + text
+
+
+text = centered(line1)
+if line2:
+    text += '\n' + centered(line2)
+
+name = '_'.join(x for x in ([dev, manager, hook] + feats) if x) + '.zip'
 
 s = open(sh_path).read()
 s = re.sub(r'(?m)^kernel\.string=.*', 'kernel.string="' + text + '"', s, count=1)
 open(sh_path, 'w').write(s)
+if name_out:
+    open(name_out, 'w').write(name + '\n')
 print(text)
