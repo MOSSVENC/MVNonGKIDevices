@@ -65,6 +65,7 @@ config KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
 	bool "Enable to spoof /proc/bootconfig (gki) or /proc/cmdline (non-gki)"
 	depends on KSU_SUSFS
 	default y
+	help
 	  - Spoof the output of /proc/bootconfig (gki) or /proc/cmdline (non-gki) with a user-defined file.
 	  - Effective on all processes.
 
