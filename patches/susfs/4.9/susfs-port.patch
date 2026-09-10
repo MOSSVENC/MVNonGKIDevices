@@ -1968,10 +1968,10 @@ index 1059f2a9b..4a0fb3c30 100644
  	return error;
  }
 diff --git a/fs/stat.c b/fs/stat.c
-index 068fdbcc9..cb807cbc9 100644
+index 068fdbcc9..c26e58f3c 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
-@@ -17,6 +17,13 @@
+@@ -17,6 +17,14 @@
  
  #include <asm/uaccess.h>
  #include <asm/unistd.h>
@@ -1980,30 +1980,37 @@ index 068fdbcc9..cb807cbc9 100644
 +#endif
 +
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat);
++extern bool susfs_is_inode_sus_kstat(struct inode *inode, bool *out_is_fuse);
++extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat, u32 result_mask);
 +#endif
  
  void generic_fillattr(struct inode *inode, struct kstat *stat)
  {
-@@ -33,10 +40,17 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
+@@ -33,10 +41,23 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
  	stat->ctime = inode->i_ctime;
  	stat->blksize = i_blocksize(inode);
  	stat->blocks = inode->i_blocks;
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+	susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
++	if (susfs_is_current_app_uid()) {
++		bool is_fuse = false;
++		if (susfs_is_inode_sus_kstat(inode, &is_fuse))
++			susfs_sus_kstat_spoof_generic_fillattr(inode, stat,
++					is_fuse ? STATX_SUS_KSTAT_FUSE : STATX_SUS_KSTAT);
++	}
 +#endif
  }
  
  EXPORT_SYMBOL(generic_fillattr);
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat);
++extern bool susfs_is_inode_sus_kstat(struct inode *inode, bool *out_is_fuse);
++extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat, u32 result_mask);
 +#endif
 +
  /**
   * vfs_getattr_nosec - getattr without security checks
   * @path: file to get attributes from
-@@ -53,8 +67,14 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
+@@ -53,8 +74,18 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
  {
  	struct inode *inode = d_backing_inode(path->dentry);
  
@@ -2012,15 +2019,19 @@ index 068fdbcc9..cb807cbc9 100644
 +	if (inode->i_op->getattr) {
 +		int err = inode->i_op->getattr(path->mnt, path->dentry, stat);
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+		if (!err)
-+			susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
++		if (!err && susfs_is_current_app_uid()) {
++			bool is_fuse = false;
++			if (susfs_is_inode_sus_kstat(inode, &is_fuse))
++				susfs_sus_kstat_spoof_generic_fillattr(inode, stat,
++						is_fuse ? STATX_SUS_KSTAT_FUSE : STATX_SUS_KSTAT);
++		}
 +#endif
 +		return err;
 +	}
  
  	generic_fillattr(inode, stat);
  	return 0;
-@@ -74,6 +94,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
+@@ -74,6 +105,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
  
  EXPORT_SYMBOL(vfs_getattr);
  
@@ -2032,7 +2043,7 @@ index 068fdbcc9..cb807cbc9 100644
  int vfs_fstat(unsigned int fd, struct kstat *stat)
  {
  	struct fd f = fdget_raw(fd);
-@@ -81,12 +106,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
+@@ -81,12 +117,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
  
  	if (f.file) {
  		error = vfs_getattr(&f.file->f_path, stat);
@@ -2058,7 +2069,7 @@ index 068fdbcc9..cb807cbc9 100644
  int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  		int flag)
  {
-@@ -94,6 +132,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -94,6 +143,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	int error = -EINVAL;
  	unsigned int lookup_flags = 0;
  
@@ -2069,7 +2080,7 @@ index 068fdbcc9..cb807cbc9 100644
  	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
  		      AT_EMPTY_PATH)) != 0)
  		goto out;
-@@ -103,7 +145,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -103,7 +156,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	if (flag & AT_EMPTY_PATH)
  		lookup_flags |= LOOKUP_EMPTY;
  retry:
