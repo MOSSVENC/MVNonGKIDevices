@@ -204,12 +204,7 @@ jobs:
           git apply "$P"
           echo "SuSFS port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
-
-          # post-execve su-compat call (su fd install path with current
-          # ReSukiSU su_fd): idempotent injections on fs/exec.c
-          python3 "$GITHUB_WORKSPACE/scripts/susfs-exec-post-sucompat.py" \
-            "$KROOT/fs/exec.c"
-          echo "SuSFS port + post-sucompat applied:"
+          # the port carries the post-execve su-compat extern and call site
           grep -c 'ksu_handle_post_execveat_sucompat' fs/exec.c
 
       - name: Integrate Baseband-guard (BBG)

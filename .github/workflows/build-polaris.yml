@@ -207,13 +207,9 @@ jobs:
           # port's compat hunk also covers; -3 merges instead of failing.
           git apply --3way "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch" || {
             echo "SuSFS port does not apply cleanly"; exit 1; }
-          # post-execve su-compat call (su fd install path with current
-          # ReSukiSU su_fd): idempotent injections on fs/exec.c
-          python3 "$GITHUB_WORKSPACE/scripts/susfs-exec-post-sucompat.py" \
-            "$KROOT/fs/exec.c"
-          echo "SuSFS port + post-sucompat applied:"
+          # the port carries the post-execve su-compat extern and call site
+          echo "SuSFS port applied:"
           grep -c 'ksu_handle_post_execveat_sucompat' fs/exec.c
-
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
