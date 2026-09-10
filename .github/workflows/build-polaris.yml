@@ -26,30 +26,26 @@ on:
           - xxksu-branch_link
           - none
         default: resukisu-manual-lsm
-      enable_rekernel:
-        description: integrate Re:Kernel frozen-binder notify (see patches/rekernel/README)
-        type: boolean
-        default: false
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
-        default: true
+        default: false
       enable_droidspace:
         description: enable Droidspaces/LXC kernel support
         type: boolean
-        default: true
+        default: false
       cgroup_port:
         description: 4.9 cgroup noprefix compat patch (droidspace)
         type: boolean
-        default: true
+        default: false
       enable_data_isolation:
         description: sdcardfs per-uid Android/data isolation
         type: boolean
-        default: true
+        default: false
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
-        default: true
+        default: false
 
 concurrency:
   group: polaris-kernel
@@ -66,7 +62,6 @@ jobs:
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
-      ENABLE_REKERNEL: ${{ inputs.enable_rekernel }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
@@ -238,28 +233,6 @@ jobs:
           grep -c 'ksu_handle_post_execveat_sucompat' fs/exec.c
 
 
-      # --- Re:Kernel frozen-binder notify (GPL, Sakion-Team/Re-Kernel) ---
-      # In-kernel tombstone aid: report frozen processes touched by binder
-      # transactions / killed, via netlink to the userspace tombstone.
-      - name: Integrate Re:Kernel (patches/rekernel/4.9)
-        if: env.ENABLE_REKERNEL == 'true'
-        run: |
-          bash scripts/apply-patches.sh "$KROOT" \
-            "$GITHUB_WORKSPACE"/patches/rekernel/4.9/000[1-3]-*.patch
-          # wire drivers/rekernel into the tree Kconfig/Makefile (idempotent;
-          # survives the resukisu/xxksu integration that touches the same
-          # files). Context-based patches drift here, so inject directly.
-          if ! grep -q 'drivers/rekernel/Kconfig' "$KROOT/drivers/Kconfig"; then
-            sed -i '/^endmenu$/i source "drivers/rekernel/Kconfig"' "$KROOT/drivers/Kconfig"
-          fi
-          if ! grep -q 'CONFIG_REKERNEL) += rekernel' "$KROOT/drivers/Makefile"; then
-            echo 'obj-$(CONFIG_REKERNEL) += rekernel/' >> "$KROOT/drivers/Makefile"
-          fi
-          {
-            echo "CONFIG_REKERNEL=y"
-            echo "# CONFIG_REKERNEL_NETWORK is not set"
-          } > "$GITHUB_WORKSPACE/rekernel.config.fragment"
-
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
         run: |
@@ -305,11 +278,9 @@ jobs:
           elif [ "$ROOT_MANAGER" = "xxksu" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/xxksu.config.fragment"
           fi
-          [ "$ENABLE_REKERNEL" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/rekernel.config.fragment"
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
           ROOT_MANAGER="$ROOT_MANAGER" \
-          ENABLE_REKERNEL="$ENABLE_REKERNEL" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
@@ -362,17 +333,14 @@ jobs:
           # device props inside properties() are indented; boot vars at top
           # kernel.string reflects the features actually enabled this run
           # (build inputs), not a fixed list.
-          # feature display composed by the shared script (root / hook
-          # type / feature level; manual-hook detail lines follow)
-                    # per-build feature display: to anykernel.sh (flash-time) and to a
-          # FEATURES.txt inside the zip for at-a-glance package inspection
+          # per-build display: banner + kernel.string for the flash-time
+          # screen, FEATURES.txt inside the zip for inspection
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
-            "$RUNNER_TEMP/ak3/anykernel.sh" "polaris" \
-            "$RUNNER_TEMP/ak3/zipname.txt" \
-            > "$RUNNER_TEMP/ak3/FEATURES.txt"
+            "$RUNNER_TEMP/ak3" "polaris" \
+            "$RUNNER_TEMP/zipname.txt"
           # package name follows this build's inputs
           # (codename_manager_hook_feature...)
-          AK3_ZIP="$(cat "$RUNNER_TEMP/ak3/zipname.txt")"
+          AK3_ZIP="$(cat "$RUNNER_TEMP/zipname.txt")"
           echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
           echo "=== Mix2S kernel features (this build) ==="
           cat "$RUNNER_TEMP/ak3/FEATURES.txt"

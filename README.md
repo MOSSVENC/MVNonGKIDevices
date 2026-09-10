@@ -16,10 +16,9 @@ workflow_dispatch 手动触发。
 | realme Q2（国行） | `RMX2117` (mt6853) | 4.14.186 | [realme X7 系 AndroidS 综合源](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source)（9 机共用）@ `master` | `build-RMX2117.yml` |
 
 workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
-特性开关（`enable_bbg` / `enable_droidspace`，另按设备出现
-`enable_rekernel` / `cgroup_port` / `enable_data_isolation` /
-`auto_fix_49`）。RMX2117 差异：`enable_bbg` / `enable_droidspace`
-默认 off。
+特性开关（`enable_bbg` / `enable_droidspace`，另按设备出现 `cgroup_port`
+/ `enable_data_isolation` / `auto_fix_49`）。所有开关均不预设启用，按
+构建需要手动选择。
 
 ## root_mode（root 管理器与 hook 组合）
 
@@ -35,19 +34,43 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | `none` | — | stock，无 root 集成 |
 
 - 值集：六设备共 7 值（root 管理器 + hook 类型单选互斥：manual / auto /
-  susfs / syscall_table / branch_link）；`xxksu-susfs` 为polaris 先行值
-  （SusFS 树件按树适配，其余设备待树件落位后接入）
+  susfs / syscall_table / branch_link）
 - xxksu 的 hook 类型与 susfs 组合边界以 CI 编译验证为准（维护评估文档在本地工作区）
+
+## XXKSU hook 类型适用范围
+
+来自 [Backslashxx/KernelSU fork 的钩子文档](https://github.com/backslashxx/KernelSU/issues/5)
+与 fork 的 `kernel/Kconfig` 帮助文本（树内选项自带）：
+
+| 机制 | 适用内核 | 上游标注的验证/推荐范围 | 说明 |
+|---|---|---|---|
+| `KSU_TAMPER_SYSCALL_TABLE` | ARM / ARM64 | 验证 3.0~7.1；推荐 3.0~4.14 | syscall 表劫持，覆盖 execve/faccessat/newfstatat/newfstat_ret/reboot 的 sucompat |
+| `KSU_HACK_ARM64_BRANCH_LINK` | ARM64 + KALLSYMS | 验证 3.10~7.1；推荐 4.19+ | 直接改写调用方 bl 指令到钩子；打点失败会回退 syscall 表机制 |
+| `KSU_LSM_SECURITY_HOOKS` | 任意 | 默认 y | LSM 侧自动钩子（bprm/file_permission/task_fix_setuid 等）；关闭它只对 non-ARM64 且内核 > 6.8 有意义，且需在 `security/security.c` 手工实现 LSM 钩子（见 fork issue #7） |
+
+本仓库设备的对应选择：
+
+- 4.9 / 4.14 设备（polaris/beryllium/daisy/vince/RMX2117）→ `syscall_table`
+  （在推荐区间 3.0~4.14）
+- 4.19 设备（alioth）→ `branch_link`（在推荐区间 4.19+）
+- 六设备均为 ARM64 且 ≤4.19 → 保持 `KSU_LSM_SECURITY_HOOKS=y`，
+  由 fork 的 LSM 面覆盖（issue #7 的手工 security.c 钩子面向
+  non-ARM64 且 >6.8 且关闭该选项的构建）
+
+fork issue #5/#7 的正文（含各内核版本的分支补丁形态）与三份 DeepWiki
+页面收录于本地工作区 `localworkspace/reference/xxksu/docs/`。
 
 ## 特性开关
 
-| 特性 | 输入 | 说明 | 默认 |
-|---|---|---|---|
-| BBG | `enable_bbg` | Baseband-guard 防格机 LSM（无本地补丁，官方 setup.sh） | on（RMX off） |
-| Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） | on（RMX off） |
-| Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） | on |
-| Re:Kernel | `enable_rekernel` | 冻结（墓碑）进程 binder/被杀事件 netlink 上报（GPL，Sakion-Team/Re-Kernel；手动补丁，见 patches/rekernel/） | off |
-| Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） | polaris on |
+| 特性 | 输入 | 说明 |
+|---|---|---|
+| BBG | `enable_bbg` | Baseband-guard 防格机 LSM（无本地补丁，官方 setup.sh） |
+| Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） |
+| Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） |
+| Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） |
+
+`auto_fix_49`：resukisu-auto 的 4.x kasan_reset_tag 门槛修正（auto-hook
+分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
 
 susfs 应用路径（全部为树适配 port）：polaris 用
 `patches/susfs/4.9/susfs-port.patch`；beryllium/daisy/vince 用
@@ -75,11 +98,11 @@ susfs 应用路径（全部为树适配 port）：polaris 用
 - 其它 app 访问 → lookup/getattr 得 ENOENT、open 得 EACCES
 
 owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持共享。
-能拿到"所有文件访问"特权的 app 不在本链路内（Android 授权语义）。
 
 ### ReSukiSU manual hook 七类
 
-按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)，
+按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)
+（本地工作区 `localworkspace/reference/resukisu/docs/` 有页面收录），
 4 类必须改源码、3 类可选。本仓库补丁布局：4.9/4.14/4.19 版本目录，
 跨版本相同形态单一真身存 `4.9/`，workflow 以文件级清单跨目录引用。
 
@@ -110,7 +133,7 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 <BASE_DEFCONFIG>
   + <DEVICE_FRAGMENTS>
   + resukisu.config.fragment / xxksu.config.fragment / susfs.config.fragment（按 root_mode）
-  + rekernel/bbg/droidspace fragment（按特性开关）
+  + bbg/droidspace fragment（按特性开关）
   + 强制覆盖：CC_WERROR off、KALLSYMS(+ALL)=y
   → 断言（缺失即失败）
 ```
@@ -129,14 +152,13 @@ kona-perf + 官方 device fragments；RMX2117 用 `k6853v1_64_6360_defconfig`。
 patches/
   droidspace/          official/ 官方 non-GKI 补丁 + 4.9/4.14/4.19 config
   resukisu/            4.9/4.14/4.19 树适配补丁
-  susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
-  rekernel/            4.9 树适配补丁（墓碑哨兵）
+  susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录与 fork/ 面）
   bbg/                 集成说明（无本地补丁）
   sdcardfs/            Android/data 隔离（仅 polaris）
   alioth/              min-tool-version.sh（构建辅助）
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
                        ak3-display 等）
-上游素材镜像（susfs/resukisu/rekernel）、旧 shipped 归档与维护工具
+上游素材镜像（susfs/resukisu/xxksu/rekernel）、旧 shipped 归档与维护工具
 （sync/parity/管线）均位于本地工作区（localworkspace/），不随仓库分发；
 官方补丁中 CI 直接应用的（droidspace）保留在 official/。
 localworkspace/        本机工作区（gitignored；布局见 localworkspace/README）
@@ -193,7 +215,7 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 
 ## 边界
 
-- susfs：`resukisu-susfs`；polaris 重建镜像与设备落位件由本地管线
+- susfs：`resukisu-susfs`；polaris 重建镜像与各设备落位件由本地管线
   （localworkspace/pipelines/）维护
 - Android/data 隔离仅 polaris；alioth（4.19 kona）无 sdcardfs
 - vince 树自带旧 KernelSU：集成前用
