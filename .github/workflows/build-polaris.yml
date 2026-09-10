@@ -178,9 +178,9 @@ jobs:
             fi
           } > "$GITHUB_WORKSPACE/xxksu.config.fragment"
           if [ "$HOOK_TYPE" = "susfs" ]; then
-            # SusFS over XXKSU: fork-side symbol bridge + tree patches
-            # (core/vfs/overlay; the KSU callsite patch is not used - the
-            # fork hook already drives ksu_handle_*).
+            # SusFS over XXKSU: fork-side bridge (su domain symbol, reboot
+            # supercall command path) + the tree faces without the KSU
+            # callsites, which the fork engines drive themselves.
             cd "$RUNNER_TEMP/xxksu"
             # fork kernel/Kconfig has no SuSFS option; append the menu so
             # the KSU_SUSFS fragment symbols resolve (idempotent).
@@ -188,13 +188,16 @@ jobs:
               cat "$GITHUB_WORKSPACE/patches/susfs/fork/Kconfig-susfs-menu" >> \
                 "$RUNNER_TEMP/xxksu/kernel/Kconfig"
             fi
-            git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
-            git apply "$GITHUB_WORKSPACE/patches/susfs/fork/0001-susfs-ksu-domain.patch"
+            for p in 0001-susfs-ksu-domain 0002-susfs-supercall; do
+              git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
+              git apply "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
+            done
+            grep -q 'SUSFS_MAGIC' "$RUNNER_TEMP/xxksu/kernel/supercall/supercall.c" || \
+              { echo "fork supercall bridge missing"; exit 1; }
             cd "$KROOT"
-            # SusFS tree patches: full 4.9 port (tree-adapted single file);
-            # fork hook engine drives ksu_handle_* (3-way tolerates the
-            # selinux overlap left by the fork integration).
-            git apply --3way "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
+            # tree faces: susfs core, VFS/overlay and proc surfaces for 4.9
+            git apply --check "$GITHUB_WORKSPACE/patches/susfs/4.9/xxksu-susfs-port.patch" || exit 1
+            git apply "$GITHUB_WORKSPACE/patches/susfs/4.9/xxksu-susfs-port.patch" || exit 1
             {
               echo "CONFIG_KSU_SUSFS=y"
               echo "CONFIG_KSU_SUSFS_SUS_PATH=y"

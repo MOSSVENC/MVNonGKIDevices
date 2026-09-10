@@ -112,6 +112,11 @@ susfs 应用路径（全部为树适配 port）：polaris 用
 `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
 `patches/susfs/4.14/susfs-port.patch`。
 
+`xxksu-susfs`（polaris）用 `patches/susfs/4.9/xxksu-susfs-port.patch`：
+同一套 4.9 susfs 面，去掉 KSU 调用点（sucompat 由 fork 引擎驱动），
+另加 fork 侧桥接 `patches/susfs/fork/`（su 域符号、reboot 超调用的
+susfs 命令段与 boot 完成后的 sdcard monitor 启动）。
+
 ### 静态符号
 
 selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶段无条件强制）。
