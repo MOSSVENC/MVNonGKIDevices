@@ -49,12 +49,12 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 `branch_link`；六机均为 ARM64 且 ≤4.19，保持 `KSU_LSM_SECURITY_HOOKS=y`。
 
 各内核版本的分支补丁形态见 fork issue #5/#7（收录于
-`localworkspace/reference/xxksu/docs/`）。
+`localworkspace/evidence/xxksu-docs/`）。
 
 ## ReSukiSU manual hook 七类
 
 按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)
-（本地工作区 `localworkspace/reference/resukisu/docs/` 有页面收录），
+（本地工作区 `localworkspace/evidence/resukisu-docs/` 有页面收录），
 4 类必须改源码、3 类可选。本仓库补丁布局：4.9/4.14/4.19 版本目录，
 跨版本相同形态单一真身存 `4.9/`，workflow 以文件级清单跨目录引用。
 
@@ -150,7 +150,7 @@ scripts/               编排脚本（apply-patches / integrate-* / merge-defcon
                        ak3-display 等）
 （sync/parity/管线）均位于本地工作区（localworkspace/），不随仓库分发；
 官方补丁中 CI 直接应用的（droidspace）保留在 official/。
-localworkspace/        本机工作区（gitignored；布局见 localworkspace/README）
+localworkspace/        本机工作区（gitignored；布局见 localworkspace/README.md、条目索引见 INDEX.md）
 .github/workflows/     每设备 CI
 ```
 
