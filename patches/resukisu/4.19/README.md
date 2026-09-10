@@ -11,7 +11,7 @@
 | `0011-setuid` | 4.19 本地：4.17+ 形态，hook `__sys_setresuid` |
 | `0012-sysread` | 4.19 本地：4.19+ 形态，hook `ksys_read` 包装 |
 
-文档形态参考（网页摘录）见 `../upstream/manualhook/`。
+文档形态参考（网页摘录）见 `localworkspace/evidence/resukisu-docs/docs/manual-integrate-zh.md`。
 
 ## 应用（必加组）
 

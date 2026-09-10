@@ -9,7 +9,7 @@
 | `0010-input` / `0011-setuid` / `0012-sysread` | 可选组，仅 `hook_extra=manual` 模式应用；`hook_extra=lsm`（默认）由 ReSukiSU 的 LSM / input_handler AUTO 机制覆盖 |
 | `daisy/0004` / `vince/0004` | reboot hook 的设备树变体（两者 reboot.c 上下文不同）；这两棵树用变体代替 `0004`。`vince/0000-remove-legacy-ksu-hooks.patch` 在集成前剥离树自带旧 KernelSU 埋点 |
 
-文档形态参考（网页摘录）见 `../upstream/manualhook/`；文档版本页与
+文档形态参考（网页摘录）见 `localworkspace/evidence/resukisu-docs/docs/manual-integrate-zh.md`；文档版本页与
 本目录文件的对应：stat/exec/reboot 为 3.14+ 形态，open 为 4.19- 形态，
 setuid 为 4.17- 形态，sys_read 为 4.19- 形态。
 

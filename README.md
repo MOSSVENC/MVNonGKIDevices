@@ -148,6 +148,7 @@ patches/
   alioth/              min-tool-version.sh（构建辅助）
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
                        ak3-display 等）
+上游素材镜像（susfs/resukisu/xxksu）、旧 shipped 归档与维护工具
 （sync/parity/管线）均位于本地工作区（localworkspace/），不随仓库分发；
 官方补丁中 CI 直接应用的（droidspace）保留在 official/。
 localworkspace/        本机工作区（gitignored；布局见 localworkspace/README.md、条目索引见 INDEX.md）

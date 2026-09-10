@@ -11,7 +11,7 @@
 | `0003-fs-open` | MTK 本地：内联 `SYSCALL_DEFINE3(faccessat)` 函数体（MTK 树 fallocate/注释上下文） |
 | `0010-input` / `0011-setuid` / `0012-sysread` | MTK 本地可选组（MTK input_event / 4.17- setresuid 函数体 / 含 OPLUS_IOMONITOR 区的内联 read 函数体），`hook_extra=manual` 模式使用 |
 
-文档形态参考（网页摘录）见 `../upstream/manualhook/`。
+文档形态参考（网页摘录）见 `localworkspace/evidence/resukisu-docs/docs/manual-integrate-zh.md`。
 
 ## 应用（必加组）
 
