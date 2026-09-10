@@ -319,7 +319,7 @@ jobs:
             CROSS_COMPILE_ARM32="$RUNNER_TEMP/tc/gcc32/bin/arm-linux-androideabi-" \
             LD=ld.lld LLVM=1 LLVM_IAS=1 \
             Image \
-            2>&1 | tee "$GITHUB_WORKSPACE/logs/build.log"
+            2>&1 | tee "$GITHUB_WORKSPACE/logs/alioth-build.log"
           rc=${PIPESTATUS[0]}
           # device-tree overlays (needed for dtbo.img)
           if [ "$rc" = 0 ]; then
@@ -328,7 +328,7 @@ jobs:
               CROSS_COMPILE="$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-" \
               CROSS_COMPILE_ARM32="$RUNNER_TEMP/tc/gcc32/bin/arm-linux-androideabi-" \
               LD=ld.lld LLVM=1 LLVM_IAS=1 \
-              dtbs >> "$GITHUB_WORKSPACE/logs/build.log" 2>&1
+              dtbs >> "$GITHUB_WORKSPACE/logs/alioth-build.log" 2>&1
             rc=${PIPESTATUS[0]}
           fi
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
@@ -336,10 +336,10 @@ jobs:
           cp -f "$RUNNER_TEMP/out/arch/arm64/boot/Image" "$RUNNER_TEMP/out/Image" 2>/dev/null || true
           [ -f "$RUNNER_TEMP/out/arch/arm64/boot/Image" ] || { echo "Image not produced"; rc=1; }
           if [ "$rc" != 0 ]; then
-            { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+            { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/alioth-build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
             exit "$rc"
           fi
-          { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+          { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/alioth-build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
           # dtbo.img: mkdtboimg (AOSP libufdt) from ALL xiaomi sm8250
           # overlays, in the dts Makefile order. Verified against the
           # official LOS 23.2 dtbo.img (20260902): 12 entries, one per
@@ -408,8 +408,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: build.log
-          path: ${{ github.workspace }}/logs/build.log
+          name: alioth-build.log
+          path: ${{ github.workspace }}/logs/alioth-build.log
           archive: false
           if-no-files-found: warn
           retention-days: 14
