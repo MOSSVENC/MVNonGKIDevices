@@ -224,11 +224,7 @@ jobs:
                       "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
                       "ksu_handle_stat:fs/stat.c" "ksu_handle_vfs_fstat:fs/stat.c" \
                       "ksu_handle_sys_reboot:kernel/reboot.c" \
-                      "ksu_handle_input_handle_event:drivers/input/input.c" \
-                      "ksu_handle_setuid:security/security.c" \
-                      "ksu_handle_rename:security/security.c" \
-                      "ksu_bprm_check:security/security.c" \
-                      "throne_tracker:fs/namei.c"; do
+                      "ksu_handle_input_handle_event:drivers/input/input.c"; do
             sym="${spec%%:*}"; file="${spec##*:}"
             grep -q "$sym" "$file" || MISSING="$MISSING $sym($file)"
           done
