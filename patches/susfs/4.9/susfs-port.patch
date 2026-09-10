@@ -1589,7 +1589,7 @@ index 4274f83bf..8b5d68a8f 100644
  	if (seq_has_overflowed(m))
  		goto out;
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index 1d06ab4aa..151327668 100644
+index 1d06ab4aa..c85e4982e 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -17,6 +17,9 @@
@@ -1621,16 +1621,6 @@ index 1d06ab4aa..151327668 100644
  
  	if (file) {
  		struct inode *inode = file_inode(vma->vm_file);
-+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+		if (SUSFS_IS_INODE_SUS_MAP(inode))
-+			return;
-+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
- 		dev = inode->i_sb->s_dev;
- 		ino = inode->i_ino;
- 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
-+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
-+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 +#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 +		if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
 +			char *spoofed_redirected_name = NULL;
@@ -1651,6 +1641,16 @@ index 1d06ab4aa..151327668 100644
 +			srcu_read_unlock(&susfs_srcu_open_redirect, srcu_idx);
 +		}
 +#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
++#ifdef CONFIG_KSU_SUSFS_SUS_MAP
++		if (SUSFS_IS_INODE_SUS_MAP(inode))
++			return;
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
+ 		dev = inode->i_sb->s_dev;
+ 		ino = inode->i_ino;
+ 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
  	}
  
  	/* We don't show the stack guard page in /proc/maps */
