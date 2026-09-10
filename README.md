@@ -115,7 +115,8 @@ susfs 应用路径（全部为树适配 port）：polaris 用
 `xxksu-susfs`（polaris）用 `patches/susfs/4.9/xxksu-susfs-port.patch`：
 同一套 4.9 susfs 面，去掉 KSU 调用点（sucompat 由 fork 引擎驱动），
 另加 fork 侧桥接 `patches/susfs/fork/`（su 域与 sid 符号、reboot 超调用的
-susfs 命令段、boot 完成后的 sdcard monitor 启动）。
+susfs 命令段、boot 完成后的 sdcard monitor 启动、susfs 核心初始化与
+setuid/umount 路径的进程状态标记）。
 
 ### 静态符号
 

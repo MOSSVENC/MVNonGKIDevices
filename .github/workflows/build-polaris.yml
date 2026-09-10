@@ -216,7 +216,7 @@ jobs:
             # alldefconfig; reject that shape before the build starts
             python3 "$GITHUB_WORKSPACE/scripts/check-kconfig-structure.py" \
               "$RUNNER_TEMP/xxksu/kernel/Kconfig" || exit 1
-            for p in 0001-susfs-ksu-symbols 0002-susfs-supercall; do
+            for p in 0001-susfs-ksu-symbols 0002-susfs-supercall 0003-susfs-state; do
               git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
               git apply "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
             done
