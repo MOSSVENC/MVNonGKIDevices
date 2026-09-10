@@ -188,7 +188,7 @@ jobs:
               cat "$GITHUB_WORKSPACE/patches/susfs/fork/Kconfig-susfs-menu" >> \
                 "$RUNNER_TEMP/xxksu/kernel/Kconfig"
             fi
-            for p in 0001-susfs-ksu-domain 0002-susfs-supercall; do
+            for p in 0001-susfs-ksu-symbols 0002-susfs-supercall; do
               git apply --check "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
               git apply "$GITHUB_WORKSPACE/patches/susfs/fork/$p.patch" || exit 1
             done
