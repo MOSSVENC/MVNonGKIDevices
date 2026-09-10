@@ -1,0 +1,25 @@
+diff --git a/kernel/sched_assist/sched_assist_slide_v1.c b/kernel/sched_assist/sched_assist_slide_v1.c
+index 5b0313b..6074707 100644
+--- a/kernel/sched_assist/sched_assist_slide_v1.c
++++ b/kernel/sched_assist/sched_assist_slide_v1.c
+@@ -124,7 +124,7 @@ u64 _slide_get_boost_load(int cpu) {
+ #define SCHED_CPUFREQ_BOOST (1U << 9)
+ #endif
+ #endif /* OPLUS_FEATURE_SCHED_ASSIST */
+-void adjust_sched_assist_input_ctrl(){
++void adjust_sched_assist_input_ctrl(void){
+ 	if (!sysctl_input_boost_enabled)
+ 		return;
+ 	if(sysctl_slide_boost_enabled){
+diff --git a/mm/Makefile b/mm/Makefile
+index 8a4cd7c..457e418 100644
+--- a/mm/Makefile
++++ b/mm/Makefile
+@@ -3,7 +3,6 @@
+ # Makefile for the linux memory manager.
+ #
+ 
+-subdir-ccflags-y += -Werror
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ 
+ ifdef CONFIG_MTK_ION

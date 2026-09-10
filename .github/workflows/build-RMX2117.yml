@@ -264,6 +264,11 @@ jobs:
             { echo "!! droidspace cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.14 patches done (config merged below)"
 
+      - name: Apply vendor tree fixes (clang 14)
+        run: |
+          bash scripts/apply-patches.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/patches/rmx2117"
+
       - name: Commit patched kernel tree (drop -dirty from version)
         run: |
           cd "$KROOT"
