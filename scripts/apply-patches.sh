@@ -11,11 +11,11 @@
 # device-specific variant of one patch (e.g. daisy/vince use their own
 # 0004-reboot patch and must NOT apply common/0004).
 #
-# - Patches are applied with `git apply -3` (3-way merge fallback) from the
-#   kernel root, so small line drift across 4.9.x sublevels is tolerated.
+# - Patches must apply cleanly: a strict `git apply --check` is required
+#   before the apply, so drifted context is reported instead of merged.
 # - Idempotent: if a patch is already applied (reverse-check passes) it is
 #   skipped; otherwise a clean forward check is required.
-# - Any failure leaves the .rej files in place and exits non-zero.
+# - Any failure exits non-zero without touching the tree.
 #
 set -euo pipefail
 
@@ -33,11 +33,10 @@ apply_one() { # patch-file
     echo "    already applied, skipping"
     return 0
   fi
-  if git apply --check -3 "$patch" >/dev/null 2>&1; then
-    git apply -3 "$patch" >/dev/null && echo "    applied OK" || { echo "    FAILED"; return 1; }
+  if git apply --check "$patch" >/dev/null 2>&1; then
+    git apply "$patch" >/dev/null && echo "    applied OK" || { echo "    FAILED"; return 1; }
   else
-    echo "    cannot apply cleanly (context drift) - see .rej files"
-    git apply -3 "$patch" || true
+    echo "    cannot apply cleanly (context drift); patch carries its own context" >&2
     return 1
   fi
   return 0
