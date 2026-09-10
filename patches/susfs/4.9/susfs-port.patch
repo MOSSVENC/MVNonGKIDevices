@@ -1192,14 +1192,14 @@ index 21fd423b1..489e963c2 100644
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 +
 diff --git a/fs/notify/fdinfo.c b/fs/notify/fdinfo.c
-index 317b7e7eb..15d010aad 100644
+index 317b7e7eb..004ca86b8 100644
 --- a/fs/notify/fdinfo.c
 +++ b/fs/notify/fdinfo.c
 @@ -12,6 +12,9 @@
  #include <linux/seq_file.h>
  #include <linux/proc_fs.h>
  #include <linux/exportfs.h>
-+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++#if defined(CONFIG_KSU_SUSFS_SUS_MOUNT) || defined(CONFIG_KSU_SUSFS_SUS_KSTAT)
 +#include <linux/susfs_def.h>
 +#endif
  
@@ -1467,16 +1467,16 @@ index 57d2d15e8..36a2a57ba 100644
  	seq_printf(m, "%s\n", proc_command_line);
  #else
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
-index 4274f83bf..8b5d68a8f 100644
+index 4274f83bf..1d5437030 100644
 --- a/fs/proc/fd.c
 +++ b/fs/proc/fd.c
 @@ -11,17 +11,31 @@
  #include <linux/fs.h>
  
  #include <linux/proc_fs.h>
-+#if defined(CONFIG_KSU_SUSFS_SUS_MOUNT) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
++#if defined(CONFIG_KSU_SUSFS_SUS_MOUNT) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT) || defined(CONFIG_KSU_SUSFS_SUS_KSTAT)
 +#include <linux/susfs_def.h>
-+#endif // #if defined(CONFIG_KSU_SUSFS_SUS_MOUNT) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
++#endif // #if defined(CONFIG_KSU_SUSFS_SUS_MOUNT) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT) || defined(CONFIG_KSU_SUSFS_SUS_KSTAT)
  
  #include "../mount.h"
  #include "internal.h"
