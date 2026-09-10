@@ -1219,10 +1219,10 @@ index 57d2d15e8..36a2a57ba 100644
  	seq_printf(m, "%s\n", proc_command_line);
  #else
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
-index 4274f83bf..ec5745385 100644
+index 4274f83bf..8b5d68a8f 100644
 --- a/fs/proc/fd.c
 +++ b/fs/proc/fd.c
-@@ -11,17 +11,38 @@
+@@ -11,17 +11,31 @@
  #include <linux/fs.h>
  
  #include <linux/proc_fs.h>
@@ -1238,13 +1238,10 @@ index 4274f83bf..ec5745385 100644
 +extern int susfs_get_non_sus_mnt_id_from_mnt(struct mount *orig_mnt);
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 +
-+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-+extern int susfs_open_redirect_spoof_seq_show(struct inode *inode, int *out_mnt_id, unsigned long *out_ino);
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 +extern bool susfs_is_inode_sus_kstat(struct inode *inode, bool *out_is_fuse);
 +extern void susfs_sus_kstat_spoof_proc_fd_seq_show(int *out_target_mnt_id, unsigned long *out_target_ino, dev_t target_dev);
 +#endif
-+#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
  static int seq_show(struct seq_file *m, void *v)
  {
  	struct files_struct *files = NULL;
@@ -1254,14 +1251,10 @@ index 4274f83bf..ec5745385 100644
 +#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 +	struct mount *mnt = NULL;
 +#endif
-+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-+	int mnt_id = 0;
-+	unsigned long ino = 0;
-+#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
  
  	task = get_proc_task(m->private);
  	if (!task)
-@@ -52,10 +73,97 @@ static int seq_show(struct seq_file *m, void *v)
+@@ -52,10 +66,85 @@ static int seq_show(struct seq_file *m, void *v)
  	if (ret)
  		return ret;
  
@@ -1302,18 +1295,6 @@ index 4274f83bf..ec5745385 100644
 +		goto orig_flow;
 +	}
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-+
-+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-+	if (SUSFS_IS_INODE_OPEN_REDIRECT(file_inode(file))) {
-+		if (susfs_open_redirect_spoof_seq_show(file_inode(file), &mnt_id, &ino))
-+			goto orig_flow;
-+		seq_printf(m, "pos:\t%lli\nflags:\t0%o\nmnt_id:\t%i\nino:\t%lu\n",
-+				(long long)file->f_pos, f_flags,
-+				mnt_id,
-+				ino);
-+		goto bypass_orig_flow;
-+	}
-+#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 +
 +#if defined(CONFIG_KSU_SUSFS_SUS_MOUNT) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
 +orig_flow:
@@ -2105,7 +2086,7 @@ index 068fdbcc9..c26e58f3c 100644
  		goto out;
  
 diff --git a/fs/statfs.c b/fs/statfs.c
-index 083dc0ac9..2d601724b 100644
+index 083dc0ac9..4778d89be 100644
 --- a/fs/statfs.c
 +++ b/fs/statfs.c
 @@ -5,6 +5,9 @@
@@ -2118,7 +2099,7 @@ index 083dc0ac9..2d601724b 100644
  #include <linux/security.h>
  #include <linux/uaccess.h>
  #include "internal.h"
-@@ -63,10 +66,82 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
+@@ -63,10 +66,69 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
  	return retval;
  }
  
@@ -2128,9 +2109,6 @@ index 083dc0ac9..2d601724b 100644
 +#endif
 +#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 +extern struct vfsmount *susfs_get_non_sus_vfsmnt_from_vfsmnt(struct vfsmount *vfsmnt);
-+#endif
-+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-+extern int susfs_open_redirect_spoof_vfs_statfs(struct inode *inode, struct kstatfs *buf);
 +#endif
 +
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
@@ -2168,16 +2146,6 @@ index 083dc0ac9..2d601724b 100644
 +		if (susfs_is_inode_sus_kstat(inode, &is_fuse)) {
 +			error = susfs_statfs_by_dentry(path->dentry, buf, &is_fuse);
 +			goto out_common;
-+		}
-+	}
-+#endif
-+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-+	{
-+		struct inode *inode = path->dentry->d_inode;
-+		if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
-+			if (susfs_open_redirect_spoof_vfs_statfs(inode, buf))
-+				goto out_common;
-+			return 0;
 +		}
 +	}
 +#endif
