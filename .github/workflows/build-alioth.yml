@@ -198,15 +198,10 @@ jobs:
           echo "SuSFS 4.19 port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
           # ReSukiSU's inline_hook_check.mk requires the ksu_handle_* call
-          # sites (setresuid/execveat/faccessat/sys_read/stat) in the
-          # kernel sources when using the SuSFS inline hook. The 4.9/4.19
-          # hook generator (ReSukiSU-adapted, handles the 4.19
-          # __sys_setresuid split) injects them; run it from the kernel
-          # root.
-          cp "$GITHUB_WORKSPACE/scripts/susfs_inline_hook_patches-nongki.sh" ./
-          bash ./susfs_inline_hook_patches-nongki.sh 2>&1 | tail -30
-          # verify the faces ReSukiSU's inline_hook_check.mk demands, the
-          # port-carried exec face and the generator's ungated faces
+          # sites (setresuid/execveat/faccessat/sys_read/stat/reboot/input)
+          # in the kernel sources when using the SuSFS inline hook; the port
+          # carries all of them for this tree.
+          # verify the faces ReSukiSU's inline_hook_check.mk demands
           MISSING=""
           for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
                       "ksu_handle_post_execveat_sucompat:fs/exec.c" \
@@ -223,11 +218,11 @@ jobs:
           [ -n "$post" ] && [ -n "$done_line" ] && [ "$post" -gt "$done_line" ] || {
             echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
             exit 1; }
-          # fs/open.c and fs/stat.c call filename_lookup(); the generator
-          # de-statics it for the 4.x trees
+          # fs/open.c and fs/stat.c call filename_lookup(); the port
+          # de-statics it for the 4.x tree
           grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"
           if [ -n "$MISSING" ]; then
-            echo "hook generator left missing:$MISSING" >&2
+            echo "port left missing:$MISSING" >&2
             exit 1
           fi
           echo "SuSFS KSU-interaction hooks present"

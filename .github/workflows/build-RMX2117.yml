@@ -201,8 +201,8 @@ jobs:
 
       # --- SuSFS 4.14 (root_mode=resukisu-susfs) ---
       # Tree-adapted port patches/susfs/4.14/susfs-port.patch (git
-      # apply-verified on MTK 4.14.186 snapshots) + ReSukiSU main +
-      # the 4.x inline-hook generator (scripts/susfs_inline_hook_patches-nongki.sh).
+      # apply-verified on MTK 4.14.186 snapshots) + ReSukiSU main; the
+      # port carries the inline-hook call sites.
       - name: Apply SuSFS 4.14 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
         run: |
@@ -215,9 +215,8 @@ jobs:
           git apply "$P"
           echo "SuSFS 4.14 port applied:"
           grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
-          # inline hook call sites (setresuid/execveat/faccessat/sys_read/stat)
-          cp "$GITHUB_WORKSPACE/scripts/susfs_inline_hook_patches-nongki.sh" ./
-          bash ./susfs_inline_hook_patches-nongki.sh 2>&1 | tail -30
+          # inline hook call sites (setresuid/execveat/faccessat/sys_read/
+          # stat/reboot/input) are part of the port
           MISSING=""
           for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
                       "ksu_handle_post_execveat_sucompat:fs/exec.c" \
@@ -234,11 +233,11 @@ jobs:
           [ -n "$post" ] && [ -n "$done_line" ] && [ "$post" -gt "$done_line" ] || {
             echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
             exit 1; }
-          # fs/open.c and fs/stat.c call filename_lookup(); the generator
-          # de-statics it for the 4.x trees
+          # fs/open.c and fs/stat.c call filename_lookup(); the port
+          # de-statics it for the 4.x tree
           grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"
           if [ -n "$MISSING" ]; then
-            echo "hook generator left missing:$MISSING" >&2
+            echo "port left missing:$MISSING" >&2
             exit 1
           fi
           echo "SuSFS KSU-interaction hooks present"
