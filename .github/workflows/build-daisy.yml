@@ -83,7 +83,13 @@ jobs:
           ENVF="$GITHUB_WORKSPACE/logs/bash_env.sh"
           {
             [ -n "${BASH_ENV:-}" ] && printf '[ -f %q ] && source %q\n' "$BASH_ENV" "$BASH_ENV"
-            printf 'exec > >(tee -a %q) 2>&1\n' "$LOG"
+            # 子 bash（步骤里调用的 *.sh）会再次 source 本文件；用导出的哨兵变量保证
+            # 只套一层 tee，否则脚本输出会在日志里重复/叠加
+            printf 'if [ -z "${DSH_FULL_LOG_HOOK:-}" ]; then\n'
+            printf '  DSH_FULL_LOG_HOOK=1\n'
+            printf '  export DSH_FULL_LOG_HOOK\n'
+            printf '  exec > >(tee -a %q) 2>&1\n' "$LOG"
+            printf 'fi\n'
           } > "$ENVF"
           echo "BASH_ENV=$ENVF" >> "$GITHUB_ENV"
           echo "full log: $LOG"

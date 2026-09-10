@@ -1,0 +1,1108 @@
+diff --git a/arch/metag/oprofile/Makefile b/arch/metag/oprofile/Makefile
+index dc92a4a..257e2f9 100644
+--- a/arch/metag/oprofile/Makefile
++++ b/arch/metag/oprofile/Makefile
+@@ -15,4 +15,4 @@ oprofile-y	+= backtrace.o
+ oprofile-y	+= common.o
+ oprofile-y	+= $(addprefix ../../../drivers/oprofile/,$(oprofile-core-y))
+ 
+-ccflags-y	+= -Werror
++ccflags-y	+= -Wno-error
+diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
+index 9f937b8..c9c4597 100644
+--- a/drivers/clocksource/Makefile
++++ b/drivers/clocksource/Makefile
+@@ -1,7 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ ccflags-y += -Wno-error=implicit-function-declaration
+ ccflags-y += -Wno-error=strict-prototypes
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
+ obj-$(CONFIG_TIMER_OF)		+= timer-of.o
+ obj-$(CONFIG_TIMER_PROBE)	+= timer-probe.o
+ obj-$(CONFIG_ATMEL_PIT)		+= timer-atmel-pit.o
+diff --git a/drivers/devfreq/helio-dvfsrc-v3/Makefile b/drivers/devfreq/helio-dvfsrc-v3/Makefile
+index c313681..aad931c 100644
+--- a/drivers/devfreq/helio-dvfsrc-v3/Makefile
++++ b/drivers/devfreq/helio-dvfsrc-v3/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-ccflags-y += -Werror -I$(srctree)/drivers/devfreq
++ccflags-y += -Wno-error -I$(srctree)/drivers/devfreq
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/spm/$(MTK_PLATFORM)/
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/dramc/$(MTK_PLATFORM)/
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+diff --git a/drivers/devfreq/helio-dvfsrc-v4/Makefile b/drivers/devfreq/helio-dvfsrc-v4/Makefile
+index e299257..ca26381 100644
+--- a/drivers/devfreq/helio-dvfsrc-v4/Makefile
++++ b/drivers/devfreq/helio-dvfsrc-v4/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-ccflags-y += -Werror -I$(srctree)/drivers/devfreq
++ccflags-y += -Wno-error -I$(srctree)/drivers/devfreq
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/
+diff --git a/drivers/gpu/drm/mediatek/Makefile b/drivers/gpu/drm/mediatek/Makefile
+index 700f3b8..07eaeb3 100644
+--- a/drivers/gpu/drm/mediatek/Makefile
++++ b/drivers/gpu/drm/mediatek/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ 
+ mediatek-drm-y := mtk_drm_drv.o \
+ 		  mtk_disp_color.o \
+diff --git a/drivers/gpu/drm/oplus/Makefile b/drivers/gpu/drm/oplus/Makefile
+index e3ee2e0..d87323a 100755
+--- a/drivers/gpu/drm/oplus/Makefile
++++ b/drivers/gpu/drm/oplus/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ 
+ obj-y += oplus_display_private_api.o \
+          oplus_display_panel_power.o \
+diff --git a/drivers/gpu/drm/tilcdc/Makefile b/drivers/gpu/drm/tilcdc/Makefile
+index b9e1108..0d58d45 100644
+--- a/drivers/gpu/drm/tilcdc/Makefile
++++ b/drivers/gpu/drm/tilcdc/Makefile
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ ifeq (, $(findstring -W,$(EXTRA_CFLAGS)))
+-	ccflags-y += -Werror
++	ccflags-y += -Wno-error
+ endif
+ 
+ obj-$(CONFIG_DRM_TILCDC_SLAVE_COMPAT) += tilcdc_slave_compat.o \
+diff --git a/drivers/input/keyboard/mediatek/Makefile b/drivers/input/keyboard/mediatek/Makefile
+index 4ac366b..5e93f34 100644
+--- a/drivers/input/keyboard/mediatek/Makefile
++++ b/drivers/input/keyboard/mediatek/Makefile
+@@ -18,7 +18,7 @@ MTK_KPD_PLATFORM:=mt6781
+ else
+ MTK_KPD_PLATFORM:=$(CONFIG_MTK_PLATFORM)
+ endif
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_KPD_PLATFORM)/include/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_KPD_PLATFORM)/include/
+ subdir-ccflags-y += -I$(srctree)/drivers/input/keyboard/mediatek/$(MTK_KPD_PLATFORM)/
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/
+ obj-$(CONFIG_KEYBOARD_MTK) := kpd.o
+diff --git a/drivers/input/keyboard/mediatek/mt6765/Makefile b/drivers/input/keyboard/mediatek/mt6765/Makefile
+index 03f35ef..935e039 100644
+--- a/drivers/input/keyboard/mediatek/mt6765/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6765/Makefile
+@@ -1,3 +1,3 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ obj-$(CONFIG_KEYBOARD_MTK) := hal_kpd.o
+diff --git a/drivers/input/keyboard/mediatek/mt6768/Makefile b/drivers/input/keyboard/mediatek/mt6768/Makefile
+index baced29..d9b6b15 100644
+--- a/drivers/input/keyboard/mediatek/mt6768/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6768/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ ifeq ($(CONFIG_MT_SND_SOC_NEW_ARCH),y)
+ 	EXTRA_CFLAGS += -I$(srctree)/sound/soc/mediatek/common/
+diff --git a/drivers/input/keyboard/mediatek/mt6781/Makefile b/drivers/input/keyboard/mediatek/mt6781/Makefile
+index 03f35ef..935e039 100644
+--- a/drivers/input/keyboard/mediatek/mt6781/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6781/Makefile
+@@ -1,3 +1,3 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ obj-$(CONFIG_KEYBOARD_MTK) := hal_kpd.o
+diff --git a/drivers/input/keyboard/mediatek/mt6785/Makefile b/drivers/input/keyboard/mediatek/mt6785/Makefile
+index 03f35ef..935e039 100644
+--- a/drivers/input/keyboard/mediatek/mt6785/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6785/Makefile
+@@ -1,3 +1,3 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ obj-$(CONFIG_KEYBOARD_MTK) := hal_kpd.o
+diff --git a/drivers/input/keyboard/mediatek/mt6833/Makefile b/drivers/input/keyboard/mediatek/mt6833/Makefile
+index baced29..d9b6b15 100644
+--- a/drivers/input/keyboard/mediatek/mt6833/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6833/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ ifeq ($(CONFIG_MT_SND_SOC_NEW_ARCH),y)
+ 	EXTRA_CFLAGS += -I$(srctree)/sound/soc/mediatek/common/
+diff --git a/drivers/input/keyboard/mediatek/mt6853/Makefile b/drivers/input/keyboard/mediatek/mt6853/Makefile
+index baced29..d9b6b15 100644
+--- a/drivers/input/keyboard/mediatek/mt6853/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6853/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ ifeq ($(CONFIG_MT_SND_SOC_NEW_ARCH),y)
+ 	EXTRA_CFLAGS += -I$(srctree)/sound/soc/mediatek/common/
+diff --git a/drivers/input/keyboard/mediatek/mt6873/Makefile b/drivers/input/keyboard/mediatek/mt6873/Makefile
+index baced29..d9b6b15 100644
+--- a/drivers/input/keyboard/mediatek/mt6873/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6873/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ ifeq ($(CONFIG_MT_SND_SOC_NEW_ARCH),y)
+ 	EXTRA_CFLAGS += -I$(srctree)/sound/soc/mediatek/common/
+diff --git a/drivers/input/keyboard/mediatek/mt6877/Makefile b/drivers/input/keyboard/mediatek/mt6877/Makefile
+index baced29..d9b6b15 100644
+--- a/drivers/input/keyboard/mediatek/mt6877/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6877/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ ifeq ($(CONFIG_MT_SND_SOC_NEW_ARCH),y)
+ 	EXTRA_CFLAGS += -I$(srctree)/sound/soc/mediatek/common/
+diff --git a/drivers/input/keyboard/mediatek/mt6885/Makefile b/drivers/input/keyboard/mediatek/mt6885/Makefile
+index baced29..d9b6b15 100644
+--- a/drivers/input/keyboard/mediatek/mt6885/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6885/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ ifeq ($(CONFIG_MT_SND_SOC_NEW_ARCH),y)
+ 	EXTRA_CFLAGS += -I$(srctree)/sound/soc/mediatek/common/
+diff --git a/drivers/input/keyboard/mediatek/mt6893/Makefile b/drivers/input/keyboard/mediatek/mt6893/Makefile
+index baced29..d9b6b15 100644
+--- a/drivers/input/keyboard/mediatek/mt6893/Makefile
++++ b/drivers/input/keyboard/mediatek/mt6893/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/input/keyboard/mediatek/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/input/keyboard/mediatek/
+ 
+ ifeq ($(CONFIG_MT_SND_SOC_NEW_ARCH),y)
+ 	EXTRA_CFLAGS += -I$(srctree)/sound/soc/mediatek/common/
+diff --git a/drivers/input/touchscreen/mediatek/Makefile b/drivers/input/touchscreen/mediatek/Makefile
+index 737611f..752497e 100644
+--- a/drivers/input/touchscreen/mediatek/Makefile
++++ b/drivers/input/touchscreen/mediatek/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/
+ ccflags-y += -I$(srctree)/drivers/input/touchscreen/mediatek
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+diff --git a/drivers/input/touchscreen/mediatek/gslX680/Makefile b/drivers/input/touchscreen/mediatek/gslX680/Makefile
+index e4b6aad..4e0e4a5 100644
+--- a/drivers/input/touchscreen/mediatek/gslX680/Makefile
++++ b/drivers/input/touchscreen/mediatek/gslX680/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/
+ ccflags-y += -I$(srctree)/drivers/input/touchscreen/mediatek
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+diff --git a/drivers/kernel_modules/connectivity/common/Kbuild b/drivers/kernel_modules/connectivity/common/Kbuild
+index 34e125d..474d41d 100644
+--- a/drivers/kernel_modules/connectivity/common/Kbuild
++++ b/drivers/kernel_modules/connectivity/common/Kbuild
+@@ -88,7 +88,7 @@ ccflags-y += -I$(srctree)/drivers/gpu/drm/mediatek/mediatek_v2
+ ###############################################################################
+ 
+ 
+-ccflags-y += -Werror $(call cc-disable-warning,unused-but-set-variable)
++ccflags-y += -Wno-error $(call cc-disable-warning,unused-but-set-variable)
+ 
+ ifeq ($(CONFIG_MTK_COMBO_CHIP_MT6628),y)
+     ccflags-y += -D MT6628
+diff --git a/drivers/kernel_modules/connectivity/connfem/Kbuild b/drivers/kernel_modules/connectivity/connfem/Kbuild
+index 186f460..9e35a62 100644
+--- a/drivers/kernel_modules/connectivity/connfem/Kbuild
++++ b/drivers/kernel_modules/connectivity/connfem/Kbuild
+@@ -17,7 +17,7 @@ KBUILD_MODPOST_FAIL_ON_WARNINGS := y
+ # GCC Options
+ ###############################################################################
+ ccflags-y += -Wall
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ 
+ 
+ ###############################################################################
+diff --git a/drivers/kernel_modules/connectivity/conninfra/Kbuild b/drivers/kernel_modules/connectivity/conninfra/Kbuild
+index 6935319..586d43e 100755
+--- a/drivers/kernel_modules/connectivity/conninfra/Kbuild
++++ b/drivers/kernel_modules/connectivity/conninfra/Kbuild
+@@ -25,7 +25,7 @@ ccflags-y += -I$(srctree)/drivers/gpu/drm/mediatek/mediatek_v2
+ ccflags-y += -I$(srctree)/drivers/memory/mediatek/
+ 
+ ###############################################################################
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ ccflags-y += -Wno-error=format
+ ccflags-y += -Wno-error=format-extra-args
+ 
+diff --git a/drivers/kernel_modules/connectivity/wlan/core/gen4m/Makefile b/drivers/kernel_modules/connectivity/wlan/core/gen4m/Makefile
+index b646c4a..6df679f 100755
+--- a/drivers/kernel_modules/connectivity/wlan/core/gen4m/Makefile
++++ b/drivers/kernel_modules/connectivity/wlan/core/gen4m/Makefile
+@@ -73,7 +73,7 @@ ccflags-y += -DWLAN_INCLUDE_PROC
+ ccflags-y += -DCFG_SUPPORT_AGPS_ASSIST=0
+ ccflags-y += -DCFG_SUPPORT_TSF_USING_BOOTTIME=1
+ ccflags-y += -DARP_MONITER_ENABLE=1
+-ccflags-y += -Werror $(call cc-disable-warning, unused-but-set-variable)
++ccflags-y += -Wno-error $(call cc-disable-warning, unused-but-set-variable)
+ #ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))
+ #ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
+ #workaround: also needed for none LINUX system
+diff --git a/drivers/media/platform/mtk-vcodec/Makefile b/drivers/media/platform/mtk-vcodec/Makefile
+index 0112f1c..1760dd0 100644
+--- a/drivers/media/platform/mtk-vcodec/Makefile
++++ b/drivers/media/platform/mtk-vcodec/Makefile
+@@ -53,7 +53,7 @@ endif
+ mtk-vcodec-common-y := $(MTK_PLATFORM)/mtk_vcodec_intr.o \
+ 		mtk_vcodec_util.o\
+ 
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ ifdef CONFIG_VIDEO_MEDIATEK_VCU
+ 	ccflags-y += -I$(srctree)/drivers/media/platform/mtk-vcu
+ endif
+diff --git a/drivers/media/platform/mtk-vcu/Makefile b/drivers/media/platform/mtk-vcu/Makefile
+index b7fed16..44f849c 100644
+--- a/drivers/media/platform/mtk-vcu/Makefile
++++ b/drivers/media/platform/mtk-vcu/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/smi
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/cmdq
+ mtk-vcu-y += mtk_vcu.o \
+diff --git a/drivers/media/platform/mtk-videobuf/Makefile b/drivers/media/platform/mtk-videobuf/Makefile
+index 1172aef..7c78695 100644
+--- a/drivers/media/platform/mtk-videobuf/Makefile
++++ b/drivers/media/platform/mtk-videobuf/Makefile
+@@ -1,2 +1,2 @@
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ obj-y += mtk-dma-contig.o
+diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
+index 117d4f0..2799784 100644
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -2,7 +2,7 @@
+ #
+ # Makefile for multifunction miscellaneous devices
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ 
+ 88pm860x-objs			:= 88pm860x-core.o 88pm860x-i2c.o
+ obj-$(CONFIG_MFD_88PM860X)	+= 88pm860x.o
+diff --git a/drivers/misc/mediatek/Makefile b/drivers/misc/mediatek/Makefile
+index 0c348ec..c5f9420 100755
+--- a/drivers/misc/mediatek/Makefile
++++ b/drivers/misc/mediatek/Makefile
+@@ -14,7 +14,7 @@
+ #$(call all-subdir-src-or-makefile)
+ export MTK_PLATFORM_NAME := $(CONFIG_MTK_PLATFORM)
+ export MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ 
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/
+diff --git a/drivers/misc/mediatek/accdet/Makefile b/drivers/misc/mediatek/accdet/Makefile
+index 15fb3fd..6364160 100644
+--- a/drivers/misc/mediatek/accdet/Makefile
++++ b/drivers/misc/mediatek/accdet/Makefile
+@@ -1,4 +1,4 @@
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ subdir-ccflags-$(CONFIG_MACH_MT8167)+= -Werror -I$(srctree)/drivers/misc/mediatek/accdet/$(MTK_PLATFORM)
+ 
+ #subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/accdet/$(MTK_PLATFORM)
+diff --git a/drivers/misc/mediatek/chip/Makefile b/drivers/misc/mediatek/chip/Makefile
+index 6466805..981ea0d 100644
+--- a/drivers/misc/mediatek/chip/Makefile
++++ b/drivers/misc/mediatek/chip/Makefile
+@@ -11,7 +11,7 @@
+ # GNU General Public License for more details.
+ #
+ 
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/chip/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/chip/
+ 
+ obj-$(CONFIG_MTK_CHIP) += CHIP_COMMON.o
+ CHIP_COMMON-$(CONFIG_MTK_CHIP) := mtk_chip_common.o
+diff --git a/drivers/misc/mediatek/connectivity/Makefile b/drivers/misc/mediatek/connectivity/Makefile
+index bac3ce5..eb00125 100644
+--- a/drivers/misc/mediatek/connectivity/Makefile
++++ b/drivers/misc/mediatek/connectivity/Makefile
+@@ -19,13 +19,13 @@ ifneq ($(KERNELRELEASE),)
+     subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+     subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/clkbuf_v1
+     subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/clkbuf_v1/$(MTK_PLATFORM)
+-    subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-    subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
++    subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++    subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+ ifeq ($(CONFIG_MTK_PMIC_CHIP_MT6359),y)
+-    subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include/mt6359
++    subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include/mt6359
+ endif
+ ifeq ($(CONFIG_MTK_PMIC_NEW_ARCH),y)
+-    subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++    subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ endif
+     subdir-ccflags-y += -I$(srctree)/drivers/mmc/core
+     subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/eccci/$(MTK_PLATFORM)
+diff --git a/drivers/misc/mediatek/lcm/oppo20730_samsung_ams643xy04_dsi_cmd/Makefile b/drivers/misc/mediatek/lcm/oppo20730_samsung_ams643xy04_dsi_cmd/Makefile
+index 5d620e1..a0057c7 100755
+--- a/drivers/misc/mediatek/lcm/oppo20730_samsung_ams643xy04_dsi_cmd/Makefile
++++ b/drivers/misc/mediatek/lcm/oppo20730_samsung_ams643xy04_dsi_cmd/Makefile
+@@ -2,7 +2,7 @@
+ # Makefile for misc devices that really don't fit anywhere else.
+ #
+ #include $(srctree)/drivers/misc/mediatek/Makefile.custom
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ obj-y += oppo20730_samsung_ams643xy04_1080p_dsi_vdo.o
+ 
+ ccflags-$(CONFIG_MTK_LCM) += -I$(srctree)/drivers/misc/mediatek/lcm/inc
+diff --git a/drivers/misc/mediatek/mtee/Makefile b/drivers/misc/mediatek/mtee/Makefile
+index f807a3f..b1ee826 100644
+--- a/drivers/misc/mediatek/mtee/Makefile
++++ b/drivers/misc/mediatek/mtee/Makefile
+@@ -19,7 +19,7 @@
+ # inconsistent state and crashed.
+ KCOV_INSTRUMENT_tz_system.o := n
+ 
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/trustzone
+ 
+ obj-y += tz_module.o
+diff --git a/drivers/misc/mediatek/pmic/mt6357/v1/Makefile b/drivers/misc/mediatek/pmic/mt6357/v1/Makefile
+index a8df6fd..aed97ae 100644
+--- a/drivers/misc/mediatek/pmic/mt6357/v1/Makefile
++++ b/drivers/misc/mediatek/pmic/mt6357/v1/Makefile
+@@ -12,7 +12,7 @@ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/misc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc
+ 
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ 
+ ifeq ($(CONFIG_MTK_TINYSYS_SSPM_SUPPORT), y)
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm/
+diff --git a/drivers/misc/mediatek/pmic/mt6358/v1/Makefile b/drivers/misc/mediatek/pmic/mt6358/v1/Makefile
+index 915175a..20e9f5a 100644
+--- a/drivers/misc/mediatek/pmic/mt6358/v1/Makefile
++++ b/drivers/misc/mediatek/pmic/mt6358/v1/Makefile
+@@ -6,7 +6,7 @@ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/misc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/usb_c/tcpc/inc
+ 
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ 
+ ifeq ($(CONFIG_MTK_TINYSYS_SSPM_SUPPORT), y)
+ ifeq ($(CONFIG_MACH_MT6781),y)
+diff --git a/drivers/misc/mediatek/pmic/mt6359/v1/Makefile b/drivers/misc/mediatek/pmic/mt6359/v1/Makefile
+index e05c4b4..a4568b4 100644
+--- a/drivers/misc/mediatek/pmic/mt6359/v1/Makefile
++++ b/drivers/misc/mediatek/pmic/mt6359/v1/Makefile
+@@ -6,7 +6,7 @@ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/misc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/usb_c/tcpc/inc
+ 
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ 
+ ifeq ($(CONFIG_MTK_TINYSYS_SSPM_SUPPORT), y)
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm/
+diff --git a/drivers/misc/mediatek/pmic/mt6359p/v1/Makefile b/drivers/misc/mediatek/pmic/mt6359p/v1/Makefile
+index 91634fa..2b114c6 100644
+--- a/drivers/misc/mediatek/pmic/mt6359p/v1/Makefile
++++ b/drivers/misc/mediatek/pmic/mt6359p/v1/Makefile
+@@ -12,7 +12,7 @@ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/misc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/usb_c/tcpc/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/subpmic
+ 
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ 
+ ifeq ($(CONFIG_MTK_TINYSYS_SSPM_SUPPORT), y)
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm/v2
+diff --git a/drivers/misc/mediatek/pmic/mt6390/v1/Makefile b/drivers/misc/mediatek/pmic/mt6390/v1/Makefile
+index 08213ec..bedc3c3 100644
+--- a/drivers/misc/mediatek/pmic/mt6390/v1/Makefile
++++ b/drivers/misc/mediatek/pmic/mt6390/v1/Makefile
+@@ -12,7 +12,7 @@ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/misc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc
+ 
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ 
+ ifeq ($(CONFIG_MTK_TINYSYS_SSPM_SUPPORT), y)
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm/
+diff --git a/drivers/misc/mediatek/power/Makefile b/drivers/misc/mediatek/power/Makefile
+index b3a5c28..43a2fe5 100644
+--- a/drivers/misc/mediatek/power/Makefile
++++ b/drivers/misc/mediatek/power/Makefile
+@@ -14,12 +14,12 @@ subdir-ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/battery
+ subdir-ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/charger
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/misc
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/misc
+ 
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/usb_c/tcpc/inc
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6765/Makefile b/drivers/misc/mediatek/power/mt6765/Makefile
+index 1b00df2..f3338cc 100644
+--- a/drivers/misc/mediatek/power/mt6765/Makefile
++++ b/drivers/misc/mediatek/power/mt6765/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6768/Makefile b/drivers/misc/mediatek/power/mt6768/Makefile
+index 65c661e..cfce0d2 100644
+--- a/drivers/misc/mediatek/power/mt6768/Makefile
++++ b/drivers/misc/mediatek/power/mt6768/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6781/Makefile b/drivers/misc/mediatek/power/mt6781/Makefile
+index 1b00df2..f3338cc 100644
+--- a/drivers/misc/mediatek/power/mt6781/Makefile
++++ b/drivers/misc/mediatek/power/mt6781/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6785/Makefile b/drivers/misc/mediatek/power/mt6785/Makefile
+index 1b00df2..f3338cc 100644
+--- a/drivers/misc/mediatek/power/mt6785/Makefile
++++ b/drivers/misc/mediatek/power/mt6785/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6833/Makefile b/drivers/misc/mediatek/power/mt6833/Makefile
+index 1b00df2..f3338cc 100644
+--- a/drivers/misc/mediatek/power/mt6833/Makefile
++++ b/drivers/misc/mediatek/power/mt6833/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6853/Makefile b/drivers/misc/mediatek/power/mt6853/Makefile
+index f51e454..5c65290 100644
+--- a/drivers/misc/mediatek/power/mt6853/Makefile
++++ b/drivers/misc/mediatek/power/mt6853/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6873/Makefile b/drivers/misc/mediatek/power/mt6873/Makefile
+index eaf2d36..a06a16a 100644
+--- a/drivers/misc/mediatek/power/mt6873/Makefile
++++ b/drivers/misc/mediatek/power/mt6873/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/power/mt6885/Makefile b/drivers/misc/mediatek/power/mt6885/Makefile
+index a3f3f0c..cad44ea 100644
+--- a/drivers/misc/mediatek/power/mt6885/Makefile
++++ b/drivers/misc/mediatek/power/mt6885/Makefile
+@@ -10,8 +10,8 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/charger
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/charger
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/flashlight/inc
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2/
+diff --git a/drivers/misc/mediatek/teei/400/ut_tester/Makefile b/drivers/misc/mediatek/teei/400/ut_tester/Makefile
+index f38b195..2c62275 100644
+--- a/drivers/misc/mediatek/teei/400/ut_tester/Makefile
++++ b/drivers/misc/mediatek/teei/400/ut_tester/Makefile
+@@ -11,4 +11,4 @@
+ # GNU General Public License for more details.
+ 
+ obj-y += ut_tester.o
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+diff --git a/drivers/misc/mediatek/trusted_mem/Makefile b/drivers/misc/mediatek/trusted_mem/Makefile
+index 2c79e15..ca40501 100644
+--- a/drivers/misc/mediatek/trusted_mem/Makefile
++++ b/drivers/misc/mediatek/trusted_mem/Makefile
+@@ -13,7 +13,7 @@
+ include $(srctree)/drivers/misc/mediatek/trusted_mem/Makefile.configs
+ 
+ # Force strictly compiler check
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ 
+ #==========================================================================
+ # Trusted Memory Subsystem Driver
+diff --git a/drivers/power/oplus/Makefile b/drivers/power/oplus/Makefile
+index 5087042..3dee125 100755
+--- a/drivers/power/oplus/Makefile
++++ b/drivers/power/oplus/Makefile
+@@ -61,7 +61,7 @@ obj-$(CONFIG_OPLUS_CHG) := oplus_chg.o
+ 
+ else
+ ifeq ($(CONFIG_OPLUS_CHARGER_MTK),y)
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ subdir-ccflags-y += -Wno-unused-variable
+ ifeq ($(CONFIG_OPLUS_CHARGER_MTK6779Q),y)
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+@@ -75,7 +75,7 @@ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ endif
+ ifeq ($(CONFIG_OPLUS_CHARGER_MTK6877),y)
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ subdir-ccflags-y += -Wunused
+ subdir-ccflags-y += -Wno-unused-result
+ endif
+diff --git a/drivers/power/oplus/charger_ic/Makefile b/drivers/power/oplus/charger_ic/Makefile
+index 6fbe26c..1e9dc17 100755
+--- a/drivers/power/oplus/charger_ic/Makefile
++++ b/drivers/power/oplus/charger_ic/Makefile
+@@ -11,7 +11,7 @@ ifeq ($(CONFIG_OPLUS_CHARGER_MTK),y)
+ 		obj-y   += smb1351-charger.o
+         else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6768),y)
+                 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-                subdir-ccflags-y += -Werror
++                subdir-ccflags-y += -Wno-error
+                 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+                 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+                 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+@@ -32,7 +32,7 @@ ifeq ($(CONFIG_OPLUS_CHARGER_MTK),y)
+                 obj-$(CONFIG_CHARGER_SY6974) += oplus_sy6974.o
+ 	else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6769R),y)
+                 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-                subdir-ccflags-y += -Werror
++                subdir-ccflags-y += -Wno-error
+                 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+                 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+                 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+@@ -53,7 +53,7 @@ ifeq ($(CONFIG_OPLUS_CHARGER_MTK),y)
+                 obj-$(CONFIG_CHARGER_SY6974) += oplus_sy6974.o
+ 	else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6769),y)
+ 		MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-		subdir-ccflags-y += -Werror
++		subdir-ccflags-y += -Wno-error
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+@@ -113,7 +113,7 @@ ifeq ($(CONFIG_OPLUS_CHARGER_MTK),y)
+ 		obj-y	+= oplus_bq25910.o
+ 	else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6765R),y)
+ 		MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-		subdir-ccflags-y += -Werror
++		subdir-ccflags-y += -Wno-error
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+@@ -133,7 +133,7 @@ ifeq ($(CONFIG_OPLUS_CHARGER_MTK),y)
+ 		obj-$(CONFIG_CHARGER_BQ2591X) += oplus_bq2591x.o
+ 	else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6765S),y)
+ 		MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-		subdir-ccflags-y += -Werror
++		subdir-ccflags-y += -Wno-error
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ 		subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+diff --git a/drivers/power/supply/mediatek/Makefile b/drivers/power/supply/mediatek/Makefile
+index ea45a8b..e0726f2 100644
+--- a/drivers/power/supply/mediatek/Makefile
++++ b/drivers/power/supply/mediatek/Makefile
+@@ -13,10 +13,10 @@
+ 
+ 
+ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ 
+ ifneq ($(CONFIG_FPGA_EARLY_PORTING),y)
+ ifeq ($(CONFIG_MTK_GAUGE_VERSION),30)
+diff --git a/drivers/power/supply/mediatek/battery/Makefile b/drivers/power/supply/mediatek/battery/Makefile
+index 4952e7a..01c0a68 100755
+--- a/drivers/power/supply/mediatek/battery/Makefile
++++ b/drivers/power/supply/mediatek/battery/Makefile
+@@ -13,27 +13,27 @@
+ 
+ 
+ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/misc
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/misc
+ 
+ ifeq ($(CONFIG_OPLUS_CHARGER_MTK6785),y)
+ #Liu.Yong@RM.CM.BSP.CHG 2020/08/20 modify for mt6785 charger bring up
+ 	obj-y += mtk_battery.o mtk_power_misc.o mtk_gauge_coulomb_service.o mtk_gauge_class.o mtk_battery_recovery.o mtk_battery_core.o
+ else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6769),y)
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/misc
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/misc
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc/
+ 	obj-y += oplus_mtk_battery.o mtk_power_misc.o mtk_gauge_coulomb_service.o mtk_gauge_class.o mtk_battery_recovery.o mtk_battery_core.o
+ else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6768),y)
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/misc
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/misc
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc/
+         obj-y += oplus_mtk_battery.o mtk_power_misc.o mtk_gauge_coulomb_service.o mtk_gauge_class.o mtk_battery_recovery.o mtk_battery_core.o
+ else ifeq ($(CONFIG_OPLUS_CHARGER_MTK6769R),y)
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/power/supply/mediatek/misc
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/power/supply/mediatek/misc
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc/
+         obj-y += oplus_mtk_battery.o mtk_power_misc.o mtk_gauge_coulomb_service.o mtk_gauge_class.o mtk_battery_recovery.o mtk_battery_core.o
+ else ifeq ($(CONFIG_MTK_GAUGE_VERSION),30)
+ ifeq ($(CONFIG_OPLUS_CHARGER_MTK6771),y)
+diff --git a/drivers/power/supply/mediatek/charger/Makefile b/drivers/power/supply/mediatek/charger/Makefile
+index 0abb30c..e7a1d68 100755
+--- a/drivers/power/supply/mediatek/charger/Makefile
++++ b/drivers/power/supply/mediatek/charger/Makefile
+@@ -12,7 +12,7 @@
+ #
+ 
+ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+diff --git a/drivers/power/supply/mediatek/misc/Makefile b/drivers/power/supply/mediatek/misc/Makefile
+index ef1cb50..1e42b0e 100644
+--- a/drivers/power/supply/mediatek/misc/Makefile
++++ b/drivers/power/supply/mediatek/misc/Makefile
+@@ -13,10 +13,10 @@
+ 
+ 
+ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/pmic/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/pmic/include
+ 
+ 
+ obj-y += mtk_gauge_time_service.o
+diff --git a/drivers/scsi/aic7xxx/Makefile b/drivers/scsi/aic7xxx/Makefile
+index c15be25..55add4e 100644
+--- a/drivers/scsi/aic7xxx/Makefile
++++ b/drivers/scsi/aic7xxx/Makefile
+@@ -36,7 +36,7 @@ aic79xx-y					+= aic79xx_osm.o	\
+ 
+ ccflags-y += -Idrivers/scsi
+ ifdef WARNINGS_BECOME_ERRORS
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ endif
+ 
+ # Files generated that shall be removed upon make clean
+diff --git a/drivers/scsi/lpfc/Makefile b/drivers/scsi/lpfc/Makefile
+index cb6aa80..1229078 100644
+--- a/drivers/scsi/lpfc/Makefile
++++ b/drivers/scsi/lpfc/Makefile
+@@ -25,7 +25,7 @@ ccflags-$(GCOV) := -fprofile-arcs -ftest-coverage
+ ccflags-$(GCOV) += -O0
+ 
+ ifdef WARNINGS_BECOME_ERRORS
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ endif
+ 
+ obj-$(CONFIG_SCSI_LPFC) := lpfc.o
+diff --git a/drivers/usb/mtu3/mt6785/Makefile b/drivers/usb/mtu3/mt6785/Makefile
+index 8839ae7..efb7f44 100644
+--- a/drivers/usb/mtu3/mt6785/Makefile
++++ b/drivers/usb/mtu3/mt6785/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/usb/mtu3
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/usb/mtu3
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ 
+ obj-y += mtu3_hal.o mtu3_phy_hal.o mtu3_sleep.o mtu3_phy_debugfs.o
+diff --git a/drivers/usb/mtu3/mt6833/Makefile b/drivers/usb/mtu3/mt6833/Makefile
+index 8839ae7..efb7f44 100644
+--- a/drivers/usb/mtu3/mt6833/Makefile
++++ b/drivers/usb/mtu3/mt6833/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/usb/mtu3
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/usb/mtu3
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ 
+ obj-y += mtu3_hal.o mtu3_phy_hal.o mtu3_sleep.o mtu3_phy_debugfs.o
+diff --git a/drivers/usb/mtu3/mt6853/Makefile b/drivers/usb/mtu3/mt6853/Makefile
+index 8839ae7..efb7f44 100644
+--- a/drivers/usb/mtu3/mt6853/Makefile
++++ b/drivers/usb/mtu3/mt6853/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/usb/mtu3
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/usb/mtu3
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ 
+ obj-y += mtu3_hal.o mtu3_phy_hal.o mtu3_sleep.o mtu3_phy_debugfs.o
+diff --git a/drivers/usb/mtu3/mt6873/Makefile b/drivers/usb/mtu3/mt6873/Makefile
+index 8839ae7..efb7f44 100644
+--- a/drivers/usb/mtu3/mt6873/Makefile
++++ b/drivers/usb/mtu3/mt6873/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/usb/mtu3
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/usb/mtu3
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ 
+ obj-y += mtu3_hal.o mtu3_phy_hal.o mtu3_sleep.o mtu3_phy_debugfs.o
+diff --git a/drivers/usb/mtu3/mt6877/Makefile b/drivers/usb/mtu3/mt6877/Makefile
+index 8839ae7..efb7f44 100644
+--- a/drivers/usb/mtu3/mt6877/Makefile
++++ b/drivers/usb/mtu3/mt6877/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/usb/mtu3
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/usb/mtu3
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ 
+ obj-y += mtu3_hal.o mtu3_phy_hal.o mtu3_sleep.o mtu3_phy_debugfs.o
+diff --git a/drivers/usb/mtu3/mt6885/Makefile b/drivers/usb/mtu3/mt6885/Makefile
+index 8839ae7..efb7f44 100644
+--- a/drivers/usb/mtu3/mt6885/Makefile
++++ b/drivers/usb/mtu3/mt6885/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/usb/mtu3
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/usb/mtu3
+ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ 
+ obj-y += mtu3_hal.o mtu3_phy_hal.o mtu3_sleep.o mtu3_phy_debugfs.o
+diff --git a/drivers/watchdog/mediatek/Makefile b/drivers/watchdog/mediatek/Makefile
+index 090796c..f3465f6 100644
+--- a/drivers/watchdog/mediatek/Makefile
++++ b/drivers/watchdog/mediatek/Makefile
+@@ -13,9 +13,9 @@
+ 
+ #$(call all-subdir-src-or-makefile)
+ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/masp/asfv2/asf_inc
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/masp/asfv2/asf_inc
+ 
+ obj-$(CONFIG_MTK_WATCHDOG)		+= wdk/
+ 
+diff --git a/drivers/watchdog/mediatek/wdk/Makefile b/drivers/watchdog/mediatek/wdk/Makefile
+index 95ae285..7a69454 100644
+--- a/drivers/watchdog/mediatek/wdk/Makefile
++++ b/drivers/watchdog/mediatek/wdk/Makefile
+@@ -13,7 +13,7 @@
+ 
+ ccflags-y += -I$(srctree)/drivers/watchdog/mediatek/include
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/masp/asfv2/asf_inc
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/masp/asfv2/asf_inc
+ 
+ obj-$(CONFIG_MTK_WD_KICKER) += wd_common_drv.o
+ obj-y += wd_api.o
+diff --git a/mm/Makefile b/mm/Makefile
+index 8a4cd7c..55d1e32 100755
+--- a/mm/Makefile
++++ b/mm/Makefile
+@@ -3,7 +3,7 @@
+ # Makefile for the linux memory manager.
+ #
+ 
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ 
+ ifdef CONFIG_MTK_ION
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index bfb79b0..617ca49 100755
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -1,5 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
+ 
+ snd-soc-88pm860x-objs := 88pm860x-codec.o
+ snd-soc-ab8500-codec-objs := ab8500-codec.o
+@@ -510,12 +510,12 @@ obj-$(CONFIG_SND_SOC_CS35L41)	+= cs35l41/
+ 
+ ifneq (, $(filter y,$(CONFIG_SND_SOC_MT6358) $(CONFIG_SND_SOC_MT6366)))
+   MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-  subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-  subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/accdet/mt6358
++  subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++  subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/accdet/mt6358
+ endif
+ 
+ ifeq ($(CONFIG_SND_SOC_MT6359),y)
+   MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-  subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-  subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/accdet/mt6359
++  subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++  subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/accdet/mt6359
+ endif
+diff --git a/sound/soc/codecs/audio/aw882xx/Makefile b/sound/soc/codecs/audio/aw882xx/Makefile
+index 4320b34..dd5a08a 100644
+--- a/sound/soc/codecs/audio/aw882xx/Makefile
++++ b/sound/soc/codecs/audio/aw882xx/Makefile
+@@ -5,7 +5,7 @@ subdir-ccflags-y += -I$(srctree)/sound/soc/mediatek/common
+ 
+ ccflags-y += -Isound/soc/codecs/aw882xx
+ ccflags-y += -DDEBUG
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ ccflags-y += $(call cc-option,-Wno-date-time,)
+ 
+ snd-soc-aw88263-objs := awinic_monitor.o awinic_dsp.o awinic_cali.o aw882xx.o
+diff --git a/sound/soc/codecs/audio/tfa98xx/Makefile b/sound/soc/codecs/audio/tfa98xx/Makefile
+index 5a49b61..cd1c371 100755
+--- a/sound/soc/codecs/audio/tfa98xx/Makefile
++++ b/sound/soc/codecs/audio/tfa98xx/Makefile
+@@ -19,7 +19,7 @@ subdir-ccflags-y += -I$(srctree)/sound/soc/mediatek/common
+ # debugging support (also enables trace_printk)
+ ccflags-y += -Isound/soc/codecs/tfa98xx
+ ccflags-y += -DDEBUG -DTFA_NON_DSP_SOLUTION
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ ccflags-y += $(call cc-option,-Wno-date-time,)
+ 
+ snd-soc-tfa98xx-objs += tfa98xx.o
+diff --git a/sound/soc/codecs/tfa98xx/Makefile b/sound/soc/codecs/tfa98xx/Makefile
+index bd4fcca..07152f8 100644
+--- a/sound/soc/codecs/tfa98xx/Makefile
++++ b/sound/soc/codecs/tfa98xx/Makefile
+@@ -19,7 +19,7 @@ subdir-ccflags-y += -I$(srctree)/sound/soc/mediatek/common
+ # debugging support (also enables trace_printk)
+ ccflags-y += -Isound/soc/codecs/tfa98xx/inc
+ ccflags-y += -DDEBUG -DTFA_NON_DSP_SOLUTION
+-ccflags-y += -Werror
++ccflags-y += -Wno-error
+ ccflags-y += $(call cc-option,-Wno-date-time,)
+ 
+ snd-soc-tfa98xx-objs += src/tfa98xx.o
+diff --git a/sound/soc/mediatek/Makefile b/sound/soc/mediatek/Makefile
+index 07d1e3f..6e2d315 100755
+--- a/sound/soc/mediatek/Makefile
++++ b/sound/soc/mediatek/Makefile
+@@ -10,7 +10,7 @@
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ # GNU General Public License for more details.
+ #
+-subdir-ccflags-y += -Werror
++subdir-ccflags-y += -Wno-error
+ 
+ # scp smartpa related code
+ obj-$(CONFIG_SND_SOC_MTK_SCP_SMARTPA) += scp_spk/
+@@ -54,8 +54,8 @@ MTK_CODEC := $(subst ",,$(CONFIG_MTK_SND_SOC_CODEC))
+ 
+ # PMIC include path
+ ifneq  ($(MTK_CODEC),)
+-subdir-ccflags-y += -Werror -Werror -Icodec/$(MTK_CODEC)/
+-subdir-ccflags-y += -Werror -I$(src)/common_int
++subdir-ccflags-y += -Wno-error -Werror -Icodec/$(MTK_CODEC)/
++subdir-ccflags-y += -Wno-error -I$(src)/common_int
+ 
+ # Update pmic built flow to avoid codec init later than codec probe
+ obj-y += codec/$(MTK_CODEC)/
+@@ -65,8 +65,8 @@ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+ # flags for not ready feature, uncomment after ready
+ subdir-ccflags-y += -D_GIT318_PMIC_READY
+ subdir-ccflags-y += -DAUDIO_USING_WRAP_DRIVER
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/
+ endif
+ endif
+ 
+@@ -101,16 +101,16 @@ subdir-ccflags-y += -D_MT_IDLE_HEADER
+ subdir-ccflags-y += -D_REG_SYNC_WRITE
+ 
+ # include path
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/accdet/mt6358
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/accdet/mt6358
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
+ subdir-ccflags-${CONFIG_MACH_MT6833} += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/mt6833/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/base/power/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/base/power/include
+ subdir-ccflags-${CONFIG_MACH_MT6833} += -Werror -I$(srctree)/drivers/misc/mediatek/base/power/mt6833/
+ subdir-ccflags-${CONFIG_MACH_MT6833} += -Werror -I$(srctree)/drivers/misc/mediatek/dramc/mt6833/
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/dramc/$(MTK_PLATFORM)/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/dramc/$(MTK_PLATFORM)/
+ 
+ ifeq ($(CONFIG_MACH_MT6833),y)
+ AUDIO_PLATFORM := mt6833
+@@ -118,18 +118,18 @@ else
+ AUDIO_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+ endif
+ 
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/scp/$(AUDIO_PLATFORM)/
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/audio_ipi/$(AUDIO_PLATFORM)/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/scp/$(AUDIO_PLATFORM)/
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/audio_ipi/$(AUDIO_PLATFORM)/
+ 
+ # Common include path
+-subdir-ccflags-y += -Werror -I$(src)/common_int
++subdir-ccflags-y += -Wno-error -I$(src)/common_int
+ 
+ # PMIC include path
+ ifneq  ($(MTK_CODEC),)
+-subdir-ccflags-y += -Werror -I$(src)/codec/$(MTK_CODEC)
++subdir-ccflags-y += -Wno-error -I$(src)/codec/$(MTK_CODEC)
+ endif
+ 
+-subdir-ccflags-y += -Werror -Wno-incompatible-pointer-types
++subdir-ccflags-y += -Wno-error -Wno-incompatible-pointer-types
+ 
+ # Update pmic built flow to avoid codec init later than codec probe
+ ifneq  ($(MTK_CODEC),)
+@@ -141,7 +141,7 @@ obj-y += common_int/
+ obj-y += $(AUDIO_PLATFORM)/
+ 
+ # AP include path
+-subdir-ccflags-y += -Werror -I$(src)/$(AUDIO_PLATFORM)
++subdir-ccflags-y += -Wno-error -I$(src)/$(AUDIO_PLATFORM)
+ endif
+ 
+ # wuhui@ODM.CM.Multimedia.Audio 2020/09/08 added for aw87339 bringup
+diff --git a/sound/soc/mediatek/common_int/Makefile b/sound/soc/mediatek/common_int/Makefile
+index 2d0d31f..102feb1 100644
+--- a/sound/soc/mediatek/common_int/Makefile
++++ b/sound/soc/mediatek/common_int/Makefile
+@@ -13,9 +13,9 @@
+ 
+ # Old kernel architecture
+ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+-subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
++subdir-ccflags-y += -Wno-error -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+ obj-y += mtk-auddrv-devtree-parser.o
+ #obj-y += mtk-auddrv-underflow-mach.o
+ 

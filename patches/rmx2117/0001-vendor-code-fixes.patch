@@ -11,15 +11,21 @@ index 5b0313b..6074707 100644
  	if (!sysctl_input_boost_enabled)
  		return;
  	if(sysctl_slide_boost_enabled){
-diff --git a/mm/Makefile b/mm/Makefile
-index 8a4cd7c..457e418 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -3,7 +3,6 @@
- # Makefile for the linux memory manager.
- #
+diff --git a/sound/soc/codecs/audio/sia81xx/sia81xx.c b/sound/soc/codecs/audio/sia81xx/sia81xx.c
+index 9ca5471..cde69d9 100644
+--- a/sound/soc/codecs/audio/sia81xx/sia81xx.c
++++ b/sound/soc/codecs/audio/sia81xx/sia81xx.c
+@@ -1650,11 +1650,11 @@ static int sia81xx_volme_boost_set(
+ 	return 0;
+ }
  
--subdir-ccflags-y += -Werror
- ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+-void sia81xx_start(){
++void sia81xx_start(void){
+         sia81xx_resume(g_sia81xx);
+ }
  
- ifdef CONFIG_MTK_ION
+-void sia81xx_stop(){
++void sia81xx_stop(void){
+         sia81xx_suspend(g_sia81xx);
+ }
+ #endif /* OPLUS_BUG_COMPATIBILITY */
