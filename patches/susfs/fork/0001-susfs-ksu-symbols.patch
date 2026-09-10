@@ -1,0 +1,45 @@
+diff --git a/kernel/selinux/selinux.c b/kernel/selinux/selinux.c
+index 04e5ffe..f3a407a 100644
+--- a/kernel/selinux/selinux.c
++++ b/kernel/selinux/selinux.c
+@@ -14,6 +14,12 @@ static u32 cached_su_sid __read_mostly = 0;
+ static u32 cached_zygote_sid __read_mostly = 0;
+ static u32 cached_init_sid __read_mostly = 0;
+ u32 ksu_file_sid __read_mostly = 0;
++#ifdef CONFIG_KSU_SUSFS
++/* SIDs the susfs faces compare against (avc log spoofing) */
++#define SUSFS_PRIV_APP_CONTEXT "u:r:priv_app:s0:c512,c768"
++u32 susfs_ksu_sid __read_mostly = 0;
++u32 susfs_priv_app_sid __read_mostly = 0;
++#endif // #ifdef CONFIG_KSU_SUSFS
+ 
+ static int transive_to_domain(const char *domain, struct cred *cred, bool clear_exec_sid)
+ {
+@@ -156,6 +162,17 @@ void cache_sid(void)
+ 	} else {
+ 		pr_info("Cached ksu_file SID: %u\n", ksu_file_sid);
+ 	}
++
++#ifdef CONFIG_KSU_SUSFS
++	susfs_ksu_sid = cached_su_sid;
++	err = security_secctx_to_secid(SUSFS_PRIV_APP_CONTEXT, strlen(SUSFS_PRIV_APP_CONTEXT), &susfs_priv_app_sid);
++	if (err) {
++		pr_warn("Failed to cache priv_app SID: %d\n", err);
++		susfs_priv_app_sid = 0;
++	} else {
++		pr_info("Cached priv_app SID: %u\n", susfs_priv_app_sid);
++	}
++#endif // #ifdef CONFIG_KSU_SUSFS
+ }
+ 
+ /*
+@@ -227,3 +244,9 @@ void escape_to_root_for_adb_root(void)
+ 	}
+ 	commit_creds(cred);
+ }
++
++/* SusFS compatibility: same check under the susfs-facing symbol name */
++bool susfs_is_current_ksu_domain(void)
++{
++	return is_ksu_domain();
++}
