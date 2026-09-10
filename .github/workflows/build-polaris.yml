@@ -311,6 +311,20 @@ jobs:
           # AOSP GCC 4.9 prebuilts provide the <triple>-as/ld for clang's
           # external assembler/linker when it builds the AArch32 vDSO.
           rc=0
+          # Module-signing key generation writes RSA progress without newlines;
+          # build it serially first with that output silenced so it cannot
+          # interleave with the parallel build
+          if grep -q '^CONFIG_MODULE_SIG=y' "$RUNNER_TEMP/out/.config" 2>/dev/null; then
+            make -j1 O="$RUNNER_TEMP/out" ARCH=arm64 \
+            CC="clang" \
+            CLANG_TRIPLE="aarch64-linux-gnu-" \
+            CROSS_COMPILE="$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-" \
+            CROSS_COMPILE_ARM32="$RUNNER_TEMP/tc/gcc32/bin/arm-linux-androideabi-" \
+            LD=ld.lld LLVM=1 LLVM_IAS=1 \
+            quiet=silent_ certs/ >"$RUNNER_TEMP/certs.log" 2>&1 || {
+              echo "certs prebuild failed:" >&2
+              tail -30 "$RUNNER_TEMP/certs.log" >&2; }
+          fi
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC="clang" \
             CLANG_TRIPLE="aarch64-linux-gnu-" \

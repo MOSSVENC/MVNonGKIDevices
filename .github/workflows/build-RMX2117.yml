@@ -81,32 +81,22 @@ jobs:
             binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
             device-tree-compiler python3
 
-      - name: Download AOSP clang 11 (r383902) + GCC 4.9 binutils
+      - name: Download AOSP clang 14 + GCC 4.9 binutils
         run: |
-          # Official toolchain per build.config.mtk.aarch64 in the kernel
-          # tree: clang-r383902 (clang 11) + aarch64-linux-android-4.9
-          # binutils with the androidkernel- prefix.
-          for br in android12-release android11-release android12L-release; do
-            if git ls-remote --heads \
-                https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
-                "$br" >/dev/null 2>&1; then
-              echo "clang branch: $br"
-              git clone -q --depth=1 --single-branch --branch "$br" \
-                https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
-                "$RUNNER_TEMP/tc/clang" && break
-            fi
-          done
-          if [ ! -d "$RUNNER_TEMP/tc/clang/clang-r383902/bin" ]; then
-            echo "clang-r383902 not found on android12/11 branches; fallback list:" >&2
-            ls "$RUNNER_TEMP/tc/clang" 2>/dev/null | head -20 || true
-            exit 1
-          fi
-          CLANG_BIN="$RUNNER_TEMP/tc/clang/clang-r383902/bin"
+          mkdir -p "$RUNNER_TEMP/tc"
+          # AOSP clang (contains clang + ld.lld): same clang-r450784d prebuilt
+          # as the other supported devices.
+          git clone -q --depth=1 --single-branch \
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+            -b android13-release "$RUNNER_TEMP/tc/clang"
+          CLANG_BIN="$RUNNER_TEMP/tc/clang/clang-r450784d/bin"
           ls "$CLANG_BIN/clang" >/dev/null
-          git clone -q --depth=1 --single-branch --branch android12L-release \
+          echo "CLANG_DIR=$CLANG_BIN" >> "$GITHUB_ENV"
+          # Android GCC 4.9 cross toolchain: the MTK build keeps the
+          # aarch64-linux-androidkernel- prefix for external binutils.
+          git clone -q --depth=1 --single-branch \
             https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
-            "$RUNNER_TEMP/tc/gcc64"
-          ls "$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-androidkernel-gcc" >/dev/null || true
+            -b android12L-release "$RUNNER_TEMP/tc/gcc64"
           echo "$RUNNER_TEMP/tc/gcc64/bin:$CLANG_BIN" >> "$GITHUB_PATH"
 
       - name: Clone kernel source (not part of this repo)
@@ -292,7 +282,7 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/logs"
           cd "$KROOT"
           export ARCH=arm64
-          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
+          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$CLANG_DIR:$PATH"
           FRAGS=""
           if [ "$ROOT_MANAGER" = "resukisu" ]; then
             if [ "$HOOK_TYPE" = "susfs" ]; then
@@ -344,8 +334,20 @@ jobs:
         run: |
           set -o pipefail
           cd "$KROOT"
-          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
+          export PATH="$RUNNER_TEMP/tc/gcc64/bin:$CLANG_DIR:$PATH"
           rc=0
+          # Module-signing key generation writes RSA progress without newlines;
+          # build it serially first with that output silenced so it cannot
+          # interleave with the parallel build
+          if grep -q '^CONFIG_MODULE_SIG=y' "$RUNNER_TEMP/out/.config" 2>/dev/null; then
+            make -j1 O="$RUNNER_TEMP/out" ARCH=arm64 \
+            CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-androidkernel- \
+            LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
+            quiet=silent_ certs/ >"$RUNNER_TEMP/certs.log" 2>&1 || {
+              echo "certs prebuild failed:" >&2
+              tail -30 "$RUNNER_TEMP/certs.log" >&2; }
+          fi
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=aarch64-linux-androidkernel- \
