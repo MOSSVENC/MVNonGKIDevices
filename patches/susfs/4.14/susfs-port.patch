@@ -4264,7 +4264,7 @@ index f2519aa..4e712b0 100644
  				gup_flags, &page, &vma, NULL);
  		if (ret <= 0) {
 diff --git a/fs/exec.c b/fs/exec.c
-index 0000000..0000000 100644
+index cce0669..a0b6f56 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -62,6 +62,9 @@
@@ -4277,7 +4277,7 @@ index 0000000..0000000 100644
  
  #include <linux/uaccess.h>
  #include <asm/mmu_context.h>
-@@ -1704,7 +1704,19 @@
+@@ -1704,6 +1707,18 @@ extern int oplus_exec_block(struct file *file);
  /*
   * sys_execve() executes a new program.
   */
@@ -4296,8 +4296,7 @@ index 0000000..0000000 100644
  static int do_execveat_common(int fd, struct filename *filename,
  			      struct user_arg_ptr argv,
  			      struct user_arg_ptr envp,
- 			      int flags)
-@@ -1714,6 +1714,22 @@
+@@ -1714,6 +1729,20 @@ static int do_execveat_common(int fd, struct filename *filename,
  	struct file *file;
  	struct files_struct *displaced;
  	int retval;
@@ -4314,9 +4313,18 @@ index 0000000..0000000 100644
 +			is_su_session = !ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp, &flags);
 +	}
 +orig_flow:
-+	if (unlikely(is_su_session))
-+		(void)ksu_handle_post_execveat_sucompat(&fd, &filename, &argv, &envp, &flags, &retval);
 +#endif
  
  	if (IS_ERR(filename))
  		return PTR_ERR(filename);
+@@ -1823,6 +1852,10 @@ static int do_execveat_common(int fd, struct filename *filename,
+ 	if (retval < 0)
+ 		goto out;
+ 
++#ifdef CONFIG_KSU_SUSFS
++	if (unlikely(is_su_session))
++		(void)ksu_handle_post_execveat_sucompat(&fd, &filename, &argv, &envp, &flags, &retval);
++#endif
+ 	/* execve succeeded */
+ 	current->fs->in_exec = 0;
+ 	current->in_execve = 0;

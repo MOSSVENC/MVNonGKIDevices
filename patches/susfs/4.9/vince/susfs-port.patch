@@ -285,7 +285,7 @@ index bd064a2c3..0138b5fd6 100644
  }
  #endif /* __ARCH_WANT_COMPAT_SYS_GETDENTS64 */
 diff --git a/fs/exec.c b/fs/exec.c
-index 5addf3b00..dfaf7f8c3 100644
+index 5addf3b..a11b44c 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -57,6 +57,9 @@
@@ -317,7 +317,7 @@ index 5addf3b00..dfaf7f8c3 100644
  static int do_execveat_common(int fd, struct filename *filename,
  			      struct user_arg_ptr argv,
  			      struct user_arg_ptr envp,
-@@ -1686,9 +1701,25 @@ static int do_execveat_common(int fd, struct filename *filename,
+@@ -1686,9 +1701,23 @@ static int do_execveat_common(int fd, struct filename *filename,
  	struct file *file;
  	struct files_struct *displaced;
  	int retval;
@@ -337,12 +337,21 @@ index 5addf3b00..dfaf7f8c3 100644
 +			is_su_session = !ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp, &flags);
 +	}
 +orig_flow:
-+	if (unlikely(is_su_session))
-+		(void)ksu_handle_post_execveat_sucompat(&fd, &filename, &argv, &envp, &flags, &retval);
 +#endif
  
  	/*
  	 * We move the actual failure in case of RLIMIT_NPROC excess from
+@@ -1803,6 +1832,10 @@ static int do_execveat_common(int fd, struct filename *filename,
+ 	if (retval < 0)
+ 		goto out;
+ 
++#ifdef CONFIG_KSU_SUSFS
++	if (unlikely(is_su_session))
++		(void)ksu_handle_post_execveat_sucompat(&fd, &filename, &argv, &envp, &flags, &retval);
++#endif
+ 	/* execve succeeded */
+ 	current->fs->in_exec = 0;
+ 	current->in_execve = 0;
 diff --git a/fs/namei.c b/fs/namei.c
 index e8537d462..a576c2e38 100644
 --- a/fs/namei.c

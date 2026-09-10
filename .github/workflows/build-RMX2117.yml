@@ -228,6 +228,12 @@ jobs:
             sym="${spec%%:*}"; file="${spec##*:}"
             grep -q "$sym" "$file" || MISSING="$MISSING $sym($file)"
           done
+          # the post-execve call must sit after the exec attempt
+          post=$(grep -n '(void)ksu_handle_post_execveat_sucompat(' fs/exec.c | head -1 | cut -d: -f1)
+          done_line=$(grep -n 'exec_binprm(bprm)' fs/exec.c | head -1 | cut -d: -f1)
+          [ -n "$post" ] && [ -n "$done_line" ] && [ "$post" -gt "$done_line" ] || {
+            echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
+            exit 1; }
           # fs/open.c and fs/stat.c call filename_lookup(); the generator
           # de-statics it for the 4.x trees
           grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"

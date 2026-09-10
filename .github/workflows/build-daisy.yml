@@ -217,6 +217,12 @@ jobs:
             sym="${spec%%:*}"; file="${spec##*:}"
             grep -q "$sym" "$file" || { echo "port face missing: $sym($file)" >&2; exit 1; }
           done
+          # the post-execve call must sit after the exec attempt
+          post=$(grep -n '(void)ksu_handle_post_execveat_sucompat(' fs/exec.c | head -1 | cut -d: -f1)
+          done_line=$(grep -n 'exec_binprm(bprm)' fs/exec.c | head -1 | cut -d: -f1)
+          [ -n "$post" ] && [ -n "$done_line" ] && [ "$post" -gt "$done_line" ] || {
+            echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
+            exit 1; }
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
