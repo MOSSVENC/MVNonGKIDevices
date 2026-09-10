@@ -2094,16 +2094,32 @@ index 068fdbcc9..cb807cbc9 100644
  		goto out;
  
 diff --git a/fs/statfs.c b/fs/statfs.c
-index 083dc0ac9..38d76a15d 100644
+index 083dc0ac9..2d601724b 100644
 --- a/fs/statfs.c
 +++ b/fs/statfs.c
-@@ -63,10 +63,76 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
+@@ -5,6 +5,9 @@
+ #include <linux/mount.h>
+ #include <linux/namei.h>
+ #include <linux/statfs.h>
++#ifdef CONFIG_KSU_SUSFS
++#include <linux/susfs_def.h>
++#endif
+ #include <linux/security.h>
+ #include <linux/uaccess.h>
+ #include "internal.h"
+@@ -63,10 +66,82 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
  	return retval;
  }
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 +extern bool susfs_is_inode_sus_kstat(struct inode *inode, bool *out_is_fuse);
 +extern int susfs_sus_kstat_spoof_vfs_statfs(struct inode *inode, struct kstatfs *buf, bool *is_fuse);
++#endif
++#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++extern struct vfsmount *susfs_get_non_sus_vfsmnt_from_vfsmnt(struct vfsmount *vfsmnt);
++#endif
++#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
++extern int susfs_open_redirect_spoof_vfs_statfs(struct inode *inode, struct kstatfs *buf);
 +#endif
 +
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
