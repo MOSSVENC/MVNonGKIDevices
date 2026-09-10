@@ -53,23 +53,26 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 各内核版本的分支补丁形态见 fork issue #5/#7（收录于
 `localworkspace/reference/xxksu/docs/`）。
 
-## 特性开关
+## ReSukiSU manual hook 七类
 
-| 特性 | 输入 | 说明 |
-|---|---|---|
-| BBG | `enable_bbg` | Baseband-guard 防格机 LSM（无本地补丁，官方 setup.sh） |
-| Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） |
-| Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） |
-| Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） |
+按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)
+（本地工作区 `localworkspace/reference/resukisu/docs/` 有页面收录），
+4 类必须改源码、3 类可选。本仓库补丁布局：4.9/4.14/4.19 版本目录，
+跨版本相同形态单一真身存 `4.9/`，workflow 以文件级清单跨目录引用。
 
-`auto_fix_49`：resukisu-auto 的 4.x kasan_reset_tag 门槛修正（auto-hook
-分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
+| hook | 内核文件 | 必打 | resukisu-manual-lsm | resukisu-manual-source |
+|---|---|---|---|---|
+| stat | fs/stat.c | 是 | 源码补丁 | 源码补丁 |
+| execve | fs/exec.c | 是 | 源码补丁 | 源码补丁 |
+| faccessat | fs/open.c | 是 | 源码补丁 | 源码补丁 |
+| sys_reboot | kernel/reboot.c | 是 | 源码补丁（daisy/vince 用设备变体） | 同左 |
+| input | drivers/input/input.c | 可选 | 内核 input_handler 自动 | 0010 源码补丁 |
+| setuid | kernel/sys.c | 可选 | LSM AUTO | 0011 源码补丁 |
+| sys_read(initrc) | fs/read_write.c | 可选 | LSM AUTO | 0012 源码补丁 |
 
-susfs 应用路径（全部为树适配 port）：polaris 用
-`patches/susfs/4.9/susfs-port.patch`；beryllium/daisy/vince 用
-`patches/susfs/4.9/<设备>/susfs-port.patch`；alioth 用
-`patches/susfs/4.19/susfs-port.patch`；RMX2117 用
-`patches/susfs/4.14/susfs-port.patch`。
+input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
+`CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK=y`，由内核 input_handler 特性
+自动应用；setuid / initrc 两个自动面才走 LSM。
 
 ## 工具链
 
@@ -92,26 +95,22 @@ susfs 应用路径（全部为树适配 port）：polaris 用
 
 owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持共享。
 
-### ReSukiSU manual hook 七类
+### 特性开关
+| 特性 | 输入 | 说明 |
+|---|---|---|
+| BBG | `enable_bbg` | Baseband-guard 防格机 LSM（无本地补丁，官方 setup.sh） |
+| Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） |
+| Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） |
+| Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） |
 
-按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)
-（本地工作区 `localworkspace/reference/resukisu/docs/` 有页面收录），
-4 类必须改源码、3 类可选。本仓库补丁布局：4.9/4.14/4.19 版本目录，
-跨版本相同形态单一真身存 `4.9/`，workflow 以文件级清单跨目录引用。
+`auto_fix_49`：resukisu-auto 的 4.x kasan_reset_tag 门槛修正（auto-hook
+分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
 
-| hook | 内核文件 | 必打 | resukisu-manual-lsm | resukisu-manual-source |
-|---|---|---|---|---|
-| stat | fs/stat.c | 是 | 源码补丁 | 源码补丁 |
-| execve | fs/exec.c | 是 | 源码补丁 | 源码补丁 |
-| faccessat | fs/open.c | 是 | 源码补丁 | 源码补丁 |
-| sys_reboot | kernel/reboot.c | 是 | 源码补丁（daisy/vince 用设备变体） | 同左 |
-| input | drivers/input/input.c | 可选 | 内核 input_handler 自动 | 0010 源码补丁 |
-| setuid | kernel/sys.c | 可选 | LSM AUTO | 0011 源码补丁 |
-| sys_read(initrc) | fs/read_write.c | 可选 | LSM AUTO | 0012 源码补丁 |
-
-input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
-`CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK=y`，由内核 input_handler 特性
-自动应用；setuid / initrc 两个自动面才走 LSM。
+susfs 应用路径（全部为树适配 port）：polaris 用
+`patches/susfs/4.9/susfs-port.patch`；beryllium/daisy/vince 用
+`patches/susfs/4.9/<设备>/susfs-port.patch`；alioth 用
+`patches/susfs/4.19/susfs-port.patch`；RMX2117 用
+`patches/susfs/4.14/susfs-port.patch`。
 
 ### 静态符号
 
