@@ -580,7 +580,7 @@ index ea9e472..d787ded 100644
  	do_delayed_call(&done);
  	return res;
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 4a69b91..8a87770 100644
+index 4a69b91..cb12d9c 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -27,10 +27,21 @@
@@ -779,7 +779,29 @@ index 4a69b91..8a87770 100644
  	hlist_for_each_entry_rcu(p, head, mnt_hash)
  		if (&p->mnt_parent->mnt == mnt && p->mnt_mountpoint == dentry)
  			return p;
-@@ -1039,7 +1195,40 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+@@ -946,7 +1102,21 @@ struct vfsmount *vfs_create_mount(struct fs_context *fc)
+ 		return ERR_PTR(-EINVAL);
+ 	sb = fc->root->d_sb;
+ 
++#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++	// - We will just stop checking for ksu process if /sdcard/Android is accessible,
++	//   for the sake of performance
++	if (static_branch_unlikely(&susfs_is_sdcard_android_data_not_decrypted)) {
++		if (susfs_is_current_ksu_domain()) {
++			mnt = susfs_alloc_non_unshare_ksu_vfsmnt(fc->source ?: "none");
++			goto bypass_orig_flow;
++		}
++	}
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++
+ 	mnt = alloc_vfsmnt(fc->source ?: "none");
++#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++bypass_orig_flow:
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+ 	if (!mnt)
+ 		return ERR_PTR(-ENOMEM);
+ 
+@@ -1039,7 +1209,40 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  	struct mount *mnt;
  	int err;
  
@@ -820,7 +842,7 @@ index 4a69b91..8a87770 100644
  	if (!mnt)
  		return ERR_PTR(-ENOMEM);
  
-@@ -1064,6 +1253,13 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+@@ -1064,6 +1267,13 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  
  	mnt->mnt.mnt_flags = old->mnt.mnt_flags;
  	mnt->mnt.mnt_flags &= ~(MNT_WRITE_HOLD|MNT_MARKED|MNT_INTERNAL);
@@ -834,7 +856,7 @@ index 4a69b91..8a87770 100644
  	/* Don't allow unprivileged users to change mount flags */
  	if (flag & CL_UNPRIVILEGED) {
  		mnt->mnt.mnt_flags |= MNT_LOCK_ATIME;
-@@ -3074,6 +3270,9 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+@@ -3074,6 +3284,9 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  	copy_flags = CL_COPY_UNBINDABLE | CL_EXPIRE;
  	if (user_ns != ns->user_ns)
  		copy_flags |= CL_SHARED_TO_SLAVE | CL_UNPRIVILEGED;
@@ -844,7 +866,7 @@ index 4a69b91..8a87770 100644
  	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
  	if (IS_ERR(new)) {
  		namespace_unlock();
-@@ -3652,3 +3851,35 @@ const struct proc_ns_operations mntns_operations = {
+@@ -3652,3 +3865,35 @@ const struct proc_ns_operations mntns_operations = {
  	.install	= mntns_install,
  	.owner		= mntns_owner,
  };
