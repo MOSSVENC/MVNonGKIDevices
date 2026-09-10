@@ -37,7 +37,7 @@ on:
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
-        default: true
+        default: false
 concurrency:
   group: rmx2117-kernel
   cancel-in-progress: true
@@ -364,17 +364,14 @@ jobs:
           # of the on-device boot image and keeps its ramdisk; the dtbo
           # partition is never touched. Device-name check is skipped
           # (fastboot product name not pinned on MTK).
-          # feature display composed by the shared script (root / hook
-          # type / feature level; manual-hook detail lines follow)
-                    # per-build feature display: to anykernel.sh (flash-time) and to a
-          # FEATURES.txt inside the zip for at-a-glance package inspection
+          # per-build display: banner + kernel.string for the flash-time
+          # screen, FEATURES.txt inside the zip for inspection
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
-            "$RUNNER_TEMP/ak3/anykernel.sh" "RMX2117" \
-            "$RUNNER_TEMP/ak3/zipname.txt" \
-            > "$RUNNER_TEMP/ak3/FEATURES.txt"
+            "$RUNNER_TEMP/ak3" "RMX2117" \
+            "$RUNNER_TEMP/zipname.txt"
           # package name follows this build's inputs
           # (codename_manager_hook_feature...)
-          AK3_ZIP="$(cat "$RUNNER_TEMP/ak3/zipname.txt")"
+          AK3_ZIP="$(cat "$RUNNER_TEMP/zipname.txt")"
           echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
           echo "=== RMX2117 kernel features (this build) ==="
           cat "$RUNNER_TEMP/ak3/FEATURES.txt"

@@ -33,15 +33,15 @@ on:
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
-        default: true
+        default: false
       enable_droidspace:
         description: enable Droidspaces/LXC kernel support (4.19)
         type: boolean
-        default: true
+        default: false
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
-        default: true
+        default: false
 
 concurrency:
   group: alioth-kernel
@@ -358,17 +358,14 @@ jobs:
           # virtual A/B device: kernel Image goes to the boot partition of
           # the current slot; dtbo.img (if produced) is flashed by AK3's
           # flash_generic dtbo from the zip root.
-          # feature display composed by the shared script (root / hook
-          # type / feature level; manual-hook detail lines follow)
-                    # per-build feature display: to anykernel.sh (flash-time) and to a
-          # FEATURES.txt inside the zip for at-a-glance package inspection
+          # per-build display: banner + kernel.string for the flash-time
+          # screen, FEATURES.txt inside the zip for inspection
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
-            "$RUNNER_TEMP/ak3/anykernel.sh" "alioth" \
-            "$RUNNER_TEMP/ak3/zipname.txt" \
-            > "$RUNNER_TEMP/ak3/FEATURES.txt"
+            "$RUNNER_TEMP/ak3" "alioth" \
+            "$RUNNER_TEMP/zipname.txt"
           # package name follows this build's inputs
           # (codename_manager_hook_feature...)
-          AK3_ZIP="$(cat "$RUNNER_TEMP/ak3/zipname.txt")"
+          AK3_ZIP="$(cat "$RUNNER_TEMP/zipname.txt")"
           echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
           echo "=== K40 kernel features (this build) ==="
           cat "$RUNNER_TEMP/ak3/FEATURES.txt"
