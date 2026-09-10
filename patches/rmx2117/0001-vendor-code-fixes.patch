@@ -1,5 +1,2964 @@
+diff --git a/arch/arm/probes/kprobes/core.c b/arch/arm/probes/kprobes/core.c
+index 091e9a3c2..3cd2066c2 100644
+--- a/arch/arm/probes/kprobes/core.c
++++ b/arch/arm/probes/kprobes/core.c
+@@ -669,7 +669,7 @@ static struct undef_hook kprobes_arm_break_hook = {
+ 
+ #endif /* !CONFIG_THUMB2_KERNEL */
+ 
+-int __init arch_init_kprobes()
++int __init arch_init_kprobes(void)
+ {
+ 	arm_probes_decode_init();
+ #ifdef CONFIG_THUMB2_KERNEL
+diff --git a/arch/arm64/kernel/rootguard/oplus_guard_general.c b/arch/arm64/kernel/rootguard/oplus_guard_general.c
+index 5be4d436a..0f1f42d6f 100755
+--- a/arch/arm64/kernel/rootguard/oplus_guard_general.c
++++ b/arch/arm64/kernel/rootguard/oplus_guard_general.c
+@@ -82,7 +82,7 @@ static int __init boot_state_init(void)
+ 	return 0;
+ }
+ 
+-static void __exit boot_state_exit()
++static void __exit boot_state_exit(void)
+ {
+ 	return ;
+ }
+diff --git a/drivers/gpu/drm/mediatek/mtk_debug.c b/drivers/gpu/drm/mediatek/mtk_debug.c
+index c17b2723f..c9d567241 100755
+--- a/drivers/gpu/drm/mediatek/mtk_debug.c
++++ b/drivers/gpu/drm/mediatek/mtk_debug.c
+@@ -2901,7 +2901,7 @@ void get_disp_dbg_buffer(unsigned long *addr, unsigned long *size,
+ 	}
+ }
+ 
+-struct drm_device *get_drm_device(){
++struct drm_device *get_drm_device(void){
+     return drm_dev;
+ }
+ EXPORT_SYMBOL(get_drm_device);
+diff --git a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
+index 80324d91c..94467bfe2 100755
+--- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
++++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
+@@ -6905,7 +6905,7 @@ void mtk_wait_TE(int te_num) {
+ 	}
+ }
+ 
+-void hbm_notify_fingerprint_if_neccessary() {
++void hbm_notify_fingerprint_if_neccessary(void) {
+ 	if (te_remain == 0) return;
+ 
+ 	te_remain --;
+@@ -6971,7 +6971,7 @@ void mtk_wait_framedone(int fd_num) {
+ 	}
+ }
+ 
+-void hbm_notify_fingerprint_if_neccessary_vdo() {
++void hbm_notify_fingerprint_if_neccessary_vdo(void) {
+ 	if (framedone_remain == 0) return;
+ 
+ 	framedone_remain --;
+diff --git a/drivers/gpu/drm/oplus/display_panel/oplus_display_panel.c b/drivers/gpu/drm/oplus/display_panel/oplus_display_panel.c
+index 424232d7f..2e7ee15e3 100755
+--- a/drivers/gpu/drm/oplus/display_panel/oplus_display_panel.c
++++ b/drivers/gpu/drm/oplus/display_panel/oplus_display_panel.c
+@@ -265,7 +265,7 @@ static int __init oplus_display_panel_init(void)
+ 	return rc;
+ }
+ 
+-void __exit oplus_display_panel_exit()
++void __exit oplus_display_panel_exit(void)
+ {
+ 	pr_err("%s\n", __func__);
+ 
+diff --git a/drivers/gpu/drm/panel/oplus20131_boe_nt37800_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20131_boe_nt37800_1080p_dsi_cmd.c
+index 9084a216d..a2ca50179 100755
+--- a/drivers/gpu/drm/panel/oplus20131_boe_nt37800_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20131_boe_nt37800_1080p_dsi_cmd.c
+@@ -1473,7 +1473,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20131_samsung_ana6705_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20131_samsung_ana6705_1080p_dsi_cmd.c
+index 46efefb1e..28d6521f9 100755
+--- a/drivers/gpu/drm/panel/oplus20131_samsung_ana6705_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20131_samsung_ana6705_1080p_dsi_cmd.c
+@@ -1745,7 +1745,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_1080p_dsi_cmd.c
+index a89ad1ddb..6859e924c 100755
+--- a/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_1080p_dsi_cmd.c
+@@ -1575,7 +1575,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_32_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_32_1080p_dsi_cmd.c
+index 046834187..4f6c78d85 100755
+--- a/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_32_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20131_tianma_nt37701_32_1080p_dsi_cmd.c
+@@ -1562,7 +1562,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20171_boe_nt37701_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20171_boe_nt37701_1080p_dsi_cmd.c
+index 752738f33..9863d5ec4 100755
+--- a/drivers/gpu/drm/panel/oplus20171_boe_nt37701_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20171_boe_nt37701_1080p_dsi_cmd.c
+@@ -1408,7 +1408,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20171_samsung_ana6705_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20171_samsung_ana6705_1080p_dsi_cmd.c
+index f653babe7..47d19518e 100755
+--- a/drivers/gpu/drm/panel/oplus20171_samsung_ana6705_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20171_samsung_ana6705_1080p_dsi_cmd.c
+@@ -1596,7 +1596,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20171_tianma_nt37701_42_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20171_tianma_nt37701_42_1080p_dsi_cmd.c
+index fa0ad8d59..4fd74b829 100755
+--- a/drivers/gpu/drm/panel/oplus20171_tianma_nt37701_42_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20171_tianma_nt37701_42_1080p_dsi_cmd.c
+@@ -1478,7 +1478,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye01_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye01_1080p_dsi_cmd.c
+index 353c12c67..d29bea5cc 100755
+--- a/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye01_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye01_1080p_dsi_cmd.c
+@@ -1720,7 +1720,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye05_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye05_1080p_dsi_cmd.c
+index 92d8da1ce..2217f7614 100755
+--- a/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye05_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20615_samsung_ams643ye05_1080p_dsi_cmd.c
+@@ -1719,7 +1719,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20645_boe_nt37800_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20645_boe_nt37800_1080p_dsi_cmd.c
+index 0dec2461d..9eee82bd5 100755
+--- a/drivers/gpu/drm/panel/oplus20645_boe_nt37800_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20645_boe_nt37800_1080p_dsi_cmd.c
+@@ -1463,7 +1463,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20645_samsung_ana6705_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20645_samsung_ana6705_1080p_dsi_cmd.c
+index ad15bfc24..b4dee4118 100755
+--- a/drivers/gpu/drm/panel/oplus20645_samsung_ana6705_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20645_samsung_ana6705_1080p_dsi_cmd.c
+@@ -1723,7 +1723,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_1080p_dsi_cmd.c
+index be0d784de..d5a8853e4 100755
+--- a/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_1080p_dsi_cmd.c
+@@ -1568,7 +1568,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_32_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_32_1080p_dsi_cmd.c
+index 343c23036..c78325234 100755
+--- a/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_32_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus20645_tianma_nt37701_32_1080p_dsi_cmd.c
+@@ -1560,7 +1560,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus21015_boe_b12_nt37701_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus21015_boe_b12_nt37701_1080p_dsi_cmd.c
+index 92d4d0466..0ce0d32ee 100755
+--- a/drivers/gpu/drm/panel/oplus21015_boe_b12_nt37701_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus21015_boe_b12_nt37701_1080p_dsi_cmd.c
+@@ -1419,7 +1419,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus21015_boe_nt37701_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus21015_boe_nt37701_1080p_dsi_cmd.c
+index 8451b7572..ed3306cd7 100755
+--- a/drivers/gpu/drm/panel/oplus21015_boe_nt37701_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus21015_boe_nt37701_1080p_dsi_cmd.c
+@@ -1423,7 +1423,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus21015_boe_nt37701_2ftp_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus21015_boe_nt37701_2ftp_1080p_dsi_cmd.c
+index fd1691f12..01a5983f1 100755
+--- a/drivers/gpu/drm/panel/oplus21015_boe_nt37701_2ftp_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus21015_boe_nt37701_2ftp_1080p_dsi_cmd.c
+@@ -1422,7 +1422,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus21015_tianma_ili7838_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus21015_tianma_ili7838_1080p_dsi_cmd.c
+index deb4d0241..ea7fa161e 100755
+--- a/drivers/gpu/drm/panel/oplus21015_tianma_ili7838_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus21015_tianma_ili7838_1080p_dsi_cmd.c
+@@ -1355,7 +1355,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus21015_tianma_nt37701_42_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus21015_tianma_nt37701_42_1080p_dsi_cmd.c
+index 75881b8b7..f2f1dff04 100755
+--- a/drivers/gpu/drm/panel/oplus21015_tianma_nt37701_42_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus21015_tianma_nt37701_42_1080p_dsi_cmd.c
+@@ -1610,7 +1610,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus21127_samsung_ams643ag01_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus21127_samsung_ams643ag01_1080p_dsi_cmd.c
+index 7a62432bc..95291ef19 100755
+--- a/drivers/gpu/drm/panel/oplus21127_samsung_ams643ag01_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus21127_samsung_ams643ag01_1080p_dsi_cmd.c
+@@ -1480,7 +1480,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/gpu/drm/panel/oplus_samsung_ams643ye04_1080p_dsi_cmd.c b/drivers/gpu/drm/panel/oplus_samsung_ams643ye04_1080p_dsi_cmd.c
+index 7de81c29a..85eb8a672 100755
+--- a/drivers/gpu/drm/panel/oplus_samsung_ams643ye04_1080p_dsi_cmd.c
++++ b/drivers/gpu/drm/panel/oplus_samsung_ams643ye04_1080p_dsi_cmd.c
+@@ -1536,7 +1536,7 @@ static bool panel_no_video_cmd_switch_state(struct drm_panel *panel)
+ }
+ #endif
+ 
+-static int lcm_get_aod_state()
++static int lcm_get_aod_state(void)
+ {
+ 	return aod_state;
+ }
+diff --git a/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi.c b/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi.c
+index de1131c5c..08550e321 100755
+--- a/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi.c
++++ b/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi.c
+@@ -345,14 +345,14 @@ static void irq_cleanup(struct gf_dev *gf_dev)
+     free_irq(gf_dev->irq, gf_dev);//need modify
+ }
+ 
+-static void gf_auto_send_touchdown()
++static void gf_auto_send_touchdown(void)
+ {
+     struct fp_underscreen_info tp_info;
+     tp_info.touch_state = 1;
+     gf_opticalfp_irq_handler(&tp_info);
+ }
+ 
+-static void gf_auto_send_touchup()
++static void gf_auto_send_touchup(void)
+ {
+     struct fp_underscreen_info tp_info;
+     tp_info.touch_state = 0;
+diff --git a/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi_tee.c b/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi_tee.c
+index 3742e263f..ff60d20e5 100755
+--- a/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi_tee.c
++++ b/drivers/input/oplus_fp_drivers/goodix_optical_fp/gf_spi_tee.c
+@@ -491,14 +491,14 @@ static void gf_kernel_key_input(struct gf_dev *gf_dev, struct gf_key *gf_key)
+ 	}
+ }
+ 
+-static void gf_auto_send_touchdown()
++static void gf_auto_send_touchdown(void)
+ {
+     struct fp_underscreen_info tp_info;
+     tp_info.touch_state = 1;
+     gf_opticalfp_irq_handler(&tp_info);
+ }
+ 
+-static void gf_auto_send_touchup()
++static void gf_auto_send_touchup(void)
+ {
+     struct fp_underscreen_info tp_info;
+     tp_info.touch_state = 0;
+diff --git a/drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112f_noflash/hx83112f_noflash.c b/drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112f_noflash/hx83112f_noflash.c
+index 4f5e4a0d5..61a01da4c 100755
+--- a/drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112f_noflash/hx83112f_noflash.c
++++ b/drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112f_noflash/hx83112f_noflash.c
+@@ -1556,7 +1556,7 @@ void himax_power_on_init(void)
+     himax_sense_on(0x00);
+ }
+ 
+-int himax_check_remapping()
++int himax_check_remapping(void)
+ {
+     uint8_t cmd[4];
+     uint8_t data[64];
+@@ -1595,7 +1595,7 @@ int himax_check_remapping()
+     return reload_status;
+ }
+ 
+-static void himax_read_FW_ver()
++static void himax_read_FW_ver(void)
+ {
+     uint8_t cmd[4];
+     uint8_t data[64];
+diff --git a/drivers/input/touchscreen/oplus_touchscreen/touchpanel_common_driver.c b/drivers/input/touchscreen/oplus_touchscreen/touchpanel_common_driver.c
+index fd63a7d83..3420413ce 100755
+--- a/drivers/input/touchscreen/oplus_touchscreen/touchpanel_common_driver.c
++++ b/drivers/input/touchscreen/oplus_touchscreen/touchpanel_common_driver.c
+@@ -1712,7 +1712,7 @@ void tp_gpio_current_leakage_handler(bool normal)
+ }
+ EXPORT_SYMBOL(tp_gpio_current_leakage_handler);
+ 
+-bool tp_boot_mode_normal()
++bool tp_boot_mode_normal(void)
+ {
+     if (!g_tp) {
+         return false;
+diff --git a/drivers/kernel_modules/connectivity/bt/mt66xx/btif/btmtk_btif_main.c b/drivers/kernel_modules/connectivity/bt/mt66xx/btif/btmtk_btif_main.c
+index 83ffdcc9e..0ea59d1b7 100644
+--- a/drivers/kernel_modules/connectivity/bt/mt66xx/btif/btmtk_btif_main.c
++++ b/drivers/kernel_modules/connectivity/bt/mt66xx/btif/btmtk_btif_main.c
+@@ -526,7 +526,7 @@ void bt_notify_state(void)
+  *     0 if success, otherwise error code
+  *
+  */
+-void bt_report_hw_error()
++void bt_report_hw_error(void)
+ {
+ 	const uint8_t HCI_EVT_HW_ERROR[] = {0x04, 0x10, 0x01, 0x00};
+ 	btmtk_recv(g_sbdev->hdev, HCI_EVT_HW_ERROR, sizeof(HCI_EVT_HW_ERROR));
+@@ -1236,7 +1236,7 @@ int32_t btmtk_wcn_btif_open(void)
+  * Return Value:
+  *     0 if success, otherwise error code
+  */
+-int32_t btmtk_wcn_btif_close()
++int32_t btmtk_wcn_btif_close(void)
+ {
+ 	int32_t ret = 0;
+ 	struct btmtk_btif_dev *cif_dev = (struct btmtk_btif_dev *)g_sbdev->cif_dev;
+diff --git a/drivers/kernel_modules/connectivity/common/common_main/platform/mtk_wcn_consys_hw.c b/drivers/kernel_modules/connectivity/common/common_main/platform/mtk_wcn_consys_hw.c
+index 9a41ef427..b730d8191 100755
+--- a/drivers/kernel_modules/connectivity/common/common_main/platform/mtk_wcn_consys_hw.c
++++ b/drivers/kernel_modules/connectivity/common/common_main/platform/mtk_wcn_consys_hw.c
+@@ -875,7 +875,7 @@ INT32 mtk_wcn_consys_detect_adie_chipid(UINT32 co_clock_type)
+ 	return chipid;
+ }
+ 
+-struct pinctrl *mtk_wcn_consys_get_pinctrl()
++struct pinctrl *mtk_wcn_consys_get_pinctrl(void)
+ {
+ 	return consys_pinctrl;
+ }
+diff --git a/drivers/kernel_modules/connectivity/conninfra/platform/mt6877/mt6877_consys_reg.c b/drivers/kernel_modules/connectivity/conninfra/platform/mt6877/mt6877_consys_reg.c
+index 50afd1d85..37d97b252 100644
+--- a/drivers/kernel_modules/connectivity/conninfra/platform/mt6877/mt6877_consys_reg.c
++++ b/drivers/kernel_modules/connectivity/conninfra/platform/mt6877/mt6877_consys_reg.c
+@@ -57,7 +57,7 @@ static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
+ 	"conn_bcrm_on",
+ };
+ 
+-struct consys_base_addr* get_conn_reg_base_addr()
++struct consys_base_addr* get_conn_reg_base_addr(void)
+ {
+ 	return &conn_reg;
+ }
+diff --git a/drivers/kernel_modules/connectivity/conninfra/src/conninfra_dev.c b/drivers/kernel_modules/connectivity/conninfra/src/conninfra_dev.c
+index 601d4c72b..9a5837809 100755
+--- a/drivers/kernel_modules/connectivity/conninfra/src/conninfra_dev.c
++++ b/drivers/kernel_modules/connectivity/conninfra/src/conninfra_dev.c
+@@ -618,7 +618,7 @@ static void conninfra_register_power_throttling_callback(void)
+ }
+ 
+ /************************************************************************/
+-static int conninfra_dev_do_drv_init()
++static int conninfra_dev_do_drv_init(void)
+ {
+ 	static int init_done = 0;
+ 	int iret = 0;
+diff --git a/drivers/kernel_modules/connectivity/wlan/core/gen4m/mgmt/oplus_rlm_domain.c b/drivers/kernel_modules/connectivity/wlan/core/gen4m/mgmt/oplus_rlm_domain.c
+index 75b7a7b42..682ac1b12 100755
+--- a/drivers/kernel_modules/connectivity/wlan/core/gen4m/mgmt/oplus_rlm_domain.c
++++ b/drivers/kernel_modules/connectivity/wlan/core/gen4m/mgmt/oplus_rlm_domain.c
+@@ -394,7 +394,7 @@ static OPLUS_DOMAIN_INFO_ENTRY* parse_cfg_file(const char *path, unsigned int si
+     return oplus_entry;
+ }
+ 
+-struct OPLUS_DOMAIN_INFO_ENTRY* get_active_channel_cfg() {
++struct OPLUS_DOMAIN_INFO_ENTRY* get_active_channel_cfg(void) {
+     DBGLOG(RLM, INFO, "get_active_channel_cfg/in \n");
+     if(oplus_active_domain_info == NULL) {
+         oplus_active_domain_info = parse_cfg_file(CFG_ACTIVE_CHANNEL_FILE, CFG_CHANNEL_ACTIVE_SIZE,
+@@ -404,7 +404,7 @@ struct OPLUS_DOMAIN_INFO_ENTRY* get_active_channel_cfg() {
+     return oplus_active_domain_info;
+ }
+ 
+-struct OPLUS_DOMAIN_INFO_ENTRY* get_passive_channel_cfg() {
++struct OPLUS_DOMAIN_INFO_ENTRY* get_passive_channel_cfg(void) {
+     DBGLOG(RLM, INFO, "get_passive_channel_cfg/in \n");
+     if(oplus_passive_domain_info == NULL) {
+         oplus_passive_domain_info = parse_cfg_file(CFG_PASSIVE_CHANNEL_FILE, CFG_CHANNEL_PASSIVE_SIZE,
+diff --git a/drivers/kernel_modules/connectivity/wlan/core/gen4m/oplus_wfd/wlan_oplus_wfd.c b/drivers/kernel_modules/connectivity/wlan/core/gen4m/oplus_wfd/wlan_oplus_wfd.c
+index a2769a862..195cc1caf 100755
+--- a/drivers/kernel_modules/connectivity/wlan/core/gen4m/oplus_wfd/wlan_oplus_wfd.c
++++ b/drivers/kernel_modules/connectivity/wlan/core/gen4m/oplus_wfd/wlan_oplus_wfd.c
+@@ -67,12 +67,12 @@ static void remove_he_ie_from_probe_request(int remove) {
+     is_remove_He_ie_from_prebe_request = remove;
+ }
+ 
+-static struct wireless_dev * get_wdev_sta()
++static struct wireless_dev * get_wdev_sta(void)
+ {
+     return s_hdd_ctx;
+ }
+ 
+-static struct ADAPTER * get_adapter() {
++static struct ADAPTER * get_adapter(void) {
+     struct wireless_dev *wdev_sta = NULL;
+     struct GLUE_INFO *prGlueInfo = NULL;
+     struct ADAPTER *prAdapter = NULL;
+diff --git a/drivers/kernel_modules/met_drv/4.14/common/emi/SEDA3_5/mtk_emi_bm.c b/drivers/kernel_modules/met_drv/4.14/common/emi/SEDA3_5/mtk_emi_bm.c
+index f93fceda0..32b8336bc 100644
+--- a/drivers/kernel_modules/met_drv/4.14/common/emi/SEDA3_5/mtk_emi_bm.c
++++ b/drivers/kernel_modules/met_drv/4.14/common/emi/SEDA3_5/mtk_emi_bm.c
+@@ -2626,7 +2626,7 @@ unsigned check_sspm_support(unsigned int module_id)
+ 
+ 
+ 
+-unsigned int MET_GET_DRAM_TYPE()
++unsigned int MET_GET_DRAM_TYPE(void)
+ {
+ /*
+ enum DRAM_TYPE {
+diff --git a/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c b/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
+index b80fa982b..1c4a8c699 100644
+--- a/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
++++ b/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
+@@ -85,7 +85,7 @@ static int mcupm_run_mode = MCUPM_RUN_NORMAL;
+ /*****************************************************************************
+  * internal function ipmlement
+  *****************************************************************************/
+-void start_mcupm_ipi_recv_thread()
++void start_mcupm_ipi_recv_thread(void)
+ {
+ 	int ret = 0;
+ 
+@@ -130,7 +130,7 @@ void start_mcupm_ipi_recv_thread()
+ }
+ 
+ 
+-void stop_mcupm_ipi_recv_thread()
++void stop_mcupm_ipi_recv_thread(void)
+ {
+ 	if (_mcupm_recv_task) {
+ 		mcupm_recv_thread_comp = 1;
+diff --git a/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/sspm/sspm_met_ipi_handle.c b/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
+index 13edafd46..64b2a54ac 100644
+--- a/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
++++ b/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
+@@ -85,7 +85,7 @@ static int sspm_run_mode = SSPM_RUN_NORMAL;
+ /*****************************************************************************
+  * internal function ipmlement
+  *****************************************************************************/
+-void start_sspm_ipi_recv_thread()
++void start_sspm_ipi_recv_thread(void)
+ {
+ 	int ret = 0;
+ 
+@@ -128,7 +128,7 @@ void start_sspm_ipi_recv_thread()
+ }
+ 
+ 
+-void stop_sspm_ipi_recv_thread()
++void stop_sspm_ipi_recv_thread(void)
+ {
+ 	if (_sspm_recv_task) {
+ 		sspm_recv_thread_comp = 1;
+diff --git a/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/tinysys_mgr.c b/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/tinysys_mgr.c
+index d1c717f76..02593e708 100644
+--- a/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/tinysys_mgr.c
++++ b/drivers/kernel_modules/met_drv/4.14/common/tinysys/v1/tinysys_mgr.c
+@@ -241,19 +241,19 @@ int ondiemet_log_manager_uninit(struct device *dev)
+ }
+ 
+ 
+-void ondiemet_log_manager_start()
++void ondiemet_log_manager_start(void)
+ {
+ 	tinysys_log_manager_start();
+ }
+ 
+ 
+-void ondiemet_log_manager_stop()
++void ondiemet_log_manager_stop(void)
+ {
+ 	tinysys_log_manager_stop();
+ }
+ 
+ 
+-void ondiemet_start()
++void ondiemet_start(void)
+ {
+ #if FEATURE_SSPM_NUM
+ 	sspm_start();
+@@ -266,7 +266,7 @@ void ondiemet_start()
+ }
+ 
+ 
+-void ondiemet_stop()
++void ondiemet_stop(void)
+ {
+ #if FEATURE_SSPM_NUM
+ 	sspm_stop();
+@@ -279,7 +279,7 @@ void ondiemet_stop()
+ }
+ 
+ 
+-void ondiemet_extract()
++void ondiemet_extract(void)
+ {
+ #if FEATURE_SSPM_NUM
+ 	sspm_extract();
+@@ -831,7 +831,7 @@ static int _create_mcupm_node(struct kobject *parent)
+ }
+ 
+ 
+-static void _remove_mcupm_node()
++static void _remove_mcupm_node(void)
+ {
+ 	if (_mcupm_kobj != NULL) {
+ 		sysfs_remove_file(_mcupm_kobj, &_attr_mcupm_buffer_size.attr);
+diff --git a/drivers/kernel_modules/met_drv/4.14/common/v7_pmu_hw.c b/drivers/kernel_modules/met_drv/4.14/common/v7_pmu_hw.c
+index f2da97f57..97a7b0dc2 100644
+--- a/drivers/kernel_modules/met_drv/4.14/common/v7_pmu_hw.c
++++ b/drivers/kernel_modules/met_drv/4.14/common/v7_pmu_hw.c
+@@ -102,7 +102,7 @@ static inline void armv7_pmu_disable_intr(unsigned int idx)
+ 	isb();
+ }
+ 
+-static inline void armv7_pmu_disable_cyc_intr()
++static inline void armv7_pmu_disable_cyc_intr(void)
+ {
+ 	armv7_pmu_disable_intr(31);
+ }
+diff --git a/drivers/kernel_modules/met_drv_v2/common/emi/SEDA3_5/mtk_emi_bm.c b/drivers/kernel_modules/met_drv_v2/common/emi/SEDA3_5/mtk_emi_bm.c
+index b7bad6699..85fc8f886 100644
+--- a/drivers/kernel_modules/met_drv_v2/common/emi/SEDA3_5/mtk_emi_bm.c
++++ b/drivers/kernel_modules/met_drv_v2/common/emi/SEDA3_5/mtk_emi_bm.c
+@@ -2636,7 +2636,7 @@ unsigned check_sspm_support(unsigned int module_id)
+ 
+ 
+ 
+-unsigned int MET_GET_DRAM_TYPE()
++unsigned int MET_GET_DRAM_TYPE(void)
+ {
+ /*
+ enum DRAM_TYPE {
+diff --git a/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c b/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
+index 276681339..c3a587757 100644
+--- a/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
++++ b/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
+@@ -85,7 +85,7 @@ static int mcupm_run_mode = MCUPM_RUN_NORMAL;
+ /*****************************************************************************
+  * internal function ipmlement
+  *****************************************************************************/
+-void start_mcupm_ipi_recv_thread()
++void start_mcupm_ipi_recv_thread(void)
+ {
+ 	int ret = 0;
+ 
+@@ -130,7 +130,7 @@ void start_mcupm_ipi_recv_thread()
+ }
+ 
+ 
+-void stop_mcupm_ipi_recv_thread()
++void stop_mcupm_ipi_recv_thread(void)
+ {
+ 	if (_mcupm_recv_task) {
+ 		mcupm_recv_thread_comp = 1;
+diff --git a/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/sspm/sspm_met_ipi_handle.c b/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
+index 1b6277c52..357d58a13 100644
+--- a/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
++++ b/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
+@@ -86,7 +86,7 @@ static int sspm_run_mode = SSPM_RUN_NORMAL;
+ /*****************************************************************************
+  * internal function ipmlement
+  *****************************************************************************/
+-void start_sspm_ipi_recv_thread()
++void start_sspm_ipi_recv_thread(void)
+ {
+ 	int ret = 0;
+ 
+@@ -129,7 +129,7 @@ void start_sspm_ipi_recv_thread()
+ }
+ 
+ 
+-void stop_sspm_ipi_recv_thread()
++void stop_sspm_ipi_recv_thread(void)
+ {
+ 	if (_sspm_recv_task) {
+ 		sspm_recv_thread_comp = 1;
+diff --git a/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/tinysys_mgr.c b/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/tinysys_mgr.c
+index d1c717f76..02593e708 100644
+--- a/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/tinysys_mgr.c
++++ b/drivers/kernel_modules/met_drv_v2/common/tinysys/v1/tinysys_mgr.c
+@@ -241,19 +241,19 @@ int ondiemet_log_manager_uninit(struct device *dev)
+ }
+ 
+ 
+-void ondiemet_log_manager_start()
++void ondiemet_log_manager_start(void)
+ {
+ 	tinysys_log_manager_start();
+ }
+ 
+ 
+-void ondiemet_log_manager_stop()
++void ondiemet_log_manager_stop(void)
+ {
+ 	tinysys_log_manager_stop();
+ }
+ 
+ 
+-void ondiemet_start()
++void ondiemet_start(void)
+ {
+ #if FEATURE_SSPM_NUM
+ 	sspm_start();
+@@ -266,7 +266,7 @@ void ondiemet_start()
+ }
+ 
+ 
+-void ondiemet_stop()
++void ondiemet_stop(void)
+ {
+ #if FEATURE_SSPM_NUM
+ 	sspm_stop();
+@@ -279,7 +279,7 @@ void ondiemet_stop()
+ }
+ 
+ 
+-void ondiemet_extract()
++void ondiemet_extract(void)
+ {
+ #if FEATURE_SSPM_NUM
+ 	sspm_extract();
+@@ -831,7 +831,7 @@ static int _create_mcupm_node(struct kobject *parent)
+ }
+ 
+ 
+-static void _remove_mcupm_node()
++static void _remove_mcupm_node(void)
+ {
+ 	if (_mcupm_kobj != NULL) {
+ 		sysfs_remove_file(_mcupm_kobj, &_attr_mcupm_buffer_size.attr);
+diff --git a/drivers/kernel_modules/met_drv_v2/common/v7_pmu_hw.c b/drivers/kernel_modules/met_drv_v2/common/v7_pmu_hw.c
+index d0c29371b..70c2e6151 100644
+--- a/drivers/kernel_modules/met_drv_v2/common/v7_pmu_hw.c
++++ b/drivers/kernel_modules/met_drv_v2/common/v7_pmu_hw.c
+@@ -94,7 +94,7 @@ static inline void armv7_pmu_disable_intr(unsigned int idx)
+ 	isb();
+ }
+ 
+-static inline void armv7_pmu_disable_cyc_intr()
++static inline void armv7_pmu_disable_cyc_intr(void)
+ {
+ 	armv7_pmu_disable_intr(31);
+ }
+diff --git a/drivers/kernel_modules/met_drv_v3/common/met_workqueue.c b/drivers/kernel_modules/met_drv_v3/common/met_workqueue.c
+index fc837119e..65286d61f 100644
+--- a/drivers/kernel_modules/met_drv_v3/common/met_workqueue.c
++++ b/drivers/kernel_modules/met_drv_v3/common/met_workqueue.c
+@@ -45,7 +45,7 @@ static struct list_head __percpu *per_cpu_valid_list;
+ static struct list_head __percpu *per_cpu_invalid_list;
+ 
+ 
+-static void clean_per_cpu_var(){
++static void clean_per_cpu_var(void){
+ 	int cpu;
+ 
+ 	for_each_possible_cpu(cpu) {
+diff --git a/drivers/kernel_modules/met_drv_v3/common/mtk_emi_bm.c b/drivers/kernel_modules/met_drv_v3/common/mtk_emi_bm.c
+index 36b2c0bfd..4359bcd8a 100644
+--- a/drivers/kernel_modules/met_drv_v3/common/mtk_emi_bm.c
++++ b/drivers/kernel_modules/met_drv_v3/common/mtk_emi_bm.c
+@@ -3551,7 +3551,7 @@ unsigned check_sspm_support(unsigned int module_id)
+ 
+ 
+ 
+-unsigned int MET_GET_DRAM_TYPE()
++unsigned int MET_GET_DRAM_TYPE(void)
+ {
+ /*
+ enum DRAM_TYPE {
+diff --git a/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c b/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
+index 131714895..177cfcd2b 100644
+--- a/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
++++ b/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/mcupm/mcupm_met_ipi_handle.c
+@@ -86,7 +86,7 @@ static int mcupm_run_mode = MCUPM_RUN_NORMAL;
+ /*****************************************************************************
+  * internal function ipmlement
+  *****************************************************************************/
+-void start_mcupm_ipi_recv_thread()
++void start_mcupm_ipi_recv_thread(void)
+ {
+ 	int ret = 0;
+ 
+@@ -146,7 +146,7 @@ void start_mcupm_ipi_recv_thread()
+ }
+ 
+ 
+-void stop_mcupm_ipi_recv_thread()
++void stop_mcupm_ipi_recv_thread(void)
+ {
+ 	int ret;
+ 
+diff --git a/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/sspm/sspm_met_ipi_handle.c b/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
+index 9400f8e2e..7e0755aca 100644
+--- a/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
++++ b/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/sspm/sspm_met_ipi_handle.c
+@@ -187,7 +187,7 @@ int scmi_tinysys_to_sspm_command( u32 feature_id,
+     return ret;
+ }
+ 
+-void start_sspm_ipi_recv_thread()
++void start_sspm_ipi_recv_thread(void)
+ {
+     init_completion(&SSPM_ACK_comp);
+     init_completion(&SSPM_CMD_comp);
+@@ -227,7 +227,7 @@ void start_sspm_ipi_recv_thread()
+ }
+ 
+ 
+-void stop_sspm_ipi_recv_thread()
++void stop_sspm_ipi_recv_thread(void)
+ {
+ 	if (_sspm_recv_task) {
+ 		sspm_recv_thread_comp = 1;
+diff --git a/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/tinysys_mgr.c b/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/tinysys_mgr.c
+index 30e67e4fe..99a8e888c 100644
+--- a/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/tinysys_mgr.c
++++ b/drivers/kernel_modules/met_drv_v3/common/tinysys/v1/tinysys_mgr.c
+@@ -313,19 +313,19 @@ int ondiemet_log_manager_uninit(struct device *dev)
+ }
+ 
+ 
+-void ondiemet_log_manager_start()
++void ondiemet_log_manager_start(void)
+ {
+ 	tinysys_log_manager_start();
+ }
+ 
+ 
+-void ondiemet_log_manager_stop()
++void ondiemet_log_manager_stop(void)
+ {
+ 	tinysys_log_manager_stop();
+ }
+ 
+ 
+-void ondiemet_start()
++void ondiemet_start(void)
+ {
+ #ifdef MET_SSPM
+ 	if (met_sspm_api_ready && met_scmi_api_ready) {
+@@ -354,7 +354,7 @@ void ondiemet_start()
+ #endif
+ }
+ 
+-void ondiemet_stop()
++void ondiemet_stop(void)
+ {
+ #ifdef MET_SSPM
+ 	if (met_sspm_api_ready && met_scmi_api_ready) {
+@@ -377,7 +377,7 @@ void ondiemet_stop()
+ #endif
+ }
+ 
+-void ondiemet_extract()
++void ondiemet_extract(void)
+ {
+ #ifdef MET_SSPM
+ 	if (met_sspm_api_ready && met_scmi_api_ready) {
+@@ -1094,7 +1094,7 @@ static int _create_mcupm_node(struct kobject *parent)
+ }
+ 
+ 
+-static void _remove_mcupm_node()
++static void _remove_mcupm_node(void)
+ {
+ 	if (_mcupm_kobj != NULL) {
+ 		sysfs_remove_file(_mcupm_kobj, &_attr_mcupm_buffer_size.attr);
+diff --git a/drivers/kernel_modules/met_drv_v3/common/v7_pmu_hw.c b/drivers/kernel_modules/met_drv_v3/common/v7_pmu_hw.c
+index 9fe44bb06..4cfe44af8 100644
+--- a/drivers/kernel_modules/met_drv_v3/common/v7_pmu_hw.c
++++ b/drivers/kernel_modules/met_drv_v3/common/v7_pmu_hw.c
+@@ -94,7 +94,7 @@ static inline void armv7_pmu_disable_intr(unsigned int idx)
+ 	isb();
+ }
+ 
+-static inline void armv7_pmu_disable_cyc_intr()
++static inline void armv7_pmu_disable_cyc_intr(void)
+ {
+ 	armv7_pmu_disable_intr(31);
+ }
+diff --git a/drivers/kernel_modules/udc/crc32.c b/drivers/kernel_modules/udc/crc32.c
+index 979a7190a..22645c98b 100644
+--- a/drivers/kernel_modules/udc/crc32.c
++++ b/drivers/kernel_modules/udc/crc32.c
+@@ -87,7 +87,7 @@ local void make_crc_table OF((void));
+   allow for word-at-a-time CRC calculation for both big-endian and little-
+   endian machines, where a word is four bytes.
+ */
+-local void make_crc_table()
++local void make_crc_table(void)
+ {
+     z_crc_t c;
+     int n, k;
+@@ -187,7 +187,7 @@ local void write_table(out, table)
+ /* =========================================================================
+  * This function can be used by asm versions of crc32()
+  */
+-const z_crc_t FAR * ZEXPORT get_crc_table()
++const z_crc_t FAR * ZEXPORT get_crc_table(void)
+ {
+ #ifdef DYNAMIC_CRC_TABLE
+     if (crc_table_empty)
+diff --git a/drivers/kernel_modules/udc/trees.c b/drivers/kernel_modules/udc/trees.c
+index e4666bb01..86dda5a63 100644
+--- a/drivers/kernel_modules/udc/trees.c
++++ b/drivers/kernel_modules/udc/trees.c
+@@ -229,7 +229,7 @@ local void send_bits(s, value, length)
+ /* ===========================================================================
+  * Initialize the various 'constant' tables.
+  */
+-local void tr_static_init()
++local void tr_static_init(void)
+ {
+ #if defined(GEN_TREES_H) || !defined(STDC)
+     static int static_init_done = 0;
+@@ -323,7 +323,7 @@ local void tr_static_init()
+       ((i) == (last)? "\n};\n\n" :    \
+        ((i) % (width) == (width)-1 ? ",\n" : ", "))
+ 
+-void gen_trees_header()
++void gen_trees_header(void)
+ {
+     FILE *header = fopen("trees.h", "w");
+     int i;
+diff --git a/drivers/kernel_modules/udc/zutil.c b/drivers/kernel_modules/udc/zutil.c
+index a76c6b0c7..ac4d04811 100644
+--- a/drivers/kernel_modules/udc/zutil.c
++++ b/drivers/kernel_modules/udc/zutil.c
+@@ -24,12 +24,12 @@ z_const char * const z_errmsg[10] = {
+ };
+ 
+ 
+-const char * ZEXPORT zlibVersion()
++const char * ZEXPORT zlibVersion(void)
+ {
+     return ZLIB_VERSION;
+ }
+ 
+-uLong ZEXPORT zlibCompileFlags()
++uLong ZEXPORT zlibCompileFlags(void)
+ {
+     uLong flags;
+ 
+diff --git a/drivers/leds/led-class.c b/drivers/leds/led-class.c
+index beaeb7523..cc4422524 100755
+--- a/drivers/leds/led-class.c
++++ b/drivers/leds/led-class.c
+@@ -56,7 +56,7 @@ extern bool __attribute((weak)) oplus_display_tenbits_support;
+ extern bool __attribute((weak)) oplus_display_elevenbits_support;
+ extern bool __attribute((weak)) oplus_display_twelvebits_support;
+ 
+-int get_full_backlight_level()
++int get_full_backlight_level(void)
+ {
+ 	if(oplus_display_twelvebits_support)
+ 		return 4095;
+@@ -67,7 +67,7 @@ int get_full_backlight_level()
+ 	return 255;
+ }
+ EXPORT_SYMBOL_GPL(get_full_backlight_level);
+-int get_half_backlight_level()
++int get_half_backlight_level(void)
+ {
+         if(oplus_display_twelvebits_support)
+                 return 2047;
+diff --git a/drivers/macintosh/via-pmu-backlight.c b/drivers/macintosh/via-pmu-backlight.c
+index 89ed51571..50ada02ae 100644
+--- a/drivers/macintosh/via-pmu-backlight.c
++++ b/drivers/macintosh/via-pmu-backlight.c
+@@ -137,7 +137,7 @@ void pmu_backlight_set_sleep(int sleep)
+ }
+ #endif /* CONFIG_PM */
+ 
+-void __init pmu_backlight_init()
++void __init pmu_backlight_init(void)
+ {
+ 	struct backlight_properties props;
+ 	struct backlight_device *bd;
+diff --git a/drivers/misc/aw8697_haptic/aw86907.c b/drivers/misc/aw8697_haptic/aw86907.c
+index a569ba0b8..541efbf26 100755
+--- a/drivers/misc/aw8697_haptic/aw86907.c
++++ b/drivers/misc/aw8697_haptic/aw86907.c
+@@ -5104,7 +5104,7 @@ static void haptic_clean_buf(struct aw86907 *aw86907, int status)
+ 	}
+ }
+ 
+-static inline unsigned int aw86907_get_sys_msecs()
++static inline unsigned int aw86907_get_sys_msecs(void)
+ {
+ 	struct timespec64 ts64 = current_kernel_time64();
+ 	return jiffies_to_msecs(timespec64_to_jiffies(&ts64));
+diff --git a/drivers/misc/aw8697_haptic/aw8697.c b/drivers/misc/aw8697_haptic/aw8697.c
+index 005898095..2fbebd24c 100755
+--- a/drivers/misc/aw8697_haptic/aw8697.c
++++ b/drivers/misc/aw8697_haptic/aw8697.c
+@@ -4831,7 +4831,7 @@ static void haptic_clean_buf(struct aw8697 *aw8697, int status)
+     }
+ }
+ 
+-static inline unsigned int aw8697_get_sys_msecs()
++static inline unsigned int aw8697_get_sys_msecs(void)
+ {
+     struct timespec64 ts64 = current_kernel_time64();
+     return jiffies_to_msecs(timespec64_to_jiffies(&ts64));
+diff --git a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r25p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r25p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+index 8c7ad5db2..017abc375 100644
+--- a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r25p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
++++ b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r25p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+@@ -769,7 +769,7 @@ void mtk_mfg_counter_destroy(void)
+ 
+ 
+ // init but don't enable met
+-int gator_gpu_pmu_init()
++int gator_gpu_pmu_init(void)
+ {
+ 	int ret = PMU_OK;
+ 	int i, j, cnt, block_type;
+diff --git a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r27p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r27p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+index 1313793f1..137318db5 100644
+--- a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r27p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
++++ b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r27p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+@@ -768,7 +768,7 @@ void mtk_mfg_counter_destroy(void)
+ 
+ 
+ // init but don't enable met
+-int gator_gpu_pmu_init()
++int gator_gpu_pmu_init(void)
+ {
+ 	int ret = PMU_OK;
+ 	int i, j, cnt, block_type;
+diff --git a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r28p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r28p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+index 1313793f1..137318db5 100644
+--- a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r28p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
++++ b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r28p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+@@ -768,7 +768,7 @@ void mtk_mfg_counter_destroy(void)
+ 
+ 
+ // init but don't enable met
+-int gator_gpu_pmu_init()
++int gator_gpu_pmu_init(void)
+ {
+ 	int ret = PMU_OK;
+ 	int i, j, cnt, block_type;
+diff --git a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+index f0467553c..958ea4038 100644
+--- a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
++++ b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+@@ -768,7 +768,7 @@ void mtk_mfg_counter_destroy(void)
+ 
+ 
+ // init but don't enable met
+-int gator_gpu_pmu_init()
++int gator_gpu_pmu_init(void)
+ {
+ 	int ret = PMU_OK;
+ 	int i, j, cnt, block_type;
+diff --git a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+index 537487a81..967d8715c 100644
+--- a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
++++ b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+@@ -769,7 +769,7 @@ void mtk_mfg_counter_destroy(void)
+ 
+ 
+ // init but don't enable met
+-int gator_gpu_pmu_init()
++int gator_gpu_pmu_init(void)
+ {
+ 	int ret = PMU_OK;
+ 	int i, j, cnt, block_type;
+diff --git a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p1/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p1/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+index 537487a81..967d8715c 100644
+--- a/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p1/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
++++ b/drivers/misc/mediatek/gpu/gpu_mali/mali_valhall/mali-r32p1/drivers/gpu/arm/midgard/platform/mtk_platform_common/mtk_mfg_counter.c
+@@ -769,7 +769,7 @@ void mtk_mfg_counter_destroy(void)
+ 
+ 
+ // init but don't enable met
+-int gator_gpu_pmu_init()
++int gator_gpu_pmu_init(void)
+ {
+ 	int ret = PMU_OK;
+ 	int i, j, cnt, block_type;
+diff --git a/drivers/misc/mediatek/gpu/gpu_rgx/m1.11ED5425693/services/server/common/srvcore.c b/drivers/misc/mediatek/gpu/gpu_rgx/m1.11ED5425693/services/server/common/srvcore.c
+index 8799d452c..69ae20914 100644
+--- a/drivers/misc/mediatek/gpu/gpu_rgx/m1.11ED5425693/services/server/common/srvcore.c
++++ b/drivers/misc/mediatek/gpu/gpu_rgx/m1.11ED5425693/services/server/common/srvcore.c
+@@ -207,7 +207,7 @@ void BridgeDispatchTableStartOffsetsInit(void)
+ #if defined(DEBUG_BRIDGE_KM)
+ 
+ #if defined(INTEGRITY_OS)
+-PVRSRV_ERROR PVRSRVPrintBridgeStats()
++PVRSRV_ERROR PVRSRVPrintBridgeStats(void)
+ {
+ 	IMG_UINT32 ui32Index;
+ 	IMG_UINT32 ui32Remainder;
+diff --git a/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5696267/services/server/common/srvcore.c b/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5696267/services/server/common/srvcore.c
+index 1b5e1f8e2..e2bbd33ad 100644
+--- a/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5696267/services/server/common/srvcore.c
++++ b/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5696267/services/server/common/srvcore.c
+@@ -208,7 +208,7 @@ void BridgeDispatchTableStartOffsetsInit(void)
+ #if defined(DEBUG_BRIDGE_KM)
+ 
+ #if defined(INTEGRITY_OS)
+-PVRSRV_ERROR PVRSRVPrintBridgeStats()
++PVRSRV_ERROR PVRSRVPrintBridgeStats(void)
+ {
+ 	IMG_UINT32 ui32Index;
+ 	IMG_UINT32 ui32Remainder;
+diff --git a/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5720833/services/server/common/srvcore.c b/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5720833/services/server/common/srvcore.c
+index 1b5e1f8e2..e2bbd33ad 100644
+--- a/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5720833/services/server/common/srvcore.c
++++ b/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5720833/services/server/common/srvcore.c
+@@ -208,7 +208,7 @@ void BridgeDispatchTableStartOffsetsInit(void)
+ #if defined(DEBUG_BRIDGE_KM)
+ 
+ #if defined(INTEGRITY_OS)
+-PVRSRV_ERROR PVRSRVPrintBridgeStats()
++PVRSRV_ERROR PVRSRVPrintBridgeStats(void)
+ {
+ 	IMG_UINT32 ui32Index;
+ 	IMG_UINT32 ui32Remainder;
+diff --git a/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5776728/services/server/common/srvcore.c b/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5776728/services/server/common/srvcore.c
+index 0423fbd18..90ff20bb8 100644
+--- a/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5776728/services/server/common/srvcore.c
++++ b/drivers/misc/mediatek/gpu/gpu_rgx/m1.13ED5776728/services/server/common/srvcore.c
+@@ -208,7 +208,7 @@ void BridgeDispatchTableStartOffsetsInit(void)
+ #if defined(DEBUG_BRIDGE_KM)
+ 
+ #if defined(INTEGRITY_OS)
+-PVRSRV_ERROR PVRSRVPrintBridgeStats()
++PVRSRV_ERROR PVRSRVPrintBridgeStats(void)
+ {
+ 	IMG_UINT32 ui32Index;
+ 	IMG_UINT32 ui32Remainder;
+diff --git a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6781.c b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6781.c
+index 5a39d8e21..c0ba2ed90 100755
+--- a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6781.c
++++ b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6781.c
+@@ -374,7 +374,7 @@ struct CAMERA_DEVICE_INFO gImgEepromInfo_21684 = {
+     .i4FrontStereoAddr = {0xFFFF, 0xFFFF},
+ };
+ 
+-void oplus_imgsensor_hwcfg()
++void oplus_imgsensor_hwcfg(void)
+ {
+     if(is_project(21690) || is_project(21691) || is_project(21692)
+         || is_project(21684) || is_project(21685) || is_project(21686)) {
+diff --git a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6785.c b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6785.c
+index 5e287b082..318961afc 100755
+--- a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6785.c
++++ b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6785.c
+@@ -809,7 +809,7 @@ struct CAMERA_DEVICE_INFO gImgEepromInfo_19661 = {
+     .i4FrontStereoAddr = {0xFFFF, 0xFFFF},
+ };
+ 
+-void oplus_imgsensor_hwcfg()
++void oplus_imgsensor_hwcfg(void)
+ {
+     if (is_project(20682) || is_project(20683)) {
+          oplus_gimgsensor_sensor_list = gimgsensor_sensor_list_20682;
+diff --git a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6853.c b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6853.c
+index de459f2e7..59add8561 100755
+--- a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6853.c
++++ b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6853.c
+@@ -4207,7 +4207,7 @@ struct CAMERA_DEVICE_INFO gImgEepromInfo_210A0 = {
+ };
+ 
+ #endif
+-void oplus_imgsensor_hwcfg()
++void oplus_imgsensor_hwcfg(void)
+ {
+     if (is_project(20181) || is_project(20355)) {
+          oplus_gimgsensor_sensor_list = gimgsensor_sensor_list_20181;
+diff --git a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6873.c b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6873.c
+index ecf5119f6..56e505268 100755
+--- a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6873.c
++++ b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6873.c
+@@ -349,7 +349,7 @@ struct CAMERA_DEVICE_INFO gImgEepromInfo_19131 = {
+ };
+ 
+ 
+-void oplus_imgsensor_hwcfg()
++void oplus_imgsensor_hwcfg(void)
+ {
+          oplus_gimgsensor_sensor_list = gimgsensor_sensor_list_19131;
+          oplus_imgsensor_custom_config = imgsensor_custom_config_19131;
+diff --git a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6885.c b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6885.c
+index edc16a09d..22386aec0 100755
+--- a/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6885.c
++++ b/drivers/misc/mediatek/imgsensor/src/OplusImgsensor/imgsensor_hwcfg_mt6885.c
+@@ -2606,7 +2606,7 @@ struct CAMERA_DEVICE_INFO gImgEepromInfo_21881= {
+ };
+ #endif
+ 
+-void oplus_imgsensor_hwcfg()
++void oplus_imgsensor_hwcfg(void)
+ {
+     if (is_project(20131) || is_project(20133)
+           || is_project(20255) || is_project(20257)) {
+diff --git a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx615_mipi_raw21881/imx615mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx615_mipi_raw21881/imx615mipiraw_Sensor.c
+index 1c96ede7f..d71e94f57 100755
+--- a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx615_mipi_raw21881/imx615mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx615_mipi_raw21881/imx615mipiraw_Sensor.c
+@@ -3478,7 +3478,7 @@ static void custom5_setting(void)
+      LOG_INF("%s end\n", __func__);
+ }
+ 
+-void imx615_fab_read()
++void imx615_fab_read(void)
+ {
+     kal_uint16 reg_0xa01 = 0;
+     kal_uint16 reg_0xa1f = 0;
+diff --git a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21127/imx709mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21127/imx709mipiraw_Sensor.c
+index 46bd50450..20ff98500 100755
+--- a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21127/imx709mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21127/imx709mipiraw_Sensor.c
+@@ -553,7 +553,7 @@ static kal_uint32 get_exp_cnt_by_scenario(kal_uint32 scenario)
+     return max(exp_cnt, (kal_uint32)1);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt()
++static kal_uint32 get_cur_exp_cnt(void)
+ {
+     kal_uint32 exp_cnt = 1;
+ 
+diff --git a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21305/imx709mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21305/imx709mipiraw_Sensor.c
+index f3d2383a2..9c79add3b 100755
+--- a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21305/imx709mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx709_mipi_raw_21305/imx709mipiraw_Sensor.c
+@@ -553,7 +553,7 @@ static kal_uint32 get_exp_cnt_by_scenario(kal_uint32 scenario)
+     return max(exp_cnt, (kal_uint32)1);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt()
++static kal_uint32 get_cur_exp_cnt(void)
+ {
+     kal_uint32 exp_cnt = 1;
+ 
+diff --git a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw20817/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw20817/imx766mipiraw_Sensor.c
+index dda733a1c..22f9f20c5 100755
+--- a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw20817/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw20817/imx766mipiraw_Sensor.c
+@@ -662,7 +662,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw21881/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw21881/imx766mipiraw_Sensor.c
+index ec10db3e5..b71686182 100755
+--- a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw21881/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw21881/imx766mipiraw_Sensor.c
+@@ -662,7 +662,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw_21305/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw_21305/imx766mipiraw_Sensor.c
+index 14413f98e..65419e2d4 100755
+--- a/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw_21305/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/common/v1_1/imx766_mipi_raw_21305/imx766mipiraw_Sensor.c
+@@ -741,7 +741,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/imgsensor/src/common/v1_1/ov50a_mipi_raw_21127/ov50amipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/common/v1_1/ov50a_mipi_raw_21127/ov50amipiraw_Sensor.c
+index c2e3114ae..96d3c2a24 100755
+--- a/drivers/misc/mediatek/imgsensor/src/common/v1_1/ov50a_mipi_raw_21127/ov50amipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/common/v1_1/ov50a_mipi_raw_21127/ov50amipiraw_Sensor.c
+@@ -644,7 +644,7 @@ bool Checksum_EEPROM(kal_uint8 *buffer, kal_uint32 size, kal_uint8 read_checksum
+ 	return 0;
+ }
+ 
+-static void read_QSC_from_EEPROM()
++static void read_QSC_from_EEPROM(void)
+ {
+ 	kal_uint16 idx = 0;
+ 	kal_uint16 * QSC_setting = OV50A_QSC_setting;
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx615_mipi_raw212a1/imx615mipiraw212a1_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx615_mipi_raw212a1/imx615mipiraw212a1_Sensor.c
+index 5b57d149f..91eaf498e 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx615_mipi_raw212a1/imx615mipiraw212a1_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx615_mipi_raw212a1/imx615mipiraw212a1_Sensor.c
+@@ -3988,7 +3988,7 @@ static void custom10_setting(void)
+      LOG_INF("%s end\n", __func__);
+ }
+ 
+-void Imx615_fab_read()
++void Imx615_fab_read(void)
+ {
+     kal_uint16 reg_0xa01 = 0;
+     kal_uint16 reg_0xa1f = 0;
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx766_mossmipi_raw/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx766_mossmipi_raw/imx766mipiraw_Sensor.c
+index 41c02cad2..f081c1542 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx766_mossmipi_raw/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64/imx766_mossmipi_raw/imx766mipiraw_Sensor.c
+@@ -662,7 +662,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64_6877T/imx766_mossmipi_raw/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64_6877T/imx766_mossmipi_raw/imx766mipiraw_Sensor.c
+index f2cc4475e..ada5ca50c 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64_6877T/imx766_mossmipi_raw/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6853/camera_project/k6877v1_64_6877T/imx766_mossmipi_raw/imx766mipiraw_Sensor.c
+@@ -656,7 +656,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx615_mipi_raw21881/imx615mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx615_mipi_raw21881/imx615mipiraw_Sensor.c
+index 6f081d4bc..70708fa55 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx615_mipi_raw21881/imx615mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx615_mipi_raw21881/imx615mipiraw_Sensor.c
+@@ -3478,7 +3478,7 @@ static void custom5_setting(void)
+      LOG_INF("%s end\n", __func__);
+ }
+ 
+-void imx615_fab_read()
++void imx615_fab_read(void)
+ {
+     kal_uint16 reg_0xa01 = 0;
+     kal_uint16 reg_0xa1f = 0;
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx709_mipi_raw21015/imx709mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx709_mipi_raw21015/imx709mipiraw_Sensor.c
+index 65c0f2dab..915453bd6 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx709_mipi_raw21015/imx709mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx709_mipi_raw21015/imx709mipiraw_Sensor.c
+@@ -548,7 +548,7 @@ static kal_uint32 get_exp_cnt_by_scenario(kal_uint32 scenario)
+     return max(exp_cnt, (kal_uint32)1);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt()
++static kal_uint32 get_cur_exp_cnt(void)
+ {
+     kal_uint32 exp_cnt = 1;
+ 
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw20817/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw20817/imx766mipiraw_Sensor.c
+index 8d7c40b39..1cccf5154 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw20817/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw20817/imx766mipiraw_Sensor.c
+@@ -662,7 +662,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21015/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21015/imx766mipiraw_Sensor.c
+index a11f6170e..dadd4427e 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21015/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21015/imx766mipiraw_Sensor.c
+@@ -740,7 +740,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21881/imx766mipiraw_Sensor.c b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21881/imx766mipiraw_Sensor.c
+index 0bc3d7f27..279f355a3 100755
+--- a/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21881/imx766mipiraw_Sensor.c
++++ b/drivers/misc/mediatek/imgsensor/src/mt6885/camera_project/k6893v1_64/imx766_mipi_raw21881/imx766mipiraw_Sensor.c
+@@ -662,7 +662,7 @@ static void imx766_set_pdaf_reg_setting(MUINT32 regNum, kal_uint16 *regDa)
+     imx766_table_write_cmos_sensor(regDa, regNum*2);
+ }
+ 
+-static kal_uint32 get_cur_exp_cnt(){
++static kal_uint32 get_cur_exp_cnt(void){
+     kal_uint32 exp_cnt = 1;
+ 
+     if (0x1 == (read_cmos_sensor_8(0x33D0) & 0x1)) { // DOL_EN
+diff --git a/drivers/misc/mediatek/lens/main/common/ak7375caf/AK7375CAF.c b/drivers/misc/mediatek/lens/main/common/ak7375caf/AK7375CAF.c
+index c9a0fd3b5..9e972eec8 100755
+--- a/drivers/misc/mediatek/lens/main/common/ak7375caf/AK7375CAF.c
++++ b/drivers/misc/mediatek/lens/main/common/ak7375caf/AK7375CAF.c
+@@ -378,7 +378,7 @@ int AK7375CAF_PIDcheck[] = {
+ 	0x00, 0x00,
+ };
+ 
+-int AK7375CAF_updatePIDparam()
++int AK7375CAF_updatePIDparam(void)
+ {
+ 	unsigned short regValue;
+ 	int ret = 0, i = 0, save_retry = 3;
+@@ -403,7 +403,7 @@ int AK7375CAF_updatePIDparam()
+ 	return -1;
+ }
+ 
+-int AK7375CAF_checkPIDparam()
++int AK7375CAF_checkPIDparam(void)
+ {
+ 	unsigned short regValue;
+ 	int ret = 0, i = 0;
+diff --git a/drivers/misc/mediatek/pmic/pmic_ldo_set/pmic_ldo_set_common.c b/drivers/misc/mediatek/pmic/pmic_ldo_set/pmic_ldo_set_common.c
+index 8e2fb0356..d2133fd73 100755
+--- a/drivers/misc/mediatek/pmic/pmic_ldo_set/pmic_ldo_set_common.c
++++ b/drivers/misc/mediatek/pmic/pmic_ldo_set/pmic_ldo_set_common.c
+@@ -123,7 +123,7 @@ EXPORT_SYMBOL(pmic_ldo_2_set_voltage_uv);
+ /*
+ * set pmic_ldo IC disable,shutdown ldo2 output.
+ */
+-int pmic_ldo_2_set_disable()
++int pmic_ldo_2_set_disable(void)
+ {
+     if(ldo_type != LDO_UNKNOW){
+         return ldo_ops.ldo_2_set_disable();
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_sensor_devinfo/sensor_devinfo.c b/drivers/misc/mediatek/sensor/2.0/oplus_sensor_devinfo/sensor_devinfo.c
+index db2677017..8b09f8d17 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_sensor_devinfo/sensor_devinfo.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_sensor_devinfo/sensor_devinfo.c
+@@ -1331,7 +1331,7 @@ int get_msensor_parameter(int num)
+     return 0;
+ }
+ 
+-void  mag_soft_parameter_init()
++void  mag_soft_parameter_init(void)
+ {
+     int ret = -1;
+     int index = 0;
+@@ -1498,7 +1498,7 @@ static const struct file_operations Sensor_info_fops = {
+     .release = single_release,
+ };
+ 
+-static int oplus_sensor_feature_init()
++static int oplus_sensor_feature_init(void)
+ {
+ 	struct proc_dir_entry *p_entry;
+ 	static struct proc_dir_entry *oplus_sensor = NULL;
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c
+index 67d731ca5..2d3adea9a 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c
+@@ -85,7 +85,7 @@ static int camera_protect_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int camera_protect_flush_report()
++static int camera_protect_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_CAMERA_PROTECT);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c
+index f84e0f714..b97fabba5 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c
+@@ -75,7 +75,7 @@ static int elevator_detect_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int elevator_detect_flush_report()
++static int elevator_detect_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_ELEVATOR_DETECT);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c
+index 9be562ea7..517b98a4c 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c
+@@ -79,7 +79,7 @@ static int fp_display_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int fp_display_flush_report()
++static int fp_display_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_FP_DISPLAY);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c
+index e2324453b..017a1b703 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c
+@@ -73,7 +73,7 @@ static int free_fall_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int free_fall_flush_report()
++static int free_fall_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_FREE_FALL);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c
+index cad193c87..06fb70173 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c
+@@ -72,7 +72,7 @@ static int lux_aod_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int lux_aod_flush_report()
++static int lux_aod_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_LUX_AOD);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c
+index 157d7a619..4078710fe 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c
+@@ -79,7 +79,7 @@ static int oplus_activity_recognition_data_report(struct data_unit_t *input_even
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int oplus_activity_recognition_flush_report()
++static int oplus_activity_recognition_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_OPLUS_ACTIVITY_RECOGNITION);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c
+index 40f8a7d47..f1c36fb40 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c
+@@ -76,7 +76,7 @@ static int pedo_minute_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int pedo_minute_flush_report()
++static int pedo_minute_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_PEDO_MINUTE);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c
+index 22ddbb97a..bed2ee4f5 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c
+@@ -77,7 +77,7 @@ static int pickup_detect_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int  pickup_detect_flush_report()
++static int  pickup_detect_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_PICKUP_DETECT);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c
+index d20453fc8..efb1dd8db 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c
+@@ -229,7 +229,7 @@ static void enable_work_callback(struct work_struct *work)
+     }
+ }
+ 
+-static void enable_timer_callback()
++static void enable_timer_callback(void)
+ {
+     queue_work(enable_wq, &enable_work);
+ }
+diff --git a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c
+index 69a40aace..f2f482d9d 100755
+--- a/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c
++++ b/drivers/misc/mediatek/sensor/2.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c
+@@ -78,7 +78,7 @@ static int tp_gesture_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int  tp_gesture_flush_report()
++static int  tp_gesture_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_TP_GESTURE);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_sensor_devinfo/sensor_devinfo.c b/drivers/misc/mediatek/sensors-1.0/oplus_sensor_devinfo/sensor_devinfo.c
+index db2677017..8b09f8d17 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_sensor_devinfo/sensor_devinfo.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_sensor_devinfo/sensor_devinfo.c
+@@ -1331,7 +1331,7 @@ int get_msensor_parameter(int num)
+     return 0;
+ }
+ 
+-void  mag_soft_parameter_init()
++void  mag_soft_parameter_init(void)
+ {
+     int ret = -1;
+     int index = 0;
+@@ -1498,7 +1498,7 @@ static const struct file_operations Sensor_info_fops = {
+     .release = single_release,
+ };
+ 
+-static int oplus_sensor_feature_init()
++static int oplus_sensor_feature_init(void)
+ {
+ 	struct proc_dir_entry *p_entry;
+ 	static struct proc_dir_entry *oplus_sensor = NULL;
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c
+index 67d731ca5..2d3adea9a 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/camera_protecthub/camera_protecthub.c
+@@ -85,7 +85,7 @@ static int camera_protect_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int camera_protect_flush_report()
++static int camera_protect_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_CAMERA_PROTECT);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c
+index f84e0f714..b97fabba5 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/elevator_detecthub/elevator_detecthub.c
+@@ -75,7 +75,7 @@ static int elevator_detect_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int elevator_detect_flush_report()
++static int elevator_detect_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_ELEVATOR_DETECT);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c
+index 9be562ea7..517b98a4c 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/fp_displayhub/fp_displayhub.c
+@@ -79,7 +79,7 @@ static int fp_display_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int fp_display_flush_report()
++static int fp_display_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_FP_DISPLAY);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c
+index e2324453b..017a1b703 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/free_fallhub/free_fallhub.c
+@@ -73,7 +73,7 @@ static int free_fall_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int free_fall_flush_report()
++static int free_fall_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_FREE_FALL);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c
+index cad193c87..06fb70173 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/lux_aodhub/lux_aodhub.c
+@@ -72,7 +72,7 @@ static int lux_aod_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int lux_aod_flush_report()
++static int lux_aod_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_LUX_AOD);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c
+index 157d7a619..4078710fe 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/oplus_activity_recognitionhub/oplus_activity_recognitionhub.c
+@@ -79,7 +79,7 @@ static int oplus_activity_recognition_data_report(struct data_unit_t *input_even
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int oplus_activity_recognition_flush_report()
++static int oplus_activity_recognition_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_OPLUS_ACTIVITY_RECOGNITION);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c
+index 40f8a7d47..f1c36fb40 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pedo_minutehub/pedo_minutehub.c
+@@ -76,7 +76,7 @@ static int pedo_minute_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int pedo_minute_flush_report()
++static int pedo_minute_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_PEDO_MINUTE);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c
+index 22ddbb97a..bed2ee4f5 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/pickup_detecthub/pickup_detecthub.c
+@@ -77,7 +77,7 @@ static int pickup_detect_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int  pickup_detect_flush_report()
++static int  pickup_detect_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_PICKUP_DETECT);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c
+index d20453fc8..efb1dd8db 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/sensor_monitor/sensor_monitor.c
+@@ -229,7 +229,7 @@ static void enable_work_callback(struct work_struct *work)
+     }
+ }
+ 
+-static void enable_timer_callback()
++static void enable_timer_callback(void)
+ {
+     queue_work(enable_wq, &enable_work);
+ }
+diff --git a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c
+index 69a40aace..f2f482d9d 100755
+--- a/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c
++++ b/drivers/misc/mediatek/sensors-1.0/oplus_virtual_sensor/sensors/tp_gesturehub/tp_gesturehub.c
+@@ -78,7 +78,7 @@ static int tp_gesture_data_report(struct data_unit_t *input_event)
+     return virtual_sensor_data_report(event);
+ }
+ 
+-static int  tp_gesture_flush_report()
++static int  tp_gesture_flush_report(void)
+ {
+     return virtual_sensor_flush_report(ID_TP_GESTURE);
+ }
+diff --git a/drivers/misc/mediatek/video/mt6765/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6765/dispsys/display_recorder.c
+index 9f67f4f5f..f93e0fc99 100644
+--- a/drivers/misc/mediatek/video/mt6765/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6765/dispsys/display_recorder.c
+@@ -1124,7 +1124,7 @@ void dprec_logger_dump_reset(void)
+ 		sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1559,7 +1559,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/mediatek/video/mt6768/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6768/dispsys/display_recorder.c
+index 9f67f4f5f..f93e0fc99 100644
+--- a/drivers/misc/mediatek/video/mt6768/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6768/dispsys/display_recorder.c
+@@ -1124,7 +1124,7 @@ void dprec_logger_dump_reset(void)
+ 		sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1559,7 +1559,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/mediatek/video/mt6785/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6785/dispsys/display_recorder.c
+index 78f01c42b..0262212c8 100644
+--- a/drivers/misc/mediatek/video/mt6785/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6785/dispsys/display_recorder.c
+@@ -1107,7 +1107,7 @@ void dprec_logger_dump_reset(void)
+ 	       sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1525,7 +1525,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/mediatek/video/mt6833/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6833/dispsys/display_recorder.c
+index 9f67f4f5f..f93e0fc99 100644
+--- a/drivers/misc/mediatek/video/mt6833/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6833/dispsys/display_recorder.c
+@@ -1124,7 +1124,7 @@ void dprec_logger_dump_reset(void)
+ 		sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1559,7 +1559,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/mediatek/video/mt6853/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6853/dispsys/display_recorder.c
+index 9f67f4f5f..f93e0fc99 100644
+--- a/drivers/misc/mediatek/video/mt6853/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6853/dispsys/display_recorder.c
+@@ -1124,7 +1124,7 @@ void dprec_logger_dump_reset(void)
+ 		sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1559,7 +1559,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/mediatek/video/mt6873/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6873/dispsys/display_recorder.c
+index 9f67f4f5f..f93e0fc99 100644
+--- a/drivers/misc/mediatek/video/mt6873/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6873/dispsys/display_recorder.c
+@@ -1124,7 +1124,7 @@ void dprec_logger_dump_reset(void)
+ 		sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1559,7 +1559,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/mediatek/video/mt6885/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6885/dispsys/display_recorder.c
+index 9f67f4f5f..f93e0fc99 100644
+--- a/drivers/misc/mediatek/video/mt6885/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6885/dispsys/display_recorder.c
+@@ -1124,7 +1124,7 @@ void dprec_logger_dump_reset(void)
+ 		sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1559,7 +1559,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/mediatek/video/mt6893/dispsys/display_recorder.c b/drivers/misc/mediatek/video/mt6893/dispsys/display_recorder.c
+index 9f67f4f5f..f93e0fc99 100644
+--- a/drivers/misc/mediatek/video/mt6893/dispsys/display_recorder.c
++++ b/drivers/misc/mediatek/video/mt6893/dispsys/display_recorder.c
+@@ -1124,7 +1124,7 @@ void dprec_logger_dump_reset(void)
+ 		sizeof(dprec_string_buffer_analysize));
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return dprec_string_buffer_analysize;
+ }
+@@ -1559,7 +1559,7 @@ void dprec_logger_dump_reset(void)
+ {
+ }
+ 
+-char *dprec_logger_get_dump_addr()
++char *dprec_logger_get_dump_addr(void)
+ {
+ 	return NULL;
+ }
+diff --git a/drivers/misc/oplus/display_panel/oplus_display_panel.c b/drivers/misc/oplus/display_panel/oplus_display_panel.c
+index 0e529e307..5f86a10f7 100755
+--- a/drivers/misc/oplus/display_panel/oplus_display_panel.c
++++ b/drivers/misc/oplus/display_panel/oplus_display_panel.c
+@@ -261,7 +261,7 @@ static int __init oplus_display_panel_init(void)
+ 	return rc;
+ }
+ 
+-void __exit oplus_display_panel_exit()
++void __exit oplus_display_panel_exit(void)
+ {
+ 	pr_err("%s\n", __func__);
+ 
+diff --git a/drivers/misc/oplus/oplus_display_alwaysondisplay.c b/drivers/misc/oplus/oplus_display_alwaysondisplay.c
+index c427b0019..6a9cb5840 100755
+--- a/drivers/misc/oplus/oplus_display_alwaysondisplay.c
++++ b/drivers/misc/oplus/oplus_display_alwaysondisplay.c
+@@ -187,7 +187,7 @@ int primary_display_set_aod_mode_nolock(unsigned int mode)
+ }
+ //#endif
+ 
+-void oppo_display_aod_backlight()
++void oppo_display_aod_backlight(void)
+ {
+ 	int ret;
+ 	/* blocking flush before stop trigger loop */
+diff --git a/drivers/nfc/nq330-i2c/nq330.c b/drivers/nfc/nq330-i2c/nq330.c
+index 4e8456b7b..2a250f9ea 100755
+--- a/drivers/nfc/nq330-i2c/nq330.c
++++ b/drivers/nfc/nq330-i2c/nq330.c
+@@ -1975,7 +1975,7 @@ static struct i2c_driver pn544_driver = {
+  * Returns          None
+  *
+  ******************************************************************************/
+-static void check_hw_info() {
++static void check_hw_info(void) {
+     char read_data[20];
+     int ret, get_version_len = 8, retry_count = 0;
+     static uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01, 0x00};
+diff --git a/drivers/nfc/oplus_nfc/oplus_nfc.c b/drivers/nfc/oplus_nfc/oplus_nfc.c
+index dca344179..b4fd6f17e 100755
+--- a/drivers/nfc/oplus_nfc/oplus_nfc.c
++++ b/drivers/nfc/oplus_nfc/oplus_nfc.c
+@@ -19,7 +19,7 @@
+ static char current_chipset[32];
+ static bool support_nfc = false;
+ 
+-bool is_nfc_support()
++bool is_nfc_support(void)
+ {
+ 	return support_nfc;
+ }
+diff --git a/drivers/nfc/pn553-i2c/pn553.c b/drivers/nfc/pn553-i2c/pn553.c
+index d11eab6fa..51852ebbc 100755
+--- a/drivers/nfc/pn553-i2c/pn553.c
++++ b/drivers/nfc/pn553-i2c/pn553.c
+@@ -2098,7 +2098,7 @@ static struct i2c_driver pn544_driver = {
+  * Returns          None
+  *
+  ******************************************************************************/
+-static void check_hw_info() {
++static void check_hw_info(void) {
+     char read_data[20];
+     int ret, get_version_len = 8, retry_count = 0;
+     static uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01, 0x00};
+diff --git a/drivers/power/oplus/charger_ic/mtk_battery.c b/drivers/power/oplus/charger_ic/mtk_battery.c
+index 5063b6e6d..835dcbbc0 100755
+--- a/drivers/power/oplus/charger_ic/mtk_battery.c
++++ b/drivers/power/oplus/charger_ic/mtk_battery.c
+@@ -6474,7 +6474,7 @@ static void meter_fg_30_set_battery_full(bool full)
+ }
+ #endif
+ #ifdef OPLUS_FEATURE_CHG_BASIC
+-static int  meter_fg_30_get_ic_device_type()
++static int  meter_fg_30_get_ic_device_type(void)
+ {
+     return 0;
+ }
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_msm7125_Q.c b/drivers/power/oplus/charger_ic/oplus_battery_msm7125_Q.c
+index 75a716613..b716bdeee 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_msm7125_Q.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_msm7125_Q.c
+@@ -14354,7 +14354,7 @@ int oplus_chg_get_charger_subtype(void)
+ }
+ 
+ extern int oplus_pdo_select(int vbus_mv, int ibus_ma);
+-int oplus_chg_set_pd_config()
++int oplus_chg_set_pd_config(void)
+ {
+ 	int ret = -1;
+ 	struct oplus_chg_chip *chip = g_oplus_chip;
+@@ -14480,7 +14480,7 @@ int oplus_chg_enable_qc_detect(void)
+ 	return ret;
+ }
+ 
+-int oplus_chg_set_qc_config()
++int oplus_chg_set_qc_config(void)
+ {
+ 	int ret = -1;
+ 	struct smb_charger *chg = NULL;
+@@ -14606,7 +14606,7 @@ static const struct dev_pm_ops smb5_pm_ops = {
+ 	.resume		= smb5_pm_resume,
+ 	.suspend		= smb5_pm_suspend,
+ };
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	oplus_set_otg_switch_status(false);
+ };
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_msm7250_R.c b/drivers/power/oplus/charger_ic/oplus_battery_msm7250_R.c
+index 942023fcf..353c1daa8 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_msm7250_R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_msm7250_R.c
+@@ -9146,7 +9146,7 @@ bool oplus_chg_check_qchv_condition(void)
+ 	return false;
+ }
+ 
+-int oplus_chg_set_qc_config()
++int oplus_chg_set_qc_config(void)
+ {
+ 	int ret = -1;
+ 	struct smb_charger *chg = NULL;
+@@ -10450,7 +10450,7 @@ void oplus_get_usbtemp_volt(struct oplus_chg_chip *chip)
+ 	return ;
+ }
+ 
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	int rc;
+ 	struct smb_charger *chg = NULL;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q.c b/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q.c
+index 03ea3adf2..2b5b5048c 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q.c
+@@ -14443,7 +14443,7 @@ int oplus_chg_get_charger_subtype(void)
+ }
+ 
+ extern int oplus_pdo_select(int vbus_mv, int ibus_ma);
+-int oplus_chg_set_pd_config()
++int oplus_chg_set_pd_config(void)
+ {
+ 	int ret = 0;
+ 	struct oplus_chg_chip *chip = g_oplus_chip;
+@@ -14510,7 +14510,7 @@ int oplus_chg_enable_qc_detect(void)
+ 	return ret;
+ }
+ 
+-int oplus_chg_set_qc_config()
++int oplus_chg_set_qc_config(void)
+ {
+ 	int ret = 0;
+ 	struct smb_charger *chg = NULL;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q_pro.c b/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q_pro.c
+index 2ac5d1fda..a3ba3ceff 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q_pro.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_msm8150Q_pro.c
+@@ -13613,7 +13613,7 @@ int oplus_chg_get_charger_subtype(void)
+ }
+ 
+ extern int oplus_pdo_select(int vbus_mv, int ibus_ma);
+-int oplus_chg_set_pd_config()
++int oplus_chg_set_pd_config(void)
+ {
+ 	int ret = 0;
+ 	struct oplus_chg_chip *chip = g_oplus_chip;
+@@ -13671,7 +13671,7 @@ int oplus_chg_enable_qc_detect(void)
+ 	return ret;
+ }
+ 
+-int oplus_chg_set_qc_config()
++int oplus_chg_set_qc_config(void)
+ {
+ 	int ret = 0;
+ 	struct smb_charger *chg = NULL;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_msm8250.c b/drivers/power/oplus/charger_ic/oplus_battery_msm8250.c
+index ba123f3b7..7221fab15 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_msm8250.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_msm8250.c
+@@ -11313,7 +11313,7 @@ bool oplus_chg_check_pd_svooc_adapater(void)
+ }
+ EXPORT_SYMBOL(oplus_chg_check_pd_svooc_adapater);
+ 
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	int rc;
+ 	struct smb_charger *chg = NULL;
+@@ -16622,7 +16622,7 @@ void oplus_set_flash_screen_ctrl_by_pcb_version(struct oplus_chg_chip *chip)
+ }
+ #endif
+ extern int oplus_pdo_select(int vbus_mv, int ibus_ma);
+-int oplus_chg_set_pd_config()
++int oplus_chg_set_pd_config(void)
+ {
+ 	int ret = 0;
+ 	struct oplus_chg_chip *chip = g_oplus_chip;
+@@ -16703,7 +16703,7 @@ int oplus_chg_enable_qc_detect(void)
+ 	return ret;
+ }
+ 
+-int oplus_chg_set_qc_config()
++int oplus_chg_set_qc_config(void)
+ {
+ 	int ret = 0;
+ 	struct smb_charger *chg = NULL;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6765S.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6765S.c
+index acc6278c6..75dfea47d 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6765S.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6765S.c
+@@ -2202,7 +2202,7 @@ static bool oplus_chg_get_vbus_status(struct oplus_chg_chip *chip)
+ 		return false;
+ }
+ 
+-enum charger_type mt_get_charger_type()
++enum charger_type mt_get_charger_type(void)
+ {
+ 	return g_oplus_chip->charger_type;
+ }
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6779R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6779R.c
+index fca87bf53..6ecd7df7c 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6779R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6779R.c
+@@ -2937,7 +2937,7 @@ void mt_usb_disconnect(void)
+ #endif /* OPLUS_FEATURE_CHG_BASIC */
+ //====================================================================//
+ 
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6785.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6785.c
+index 0cf431e43..651a673a5 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6785.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6785.c
+@@ -5667,7 +5667,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+@@ -6469,7 +6469,7 @@ EXPORT_SYMBOL(oplus_chg_set_camera_on);
+ 
+ 
+ //====================================================================//
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6785R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6785R.c
+index 9730b8c05..54a7061f9 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6785R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6785R.c
+@@ -5444,7 +5444,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+@@ -6383,7 +6383,7 @@ EXPORT_SYMBOL(oplus_chg_set_camera_on);
+ 
+ 
+ //====================================================================//
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6833R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6833R.c
+index 7b7c8cf2e..3df40d01a 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6833R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6833R.c
+@@ -3481,7 +3481,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6853.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6853.c
+index ddecd3563..8c0d88eb7 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6853.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6853.c
+@@ -2967,7 +2967,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6853R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6853R.c
+index 2a5787ac0..675450c64 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6853R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6853R.c
+@@ -3532,7 +3532,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+@@ -4402,7 +4402,7 @@ EXPORT_SYMBOL(oplus_chg_set_camera_on);
+ #endif /* OPLUS_FEATURE_CHG_BASIC */
+ //====================================================================//
+ 
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6877R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6877R.c
+index f130f9cb9..dba66e669 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6877R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6877R.c
+@@ -5575,7 +5575,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+@@ -6673,7 +6673,7 @@ EXPORT_SYMBOL(oplus_chg_set_camera_on);
+ 
+ 
+ //====================================================================//
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+@@ -6682,7 +6682,7 @@ void oplus_set_typec_sinkonly()
+ };
+ 
+ #ifdef OPLUS_FEATURE_CHG_BASIC
+-void oplus_set_typec_cc_open()
++void oplus_set_typec_cc_open(void)
+ {
+ 	if (pinfo == NULL || pinfo->tcpc == NULL)
+ 		return;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6885R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6885R.c
+index e5fb0135d..fda7a86fd 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6885R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6885R.c
+@@ -5350,7 +5350,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+@@ -6330,7 +6330,7 @@ EXPORT_SYMBOL(oplus_chg_set_camera_on);
+ 
+ 
+ //====================================================================//
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6889R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6889R.c
+index 57018d6c7..74421942e 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6889R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6889R.c
+@@ -5379,7 +5379,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+@@ -6323,7 +6323,7 @@ EXPORT_SYMBOL(oplus_chg_set_camera_on);
+ 
+ 
+ //====================================================================//
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_mtk6893R.c b/drivers/power/oplus/charger_ic/oplus_battery_mtk6893R.c
+index ee55ae417..d6fc93205 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_mtk6893R.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_mtk6893R.c
+@@ -5516,7 +5516,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+@@ -6695,7 +6695,7 @@ EXPORT_SYMBOL(oplus_chg_set_camera_on);
+ 
+ 
+ //====================================================================//
+-void oplus_set_typec_sinkonly()
++void oplus_set_typec_sinkonly(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp occur otg switch[0]\n", __func__);
+@@ -6703,7 +6703,7 @@ void oplus_set_typec_sinkonly()
+ 	}
+ };
+ 
+-void oplus_set_typec_cc_open()
++void oplus_set_typec_cc_open(void)
+ {
+ 	if (pinfo != NULL && pinfo->tcpc != NULL) {
+ 		printk(KERN_ERR "[OPLUS_CHG][%s]: usbtemp set cc open\n", __func__);
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_sm6125P.c b/drivers/power/oplus/charger_ic/oplus_battery_sm6125P.c
+index babcdbb5b..804cbe0fb 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_sm6125P.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_sm6125P.c
+@@ -12464,7 +12464,7 @@ static int smbchg_set_rechg_vol(int rechg_vol)
+         return 0;
+ }
+ 
+-static int smbchg_reset_charger()
++static int smbchg_reset_charger(void)
+ {
+         return 0;
+ }
+@@ -12502,12 +12502,12 @@ static int smbchg_otg_disable(void)
+         return 0;
+ }
+ 
+-static int oplus_set_chging_term_disable()
++static int oplus_set_chging_term_disable(void)
+ {
+         return 0;
+ }
+ 
+-static bool qcom_check_charger_resume()
++static bool qcom_check_charger_resume(void)
+ {
+         return true;
+ }
+@@ -12752,7 +12752,7 @@ static bool oplus_chg_get_shortc_hw_gpio_status(void)
+ }
+ #endif
+ 
+-static bool smbchg_need_to_check_ibatt()
++static bool smbchg_need_to_check_ibatt(void)
+ {
+         return false;
+ }
+@@ -13003,7 +13003,7 @@ static int smbchg_dp_dm(int val)
+         return 0;
+ }
+ 
+-static int smbchg_calc_max_flash_current()
++static int smbchg_calc_max_flash_current(void)
+ {
+         return 0;
+ }
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_sm8350.c b/drivers/power/oplus/charger_ic/oplus_battery_sm8350.c
+index a968a326f..781eafbaa 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_sm8350.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_sm8350.c
+@@ -5793,7 +5793,7 @@ int oplus_get_charger_cycle(void)
+ 	return cycle_count;
+ }
+ 
+-int oplus_adsp_voocphy_get_enable()
++int oplus_adsp_voocphy_get_enable(void)
+ {
+ 	int rc = 0;
+ 	struct battery_chg_dev *bcdev = NULL;
+diff --git a/drivers/power/oplus/charger_ic/oplus_battery_sm8450.c b/drivers/power/oplus/charger_ic/oplus_battery_sm8450.c
+index 303ddec9b..ca3e442e0 100755
+--- a/drivers/power/oplus/charger_ic/oplus_battery_sm8450.c
++++ b/drivers/power/oplus/charger_ic/oplus_battery_sm8450.c
+@@ -4983,7 +4983,7 @@ int oplus_get_charger_cycle(void)
+ 	return cycle_count;
+ }
+ 
+-int oplus_adsp_voocphy_get_enable()
++int oplus_adsp_voocphy_get_enable(void)
+ {
+ 	int rc = 0;
+ 	struct battery_chg_dev *bcdev = NULL;
+diff --git a/drivers/power/oplus/charger_ic/oplus_bq24196.c b/drivers/power/oplus/charger_ic/oplus_bq24196.c
+index 2b507d0f9..526160817 100755
+--- a/drivers/power/oplus/charger_ic/oplus_bq24196.c
++++ b/drivers/power/oplus/charger_ic/oplus_bq24196.c
+@@ -585,7 +585,7 @@ static int bq24196_set_chging_term_disable(void)
+ 	return rc;
+ }
+ 
+-int bq24196_kick_wdt()
++int bq24196_kick_wdt(void)
+ {
+ 	int rc = 0;
+ 	struct chip_bq24196 *chip = charger_ic;
+@@ -630,7 +630,7 @@ int bq24196_enable_charging(void)
+ 	return rc;
+ }
+ 
+-int bq24196_disable_charging()
++int bq24196_disable_charging(void)
+ {
+ 	int rc = 0;
+ 	struct chip_bq24196 *chip = charger_ic;
+@@ -669,7 +669,7 @@ int bq24196_enable_charging(void)
+ 	return rc;
+ }
+ 
+-int bq24196_disable_charging()
++int bq24196_disable_charging(void)
+ {
+ 	int rc = 0;
+ 	struct chip_bq24196 *chip = charger_ic;
+@@ -878,7 +878,7 @@ int bq24196_unsuspend_charger(void)
+ }
+ 
+ #ifdef CONFIG_MTK_PMIC_CHIP_MT6353
+-int bq24196_reset_charger()
++int bq24196_reset_charger(void)
+ {
+ 	int rc = 0;
+ 	struct chip_bq24196 *chip = charger_ic;
+@@ -923,7 +923,7 @@ int bq24196_reset_charger()
+ 	return rc;
+ }
+ #else
+-int bq24196_reset_charger()
++int bq24196_reset_charger(void)
+ {
+ 	int rc = 0;
+ 	struct chip_bq24196 *chip = charger_ic;
+@@ -987,7 +987,7 @@ void bq24196_dump_registers(void)
+ 
+ }
+ #else
+-void bq24196_dump_registers()
++void bq24196_dump_registers(void)
+ {
+ 	int rc = 0;
+ 	int addr = 0;
+diff --git a/drivers/power/oplus/charger_ic/oplus_sy6970_charger.c b/drivers/power/oplus/charger_ic/oplus_sy6970_charger.c
+index 62e47f729..e8e1c0513 100644
+--- a/drivers/power/oplus/charger_ic/oplus_sy6970_charger.c
++++ b/drivers/power/oplus/charger_ic/oplus_sy6970_charger.c
+@@ -2190,7 +2190,7 @@ int oplus_bq2589x_set_aicr(int current_ma)
+ 	return rc;
+ }
+ 
+-void oplus_bq2589x_safe_calling_status_check()
++void oplus_bq2589x_safe_calling_status_check(void)
+ {
+ 	if(g_oplus_chip == NULL) {
+ 		return;
+@@ -2212,7 +2212,7 @@ void oplus_bq2589x_safe_calling_status_check()
+ 	}
+ }
+ 
+-void oplus_bq2589x_safe_camera_status_check()
++void oplus_bq2589x_safe_camera_status_check(void)
+ {
+ 	if(g_oplus_chip == NULL) {
+ 		return;
+@@ -2252,7 +2252,7 @@ void oplus_bq2589x_safe_camera_status_check()
+ 	}
+ }
+ 
+-void oplus_bq2589x_cool_down_status_check()
++void oplus_bq2589x_cool_down_status_check(void)
+ {
+ 	static int old_cool_flag = false;
+ 	if (g_oplus_chip == NULL) {
+@@ -2299,7 +2299,7 @@ void oplus_bq2589x_cool_down_status_check()
+ 	}
+ }
+ 
+-void oplus_bq2589x_batt_temp_status_check()
++void oplus_bq2589x_batt_temp_status_check(void)
+ {
+ 	static int batt_temp_flag = false;
+ 	if (g_oplus_chip == NULL) {
+diff --git a/drivers/power/oplus/gauge_ic/oplus_optiga/ECC/Optiga_Ecc.c b/drivers/power/oplus/gauge_ic/oplus_optiga/ECC/Optiga_Ecc.c
+index cda751d83..73a7c215e 100755
+--- a/drivers/power/oplus/gauge_ic/oplus_optiga/ECC/Optiga_Ecc.c
++++ b/drivers/power/oplus/gauge_ic/oplus_optiga/ECC/Optiga_Ecc.c
+@@ -78,7 +78,7 @@ void Ecc_Rng128( uint32_t * gf2n_RandomValue )
+ 
+    date:      .
+  ************************************************************************* */
+-BOOL Ecc_DoAuthentication( )
++BOOL Ecc_DoAuthentication(void)
+ {
+ 	dwordvec_t gf2nRandomValue = {0,0,0,0,0,0};
+ 	dwordvec_t gf2nChallenge = {0,0,0,0,0,0};
+diff --git a/drivers/power/oplus/gauge_ic/oplus_optiga/Platform/board.c b/drivers/power/oplus/gauge_ic/oplus_optiga/Platform/board.c
+index 0c385aee3..46f0afb37 100755
+--- a/drivers/power/oplus/gauge_ic/oplus_optiga/Platform/board.c
++++ b/drivers/power/oplus/gauge_ic/oplus_optiga/Platform/board.c
+@@ -52,7 +52,7 @@ void Set_SWILowSpeed(void) {
+ }
+ 
+ 
+-uint8_t get_pin()
++uint8_t get_pin(void)
+ {
+ 	return get_optiga_pin();
+ }
+diff --git a/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Nvm.c b/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Nvm.c
+index 1547bb6d6..1e80bf6de 100755
+--- a/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Nvm.c
++++ b/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Nvm.c
+@@ -22,7 +22,7 @@ void Nvm_SwitchUID( uint32_t uid ) {
+ 	}
+ }
+ 
+-BOOL move_register_pointer()
++BOOL move_register_pointer(void)
+ {
+ 	uint8_t ubUID10=0x00, cnt = 0;
+ 
+diff --git a/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Swi.c b/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Swi.c
+index 3300d1ee3..d82db0475 100755
+--- a/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Swi.c
++++ b/drivers/power/oplus/gauge_ic/oplus_optiga/SWI/Optiga_Swi.c
+@@ -618,7 +618,7 @@ static BOOL b_push( uint8_t ub_Data )
+ *
+ * \return  Size of ub_Stack
+ ********************************************************************/
+-static uint8_t ub_SizeOfStack()
++static uint8_t ub_SizeOfStack(void)
+ {
+     return ub_StackPointer;
+ }
+diff --git a/drivers/power/oplus/oplus_charger.c b/drivers/power/oplus/oplus_charger.c
+index f7d46a15d..7c53a0e80 100755
+--- a/drivers/power/oplus/oplus_charger.c
++++ b/drivers/power/oplus/oplus_charger.c
+@@ -9243,7 +9243,7 @@ static void oplus_chg_reset_adapter_work(struct work_struct *work) {
+ 	}
+ }
+ 
+-void oplus_chg_turn_on_charging_in_work()
++void oplus_chg_turn_on_charging_in_work(void)
+ {
+ 	if (g_charger_chip)
+ 		schedule_delayed_work(&g_charger_chip->turn_on_charging_work, 0);
+diff --git a/drivers/power/oplus/oplus_debug_info.c b/drivers/power/oplus/oplus_debug_info.c
+index 79bfb2151..9094f9749 100755
+--- a/drivers/power/oplus/oplus_debug_info.c
++++ b/drivers/power/oplus/oplus_debug_info.c
+@@ -2122,7 +2122,7 @@ void oplus_chg_vooc_mcu_error( int error ) {
+ }
+ 
+ /*add for wireless chg*/
+-void oplus_chg_wireless_udpate_param()
++void oplus_chg_wireless_udpate_param(void)
+ {
+ 	struct oplus_wpc_chip *wpc_chip = NULL;
+ 	oplus_get_wpc_chip_handle(&wpc_chip);
+diff --git a/drivers/power/oplus/oplus_vooc.c b/drivers/power/oplus/oplus_vooc.c
+index a57f68fc1..2b28e1be0 100755
+--- a/drivers/power/oplus/oplus_vooc.c
++++ b/drivers/power/oplus/oplus_vooc.c
+@@ -85,7 +85,7 @@ bool oplus_vooc_get_fw_update_status(void)
+ 		return g_vooc_chip->mcu_update_ing;
+ 	}
+ }
+-void oplus_vooc_battery_update()
++void oplus_vooc_battery_update(void)
+ {
+ 	struct oplus_vooc_chip *chip = g_vooc_chip;
+ 
+@@ -2266,7 +2266,7 @@ void oplus_vooc_set_fastchg_to_warm_full_false(void)
+ 	}
+ }
+ 
+-bool oplus_vooc_get_fastchg_low_temp_full()
++bool oplus_vooc_get_fastchg_low_temp_full(void)
+ {
+ 	if (!g_vooc_chip) {
+ 		return false;
+diff --git a/drivers/power/supply/mediatek/charger/mtk_charger.c b/drivers/power/supply/mediatek/charger/mtk_charger.c
+index b4bac03a5..6e642f8d9 100755
+--- a/drivers/power/supply/mediatek/charger/mtk_charger.c
++++ b/drivers/power/supply/mediatek/charger/mtk_charger.c
+@@ -5198,7 +5198,7 @@ static int oplus_chg_usbtemp_parse_dt(struct oplus_chg_chip *chip)
+ 	return rc;
+ }
+ 
+-static bool oplus_mtk_hv_flashled_check_is_gpio()
++static bool oplus_mtk_hv_flashled_check_is_gpio(void)
+ {
+ 	if (gpio_is_valid(mtkhv_flashled_pinctrl.chgvin_gpio) && gpio_is_valid(mtkhv_flashled_pinctrl.pmic_chgfunc_gpio)) {
+ 		return true;
+diff --git a/drivers/scsi/gdth.c b/drivers/scsi/gdth.c
+index a4473356a..9a8dd7b10 100644
+--- a/drivers/scsi/gdth.c
++++ b/drivers/scsi/gdth.c
+@@ -204,7 +204,7 @@ static char strbuf[MAX_SERBUF+1];
+ #else
+ #define COM_BASE 0x3f8
+ #endif
+-static void ser_init()
++static void ser_init(void)
+ {
+     unsigned port=COM_BASE;
+ 
+diff --git a/drivers/soc/oplus/midas/v1_gki/binder_stats_dev.c b/drivers/soc/oplus/midas/v1_gki/binder_stats_dev.c
+index 237d2ade2..7a5fb0301 100755
+--- a/drivers/soc/oplus/midas/v1_gki/binder_stats_dev.c
++++ b/drivers/soc/oplus/midas/v1_gki/binder_stats_dev.c
+@@ -787,7 +787,7 @@ static int user_binder_stats_add_intreresting_uid(struct binder_stats_user_conte
+ 	return ret;
+ }
+ 
+-static int set_driver_binder_stats_srvmgr_init() {
++static int set_driver_binder_stats_srvmgr_init(void) {
+ 	BINDER_STATS_LOGI("BDS_MGR task_tgid_nr:%d\n", task_tgid_nr(current));
+ 	g_binder_stats_driver.srvmgr_tgid = task_tgid_nr(current);
+ 	return 0;
+diff --git a/drivers/soc/oplus/midas/v2/binder_stats_dev.c b/drivers/soc/oplus/midas/v2/binder_stats_dev.c
+index fe3af370d..3b28b8edb 100755
+--- a/drivers/soc/oplus/midas/v2/binder_stats_dev.c
++++ b/drivers/soc/oplus/midas/v2/binder_stats_dev.c
+@@ -787,7 +787,7 @@ static int user_binder_stats_add_intreresting_uid(struct binder_stats_user_conte
+ 	return ret;
+ }
+ 
+-static int set_driver_binder_stats_srvmgr_init() {
++static int set_driver_binder_stats_srvmgr_init(void) {
+ 	BINDER_STATS_LOGI("BDS_MGR task_tgid_nr:%d\n", task_tgid_nr(current));
+ 	g_binder_stats_driver.srvmgr_tgid = task_tgid_nr(current);
+ 	return 0;
+diff --git a/drivers/soc/oplus/oplus_nandswap/nandswap.h b/drivers/soc/oplus/oplus_nandswap/nandswap.h
+index 3d3aa3583..8bec1c4b8 100644
+--- a/drivers/soc/oplus/oplus_nandswap/nandswap.h
++++ b/drivers/soc/oplus/oplus_nandswap/nandswap.h
+@@ -32,7 +32,7 @@ enum {
+ };
+ 
+ extern struct task_struct *nswapoutd;
+-static inline bool current_is_nswapoutd()
++static inline bool current_is_nswapoutd(void)
+ {
+ 	return current == nswapoutd;
+ }
+diff --git a/drivers/soc/oplus/system/dump_device_info/dump_device_info.c b/drivers/soc/oplus/system/dump_device_info/dump_device_info.c
+index e9c3377c1..ab88c6ff4 100755
+--- a/drivers/soc/oplus/system/dump_device_info/dump_device_info.c
++++ b/drivers/soc/oplus/system/dump_device_info/dump_device_info.c
+@@ -154,7 +154,7 @@ static void pstore_write_device_info(const char *s, unsigned int c)
+ 	}
+ }
+ 
+-static void board_hw_info_init()
++static void board_hw_info_init(void)
+ {
+ 	scnprintf(pcb_version, sizeof(pcb_version), "%d", get_PCB_Version());
+ 	scnprintf(project_version, sizeof(project_version), "%d", get_project());
+diff --git a/drivers/soc/oplus/system/feedback/gki/kernel_fb.c b/drivers/soc/oplus/system/feedback/gki/kernel_fb.c
+index f2a0287d1..40ff87f70 100755
+--- a/drivers/soc/oplus/system/feedback/gki/kernel_fb.c
++++ b/drivers/soc/oplus/system/feedback/gki/kernel_fb.c
+@@ -683,7 +683,7 @@ static int __init kernel_fb_init(void)
+ 	return ret;
+ }
+ 
+-static void __exit kernel_fb_exit()
++static void __exit kernel_fb_exit(void)
+ {
+ 	genl_unregister_family(&oplus_fb_kevent_family);
+ 	kfree(g_pkts->flush_task);
+diff --git a/drivers/soc/oplus/system/feedback/kernel_fb.c b/drivers/soc/oplus/system/feedback/kernel_fb.c
+index 4d70b0a3c..b32e3497e 100755
+--- a/drivers/soc/oplus/system/feedback/kernel_fb.c
++++ b/drivers/soc/oplus/system/feedback/kernel_fb.c
+@@ -673,7 +673,7 @@ static int __init kernel_fb_init(void)
+ 	return ret;
+ }
+ 
+-static void __exit kernel_fb_exit()
++static void __exit kernel_fb_exit(void)
+ {
+ 	kfree(bsp_fb_dwork);
+ 	bsp_fb_dwork = NULL;
+diff --git a/drivers/soc/oplus/system/oplus_project/gki/oplus_project.c b/drivers/soc/oplus/system/oplus_project/gki/oplus_project.c
+index 6163b71c4..ecec4234d 100755
+--- a/drivers/soc/oplus/system/oplus_project/gki/oplus_project.c
++++ b/drivers/soc/oplus/system/oplus_project/gki/oplus_project.c
+@@ -361,7 +361,7 @@ uint32_t get_oplus_feature(enum F_INDEX index)
+ EXPORT_SYMBOL(get_oplus_feature);
+ 
+ #define SERIALNO_LEN 16
+-unsigned int get_serialID()
++unsigned int get_serialID(void)
+ {
+ 	unsigned int serial_id = 0xFFFFFFFF;
+ 
+@@ -594,7 +594,7 @@ static int project_read_func(struct seq_file *s, void *v)
+ 	return 0;
+ }
+ 
+-unsigned int get_cdt_version()
++unsigned int get_cdt_version(void)
+ {
+ 	init_project_version();
+ 
+diff --git a/drivers/soc/oplus/system/oplus_project/gki_mtk/oplus_project.c b/drivers/soc/oplus/system/oplus_project/gki_mtk/oplus_project.c
+index a592e2a95..05f820c53 100755
+--- a/drivers/soc/oplus/system/oplus_project/gki_mtk/oplus_project.c
++++ b/drivers/soc/oplus/system/oplus_project/gki_mtk/oplus_project.c
+@@ -622,7 +622,7 @@ static int project_read_func(struct seq_file *s, void *v)
+ 	return 0;
+ }
+ 
+-unsigned int get_cdt_version()
++unsigned int get_cdt_version(void)
+ {
+ 	init_project_version();
+ 
+diff --git a/drivers/soc/oplus/system/oplus_project/mtk/oplus_project.c b/drivers/soc/oplus/system/oplus_project/mtk/oplus_project.c
+index 9a10f958e..56ca0522d 100755
+--- a/drivers/soc/oplus/system/oplus_project/mtk/oplus_project.c
++++ b/drivers/soc/oplus/system/oplus_project/mtk/oplus_project.c
+@@ -709,7 +709,7 @@ static int project_read_func(struct seq_file *s, void *v)
+ 	return 0;
+ }
+ 
+-unsigned int get_cdt_version()
++unsigned int get_cdt_version(void)
+ {
+ 	init_project_version();
+ 
+diff --git a/drivers/soc/oplus/system/oplus_project/qcom/oplus_project.c b/drivers/soc/oplus/system/oplus_project/qcom/oplus_project.c
+index 0a1f0bd43..27590d180 100755
+--- a/drivers/soc/oplus/system/oplus_project/qcom/oplus_project.c
++++ b/drivers/soc/oplus/system/oplus_project/qcom/oplus_project.c
+@@ -350,7 +350,7 @@ uint32_t get_oplus_feature(enum F_INDEX index)
+ EXPORT_SYMBOL(get_oplus_feature);
+ 
+ #define SERIALNO_LEN 16
+-unsigned int get_serialID()
++unsigned int get_serialID(void)
+ {
+ 	unsigned int serial_id = 0xFFFFFFFF;
+ 
+@@ -598,7 +598,7 @@ static int project_read_func(struct seq_file *s, void *v)
+ 	return 0;
+ }
+ 
+-unsigned int get_cdt_version()
++unsigned int get_cdt_version(void)
+ {
+ 	init_project_version();
+ 
+diff --git a/drivers/soc/oplus/system/theia/black_screen_check.c b/drivers/soc/oplus/system/theia/black_screen_check.c
+index 92d8d8dfc..ddbbfa443 100755
+--- a/drivers/soc/oplus/system/theia/black_screen_check.c
++++ b/drivers/soc/oplus/system/theia/black_screen_check.c
+@@ -101,7 +101,7 @@ static int get_status(void)
+ #endif
+ }
+ 
+-static bool get_log_swich()
++static bool get_log_swich(void)
+ {
+ 	return (BLACK_STATUS_CHECK_ENABLE == get_status()
+ 		|| BLACK_STATUS_CHECK_DEBUG == get_status()) && g_black_data.get_log;
+@@ -125,7 +125,7 @@ static void get_blackscreen_check_dcs_logmap(char *logmap)
+ }
+ 
+ /*if the error id contain current pid, we think is a normal resume*/
+-static bool is_normal_resume()
++static bool is_normal_resume(void)
+ {
+ 	char current_pid_str[32];
+ 	sprintf(current_pid_str, "%d", get_systemserver_pid());
+diff --git a/drivers/soc/oplus/system/theia/bright_screen_check.c b/drivers/soc/oplus/system/theia/bright_screen_check.c
+index dfb085c94..3b63a3609 100755
+--- a/drivers/soc/oplus/system/theia/bright_screen_check.c
++++ b/drivers/soc/oplus/system/theia/bright_screen_check.c
+@@ -107,7 +107,7 @@ static int get_status(void)
+ #endif
+ }
+ 
+-static bool get_log_swich()
++static bool get_log_swich(void)
+ {
+ 	return (BRIGHT_STATUS_CHECK_ENABLE == get_status()
+ 		|| BRIGHT_STATUS_CHECK_DEBUG == get_status()) && g_bright_data.get_log;
+@@ -143,7 +143,7 @@ static void dump_freeze_log(void)
+ 	send_bright_screen_dcs_msg();
+ }
+ 
+-static bool is_bright_last_stage_skip()
++static bool is_bright_last_stage_skip(void)
+ {
+ 	int i = 0, nLen;
+ 	char stage[64] = {0};;
+@@ -165,7 +165,7 @@ static bool is_bright_last_stage_skip()
+ 	return false;
+ }
+ 
+-static bool is_bright_contain_skip_stage()
++static bool is_bright_contain_skip_stage(void)
+ {
+ 	char stages[512] = {0};
+ 	int i = 0, nArrayLen;
+@@ -184,7 +184,7 @@ static bool is_bright_contain_skip_stage()
+ 	return false;
+ }
+ 
+-static bool is_need_skip()
++static bool is_need_skip(void)
+ {
+ 	if (is_bright_last_stage_skip()) {
+ 		return true;
+@@ -198,7 +198,7 @@ static bool is_need_skip()
+ }
+ 
+ /*if the error id contain current pid, we think is a normal resume*/
+-static bool is_normal_resume()
++static bool is_normal_resume(void)
+ {
+ 	char current_pid_str[32];
+ 	sprintf(current_pid_str, "%d", get_systemserver_pid());
+diff --git a/drivers/soc/oplus/system/theia/oplus_BScheck.c b/drivers/soc/oplus/system/theia/oplus_BScheck.c
+index 4ecc08e6a..067c0b54f 100755
+--- a/drivers/soc/oplus/system/theia/oplus_BScheck.c
++++ b/drivers/soc/oplus/system/theia/oplus_BScheck.c
+@@ -712,7 +712,7 @@ static int get_status(void)
+ #endif
+ }
+ 
+-static int get_log_swich()
++static int get_log_swich(void)
+ {
+     return  (BLACK_STATUS_CHECK_ENABLE == get_status()||BLACK_STATUS_CHECK_DEBUG == get_status())&& g_black_data.get_log;
+ }
+diff --git a/drivers/soc/oplus/system/theia/oplus_brightscreen_check.c b/drivers/soc/oplus/system/theia/oplus_brightscreen_check.c
+index 2f7b450db..a5e972a23 100755
+--- a/drivers/soc/oplus/system/theia/oplus_brightscreen_check.c
++++ b/drivers/soc/oplus/system/theia/oplus_brightscreen_check.c
+@@ -522,7 +522,7 @@ static int get_status(void)
+ #endif
+ }
+ 
+-static int get_log_swich()
++static int get_log_swich(void)
+ {
+     return  (BRIGHT_STATUS_CHECK_ENABLE == get_status()||BRIGHT_STATUS_CHECK_DEBUG == get_status())&& g_bright_data.get_log;
+ }
+diff --git a/drivers/soc/oplus/system/uboot_log/uboot_log.c b/drivers/soc/oplus/system/uboot_log/uboot_log.c
+index 8d4252f7e..a6950b5c1 100755
+--- a/drivers/soc/oplus/system/uboot_log/uboot_log.c
++++ b/drivers/soc/oplus/system/uboot_log/uboot_log.c
+@@ -59,7 +59,7 @@ static u32 	uboot_log_buf_len;
+ /*
+  * init uboot/kboot log buffer addr/size
+  */
+-static int uboot_kboot_buffer_init()
++static int uboot_kboot_buffer_init(void)
+ {
+ 	struct reserved_mem *r_mem = NULL;
+ 	struct device_node *reserved_memory, *kboot_uboot_logmemory;
+@@ -209,7 +209,7 @@ int ubootback_thread_fn(void *data)
+ 	return 0;
+ }
+ 
+-static int __init kernel_uboot_log_init()
++static int __init kernel_uboot_log_init(void)
+ {
+ 	struct proc_dir_entry *pEntry = NULL;
+ 
+diff --git a/include/linux/sched_assist/sched_assist_common.h b/include/linux/sched_assist/sched_assist_common.h
+index f43207d8c..3c8cfe271 100755
+--- a/include/linux/sched_assist/sched_assist_common.h
++++ b/include/linux/sched_assist/sched_assist_common.h
+@@ -277,7 +277,7 @@ static inline bool sched_assist_scene(unsigned int scene)
+ 	}
+ }
+ 
+-static inline bool is_sched_assist_scene() {
++static inline bool is_sched_assist_scene(void) {
+ 	return sched_assist_scene(SA_SLIDE) || sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_ANIM);
+ }
+ 
+diff --git a/include/linux/sched_assist/sched_assist_slide_v1.c b/include/linux/sched_assist/sched_assist_slide_v1.c
+index 5b0313bc2..6074707de 100755
+--- a/include/linux/sched_assist/sched_assist_slide_v1.c
++++ b/include/linux/sched_assist/sched_assist_slide_v1.c
+@@ -124,7 +124,7 @@ u64 _slide_get_boost_load(int cpu) {
+ #define SCHED_CPUFREQ_BOOST (1U << 9)
+ #endif
+ #endif /* OPLUS_FEATURE_SCHED_ASSIST */
+-void adjust_sched_assist_input_ctrl(){
++void adjust_sched_assist_input_ctrl(void){
+ 	if (!sysctl_input_boost_enabled)
+ 		return;
+ 	if(sysctl_slide_boost_enabled){
+diff --git a/kernel/sched_assist/sched_assist_common.h b/kernel/sched_assist/sched_assist_common.h
+index f43207d8c..3c8cfe271 100755
+--- a/kernel/sched_assist/sched_assist_common.h
++++ b/kernel/sched_assist/sched_assist_common.h
+@@ -277,7 +277,7 @@ static inline bool sched_assist_scene(unsigned int scene)
+ 	}
+ }
+ 
+-static inline bool is_sched_assist_scene() {
++static inline bool is_sched_assist_scene(void) {
+ 	return sched_assist_scene(SA_SLIDE) || sched_assist_scene(SA_INPUT) || sched_assist_scene(SA_LAUNCHER_SI) || sched_assist_scene(SA_ANIM);
+ }
+ 
 diff --git a/kernel/sched_assist/sched_assist_slide_v1.c b/kernel/sched_assist/sched_assist_slide_v1.c
-index 5b0313b..6074707 100644
+index 5b0313bc2..6074707de 100755
 --- a/kernel/sched_assist/sched_assist_slide_v1.c
 +++ b/kernel/sched_assist/sched_assist_slide_v1.c
 @@ -124,7 +124,7 @@ u64 _slide_get_boost_load(int cpu) {
@@ -11,8 +2970,86 @@ index 5b0313b..6074707 100644
  	if (!sysctl_input_boost_enabled)
  		return;
  	if(sysctl_slide_boost_enabled){
+diff --git a/net/oplus_nwpower/oplus_nwpower.c b/net/oplus_nwpower/oplus_nwpower.c
+index 4f11dd50d..e6b177127 100755
+--- a/net/oplus_nwpower/oplus_nwpower.c
++++ b/net/oplus_nwpower/oplus_nwpower.c
+@@ -173,7 +173,7 @@ static uid_t get_uid_from_sock(const struct sock *sk)
+ 	return sk_uid;
+ }
+ 
+-static void nwpower_unsl_blacklist_reject() {
++static void nwpower_unsl_blacklist_reject(void) {
+ 	if (record_blacklist_reject_index > 0) {
+ 		blacklist_reject_uid[0] = record_blacklist_reject_index;
+ 		nwpower_send_to_user(NW_POWER_REPORT_BLACK_REJECT, (char*)blacklist_reject_uid, sizeof(blacklist_reject_uid));
+@@ -231,13 +231,13 @@ static int nwpower_set_blacklist_uids(struct nlmsghdr *nlh) {
+ 	return 0;
+ }
+ 
+-extern void oplus_match_modem_wakeup() {
++extern void oplus_match_modem_wakeup(void) {
+ 	atomic_set(&qrtr_first_msg, 1);
+ 	oplus_nw_wakeup[OPLUS_NW_MPSS]++;
+ 	oplus_mdaci_nw_wakeup[OPLUS_NW_MPSS]++;
+ }
+ 
+-extern void oplus_match_wlan_wakeup() {
++extern void oplus_match_wlan_wakeup(void) {
+ 	oplus_nw_wakeup[OPLUS_NW_WIFI]++;
+ 	oplus_mdaci_nw_wakeup[OPLUS_NW_WIFI]++;
+ }
+@@ -422,7 +422,7 @@ extern void oplus_match_ipa_tcp_wakeup(int type, struct sock *sk) {
+ 	}
+ }
+ 
+-extern void oplus_ipa_schedule_work() {
++extern void oplus_ipa_schedule_work(void) {
+ 	if (atomic_read(&ipa_wakeup_hook_boot) == 1 && atomic_read(&tcp_is_input) == 1 && !tcp_input_sch_work) {
+ 		schedule_work(&tcp_input_hook_work);
+ 		tcp_input_sch_work = true;
+@@ -641,7 +641,7 @@ static bool tcp_monitor_check_uid_in_whitelist(int uid) {
+ 	return true;
+ }
+ 
+-static void nwpower_unsl_app_wakeup()
++static void nwpower_unsl_app_wakeup(void)
+ {
+ 	nwpower_send_to_user(NW_POWER_REPORT_APP_WAKEUP, (char*)app_wakeup_monitor_list.set, sizeof(app_wakeup_monitor_list.set));
+ 	app_wakeup_monitor_list.count = 0;
+@@ -815,7 +815,7 @@ static void reset_count(u64 qrtr[][4], struct tcp_hook_struct *ptcp_in, struct t
+ 	}
+ }
+ 
+-static void nwpower_hook_on() {
++static void nwpower_hook_on(void) {
+ 	atomic_set(&qrtr_wakeup_hook_boot, 1);
+ 	atomic_set(&ipa_wakeup_hook_boot, 1);
+ 	atomic_set(&tcpsynretrans_hook_boot, 1);
+@@ -836,7 +836,7 @@ static void nwpower_hook_off(bool unsl) {
+ 	}
+ }
+ 
+-static void nwpower_unsl_mdaci() {
++static void nwpower_unsl_mdaci(void) {
+ 	print_qrtr_wakeup(true, mdaci_service_wakeup_times, oplus_mdaci_nw_wakeup, true);
+ 	print_ipa_wakeup(true, &mdaci_tcp_input_list, &mdaci_tcp_output_list,
+ 					&mdaci_tcp_input_retrans_list, &mdaci_tcp_output_retrans_list, oplus_mdaci_nw_wakeup, true);
+diff --git a/net/oplus_wificapcenter/oplus_wificapcenter.c b/net/oplus_wificapcenter/oplus_wificapcenter.c
+index 712a14423..cef12a2ec 100755
+--- a/net/oplus_wificapcenter/oplus_wificapcenter.c
++++ b/net/oplus_wificapcenter/oplus_wificapcenter.c
+@@ -223,7 +223,7 @@ static void remove_he_ie_from_probe_request_stub(int remove) {
+ 	debug("remove_he_ie_from_probe_request_stub");
+ }
+ 
+-static int get_dbs_capacity_stub() {
++static int get_dbs_capacity_stub(void) {
+ 	debug("get_dbs_capacity_stub");
+ 	return 0;
+ }
 diff --git a/sound/soc/codecs/audio/sia81xx/sia81xx.c b/sound/soc/codecs/audio/sia81xx/sia81xx.c
-index 9ca5471..cde69d9 100644
+index 9ca5471a3..cde69d99b 100755
 --- a/sound/soc/codecs/audio/sia81xx/sia81xx.c
 +++ b/sound/soc/codecs/audio/sia81xx/sia81xx.c
 @@ -1650,11 +1650,11 @@ static int sia81xx_volme_boost_set(
@@ -29,3 +3066,57 @@ index 9ca5471..cde69d9 100644
          sia81xx_suspend(g_sia81xx);
  }
  #endif /* OPLUS_BUG_COMPATIBILITY */
+diff --git a/sound/soc/codecs/audio/sia81xx/sia81xx_socket.c b/sound/soc/codecs/audio/sia81xx/sia81xx_socket.c
+index c51fe4628..d30d261fc 100755
+--- a/sound/soc/codecs/audio/sia81xx/sia81xx_socket.c
++++ b/sound/soc/codecs/audio/sia81xx/sia81xx_socket.c
+@@ -546,7 +546,7 @@ end :
+ 	return 0;
+ }
+ 
+-int sia81xx_open_sock_server()
++int sia81xx_open_sock_server(void)
+ {
+ 	int ret = 0;
+ 	struct sockaddr_in s_addr;
+diff --git a/sound/soc/mediatek/common_int/mtk-auddrv-afe.c b/sound/soc/mediatek/common_int/mtk-auddrv-afe.c
+index 67d3628a9..6bf76933f 100644
+--- a/sound/soc/mediatek/common_int/mtk-auddrv-afe.c
++++ b/sound/soc/mediatek/common_int/mtk-auddrv-afe.c
+@@ -163,12 +163,12 @@ dma_addr_t Get_Afe_Sram_Capture_Phys_Addr(void)
+ 	return (dma_addr_t)(AFE_INTERNAL_SRAM_PHY_BASE + SramCaptureOffSet);
+ }
+ 
+-void *Get_Afe_SramBase_Pointer()
++void *Get_Afe_SramBase_Pointer(void)
+ {
+ 	return AFE_SRAM_ADDRESS;
+ }
+ 
+-void *Get_Afe_SramCaptureBase_Pointer()
++void *Get_Afe_SramCaptureBase_Pointer(void)
+ {
+ 	char *CaptureSramPointer =
+ 		(char *)(AFE_SRAM_ADDRESS) + SramCaptureOffSet;
+@@ -176,7 +176,7 @@ void *Get_Afe_SramCaptureBase_Pointer()
+ 	return (void *)CaptureSramPointer;
+ }
+ 
+-void *Get_Afe_Powertop_Pointer()
++void *Get_Afe_Powertop_Pointer(void)
+ {
+ 	return AFE_TOP_ADDRESS;
+ }
+diff --git a/sound/soc/mediatek/sia81xx_space/sia81xx_socket.c b/sound/soc/mediatek/sia81xx_space/sia81xx_socket.c
+index 6b98172c7..169c321f7 100644
+--- a/sound/soc/mediatek/sia81xx_space/sia81xx_socket.c
++++ b/sound/soc/mediatek/sia81xx_space/sia81xx_socket.c
+@@ -550,7 +550,7 @@ end :
+ 	return 0;
+ }
+ 
+-int sia81xx_open_sock_server()
++int sia81xx_open_sock_server(void)
+ {
+ 	int ret = 0;
+ 	struct sockaddr_in s_addr;
