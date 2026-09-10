@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compose the AK3 flash-time display and the package name from build inputs.
+"""Prepare the cloned AnyKernel3 tree and compose the flash-time display.
 
 usage: ak3-display.py <ak3-dir> <device-codename> [name-out]
 
@@ -21,6 +21,12 @@ same content.  kernel.string is read by AnyKernel3 through a single-line
 property parser (grep + tail + cut -d= -f2-), so a value spanning lines
 there yields only the first one; the line-by-line banner is what carries
 the full display.
+
+The upstream template also ships a tuna (Galaxy Nexus) sample ramdisk edit
+between dump_boot and write_boot (init.rc cgroup tweak, init.tuna.rc,
+fstab.tuna).  On these devices those files do not exist, so the sample
+lines only produce helper errors and an init.tuna.rc file appended into
+the repacked ramdisk; the boot install block keeps only its two calls.
 """
 import os
 import re
@@ -78,10 +84,40 @@ with open(os.path.join(ak3_dir, 'banner'), 'w') as fh:
 with open(os.path.join(ak3_dir, 'FEATURES.txt'), 'w') as fh:
     fh.write(display + '\n')
 
+def strip_template_sample(text):
+    """Drop the template's sample ramdisk edit from the boot install block.
+
+    Everything between the boot `dump_boot` call and the following
+    `write_boot` call is template sample content; the device flash needs
+    only the two calls.  Commented sample blocks elsewhere in the file
+    stay untouched because they do not start with the call names.  A
+    template without either call is returned unchanged.
+    """
+    if not re.search(r'(?m)^\s*dump_boot', text) or \
+       not re.search(r'(?m)^\s*write_boot', text):
+        return text
+    out = []
+    in_boot_install = False
+    for line in text.split('\n'):
+        stripped = line.strip()
+        if stripped.startswith('dump_boot'):
+            in_boot_install = True
+            out.append(line)
+            continue
+        if in_boot_install and stripped.startswith('write_boot'):
+            in_boot_install = False
+            out.append(line)
+            continue
+        if in_boot_install:
+            continue
+        out.append(line)
+    return '\n'.join(out)
+
+
 # kernel.string: one line, so the single-line property parser keeps it
 one_line = line1 + ('  |  ' + line2 if line2 else '')
 sh_path = os.path.join(ak3_dir, 'anykernel.sh')
-s = open(sh_path).read()
+s = strip_template_sample(open(sh_path).read())
 m = re.search(r'(?m)^kernel\.string=', s)
 if not m:
     sys.stderr.write('ak3-display: anykernel.sh has no kernel.string line\n')
