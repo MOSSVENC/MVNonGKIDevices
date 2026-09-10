@@ -76,6 +76,19 @@ jobs:
       # Unified toolchain across all supported devices: AOSP clang 14
       # (clang-r450784d from android13-release) + system binutils (see
       # README "工具链": LLVM=1 + CLANG_TRIPLE on the CAF 4.9 tree).
+      - name: Start full log
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          LOG="$GITHUB_WORKSPACE/logs/polaris-full.log"
+          : > "$LOG"
+          ENVF="$GITHUB_WORKSPACE/logs/bash_env.sh"
+          {
+            [ -n "${BASH_ENV:-}" ] && printf '[ -f %q ] && source %q\n' "$BASH_ENV" "$BASH_ENV"
+            printf 'exec > >(tee -a %q) 2>&1\n' "$LOG"
+          } > "$ENVF"
+          echo "BASH_ENV=$ENVF" >> "$GITHUB_ENV"
+          echo "full log: $LOG"
+
       - name: Install binutils
         run: |
           sudo apt-get update -qq
@@ -297,22 +310,22 @@ jobs:
           # resolves $(CROSS_COMPILE_ARM32)ld via which/absolute path; the
           # AOSP GCC 4.9 prebuilts provide the <triple>-as/ld for clang's
           # external assembler/linker when it builds the AArch32 vDSO.
+          rc=0
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC="clang" \
             CLANG_TRIPLE="aarch64-linux-gnu-" \
             CROSS_COMPILE="$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-" \
             CROSS_COMPILE_ARM32="$RUNNER_TEMP/tc/gcc32/bin/arm-linux-androideabi-" \
             LD=ld.lld LLVM=1 LLVM_IAS=1 \
-            2>&1 | tee "$GITHUB_WORKSPACE/logs/polaris-build.log"
-          rc=${PIPESTATUS[0]}
+            2>&1 || rc=$?
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
           cp -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" "$RUNNER_TEMP/out/Image.gz-dtb" 2>/dev/null || true
           [ -f "$RUNNER_TEMP/out/arch/arm64/boot/Image.gz-dtb" ] || { echo "Image.gz-dtb not produced"; rc=1; }
           if [ "$rc" != 0 ]; then
-            { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/polaris-build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+            { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/polaris-full.log"; } >> "$GITHUB_STEP_SUMMARY" || true
             exit "$rc"
           fi
-          { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/polaris-build.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+          { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/polaris-full.log"; } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Package AnyKernel3 zip
         run: |
@@ -352,13 +365,13 @@ jobs:
           ( cd "$RUNNER_TEMP/ak3" && zip -r9 "$RUNNER_TEMP/$AK3_ZIP" . >/dev/null )
 
       # --- three SEPARATE artifacts, never nested/repacked into each other ---
-      # 1) raw build log  2) raw kernel image  3) standard AnyKernel3 zip
-      - name: Upload build log
+      # 1) raw full-flow log  2) raw kernel image  3) standard AnyKernel3 zip
+      - name: Upload full log
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: polaris-build.log
-          path: ${{ github.workspace }}/logs/polaris-build.log
+          name: polaris-full.log
+          path: ${{ github.workspace }}/logs/polaris-full.log
           archive: false
           if-no-files-found: warn
           retention-days: 14
