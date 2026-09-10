@@ -334,7 +334,7 @@ index 5addf3b00..105373e2a 100644
  	/*
  	 * We move the actual failure in case of RLIMIT_NPROC excess from
 diff --git a/fs/namei.c b/fs/namei.c
-index e8537d462..37d7fa34f 100644
+index e8537d462..a576c2e38 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -38,6 +38,9 @@
@@ -568,9 +568,9 @@ index e8537d462..37d7fa34f 100644
  		path.dentry = lookup_slow(&nd->last, nd->path.dentry,
  					  nd->flags);
  		if (IS_ERR(path.dentry))
-@@ -2191,6 +2308,17 @@ static int link_path_walk(const char *name, struct nameidata *nd)
- 		if (err)
- 			return err;
+@@ -2187,6 +2304,17 @@ static int link_path_walk(const char *name, struct nameidata *nd)
+ 		u64 hash_len;
+ 		int type;
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +		{
@@ -583,9 +583,9 @@ index e8537d462..37d7fa34f 100644
 +		}
 +#endif
 +
- 		hash_len = hash_name(nd->path.dentry, name);
- 
- 		type = LAST_NORM;
+ 		err = may_lookup(nd);
+ 		if (err)
+ 			return err;
 @@ -2387,6 +2515,9 @@ static inline int lookup_last(struct nameidata *nd)
  {
  	if (nd->last_type == LAST_NORM && nd->last.name[nd->last.len])
@@ -2197,10 +2197,10 @@ index 1059f2a9b..4a0fb3c30 100644
  	return error;
  }
 diff --git a/fs/stat.c b/fs/stat.c
-index 068fdbcc9..b0c57f39a 100644
+index 068fdbcc9..b6f003e54 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
-@@ -17,6 +17,14 @@
+@@ -17,6 +17,17 @@
  
  #include <asm/uaccess.h>
  #include <asm/unistd.h>
@@ -2212,10 +2212,13 @@ index 068fdbcc9..b0c57f39a 100644
 +extern bool susfs_is_inode_sus_kstat(struct inode *inode, bool *out_is_fuse);
 +extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat, bool is_fuse);
 +#endif
++#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
++extern int susfs_open_redirect_spoof_vfs_readlink(struct inode *inode, char __user *buffer, int buflen);
++#endif
  
  void generic_fillattr(struct inode *inode, struct kstat *stat)
  {
-@@ -33,10 +41,22 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
+@@ -33,10 +44,22 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
  	stat->ctime = inode->i_ctime;
  	stat->blksize = i_blocksize(inode);
  	stat->blocks = inode->i_blocks;
@@ -2238,7 +2241,7 @@ index 068fdbcc9..b0c57f39a 100644
  /**
   * vfs_getattr_nosec - getattr without security checks
   * @path: file to get attributes from
-@@ -53,8 +73,17 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
+@@ -53,8 +76,17 @@ int vfs_getattr_nosec(struct path *path, struct kstat *stat)
  {
  	struct inode *inode = d_backing_inode(path->dentry);
  
@@ -2258,7 +2261,7 @@ index 068fdbcc9..b0c57f39a 100644
  
  	generic_fillattr(inode, stat);
  	return 0;
-@@ -74,6 +103,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
+@@ -74,6 +106,11 @@ int vfs_getattr(struct path *path, struct kstat *stat)
  
  EXPORT_SYMBOL(vfs_getattr);
  
@@ -2270,7 +2273,7 @@ index 068fdbcc9..b0c57f39a 100644
  int vfs_fstat(unsigned int fd, struct kstat *stat)
  {
  	struct fd f = fdget_raw(fd);
-@@ -81,12 +115,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
+@@ -81,12 +118,25 @@ int vfs_fstat(unsigned int fd, struct kstat *stat)
  
  	if (f.file) {
  		error = vfs_getattr(&f.file->f_path, stat);
@@ -2296,7 +2299,7 @@ index 068fdbcc9..b0c57f39a 100644
  int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  		int flag)
  {
-@@ -94,6 +141,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -94,6 +144,10 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	int error = -EINVAL;
  	unsigned int lookup_flags = 0;
  
@@ -2307,7 +2310,7 @@ index 068fdbcc9..b0c57f39a 100644
  	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
  		      AT_EMPTY_PATH)) != 0)
  		goto out;
-@@ -103,7 +154,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+@@ -103,7 +157,23 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
  	if (flag & AT_EMPTY_PATH)
  		lookup_flags |= LOOKUP_EMPTY;
  retry:
@@ -2331,6 +2334,26 @@ index 068fdbcc9..b0c57f39a 100644
  	if (error)
  		goto out;
  
+@@ -332,11 +402,19 @@ SYSCALL_DEFINE4(readlinkat, int, dfd, const char __user *, pathname,
+ 		if (inode->i_op->readlink) {
+ 			error = security_inode_readlink(path.dentry);
+ 			if (!error) {
++#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
++				if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
++					error = susfs_open_redirect_spoof_vfs_readlink(inode, buf, bufsiz);
++					if (!error)
++						goto out_path_put;
++				}
++#endif
+ 				touch_atime(&path);
+ 				error = inode->i_op->readlink(path.dentry,
+ 							      buf, bufsiz);
+ 			}
+ 		}
++out_path_put:
+ 		path_put(&path);
+ 		if (retry_estale(error, lookup_flags)) {
+ 			lookup_flags |= LOOKUP_REVAL;
 diff --git a/fs/statfs.c b/fs/statfs.c
 index 083dc0ac9..4778d89be 100644
 --- a/fs/statfs.c
