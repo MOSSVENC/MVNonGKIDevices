@@ -4175,14 +4175,15 @@ index 0000000..125ec8f
 +#endif
 diff --git a/include/linux/susfs_def.h b/include/linux/susfs_def.h
 new file mode 100644
-index 0000000..236d85e
+index 0000000..2bd6b4e
 --- /dev/null
 +++ b/include/linux/susfs_def.h
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,197 @@
 +#ifndef KSU_SUSFS_DEF_H
 +#define KSU_SUSFS_DEF_H
 +
 +#include <linux/bits.h>
++#include <linux/version.h>
 +#include <linux/string.h>
 +
 +/********/

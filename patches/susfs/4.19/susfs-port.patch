@@ -903,7 +903,7 @@ index 4a69b91..cb12d9c 100644
 +}
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 diff --git a/fs/notify/fdinfo.c b/fs/notify/fdinfo.c
-index 74aeabb..a57b7e9 100644
+index 74aeabb..4c0b2ef 100644
 --- a/fs/notify/fdinfo.c
 +++ b/fs/notify/fdinfo.c
 @@ -13,6 +13,13 @@
@@ -978,7 +978,7 @@ index 74aeabb..a57b7e9 100644
 +				dev_t dev = inode->i_sb->s_dev;
 +				susfs_sus_kstat_spoof_inotify_fdinfo(&ino, &dev);
 +				seq_printf(m, "inotify wd:%x ino:%lx sdev:%x mask:%x ignored_mask:%x ",
-+						inode_mark->wd, ino, dev, mask, mark->ignored_mask);
++						inode_mark->wd, ino, dev, inotify_mark_user_mask(mark), mark->ignored_mask);
 +				show_mark_fhandle(m, inode);
 +				seq_putc(m, '\n');
 +				iput(inode);
@@ -4125,14 +4125,15 @@ index 0000000..125ec8f
 +#endif
 diff --git a/include/linux/susfs_def.h b/include/linux/susfs_def.h
 new file mode 100644
-index 0000000..236d85e
+index 0000000..2bd6b4e
 --- /dev/null
 +++ b/include/linux/susfs_def.h
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,197 @@
 +#ifndef KSU_SUSFS_DEF_H
 +#define KSU_SUSFS_DEF_H
 +
 +#include <linux/bits.h>
++#include <linux/version.h>
 +#include <linux/string.h>
 +
 +/********/
