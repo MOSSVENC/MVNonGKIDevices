@@ -16,11 +16,17 @@ omitted. Package name: <codename>_<manager>[_<feature>...].zip
 Writes inside <ak3-dir>:
   banner        the two lines; AnyKernel3 prints this file line by line
   FEATURES.txt  the same two lines for at-a-glance package inspection
-and rewrites kernel.string in anykernel.sh with the one-line form of the
-same content.  kernel.string is read by AnyKernel3 through a single-line
-property parser (grep + tail + cut -d= -f2-), so a value spanning lines
-there yields only the first one; the line-by-line banner is what carries
-the full display.
+and rewrites two template files:
+  anykernel.sh  kernel.string takes the one-line form of the same content;
+                its parser is grep + tail + cut -d= -f2-, so a value
+                spanning lines would keep only the first one
+  META-INF/com/google/android/update-binary
+                the installer's own print of kernel.string is commented
+                out, so the flash log carries the display once, centered.
+                The property stays in place: the installer reads it as the
+                ak3-helper module description.
+A template without the line to rewrite is reported on stderr; the print
+then stays and the flash log shows the display twice.
 
 The upstream template also ships a tuna (Galaxy Nexus) sample ramdisk edit
 between dump_boot and write_boot (init.rc cgroup tweak, init.tuna.rc,
@@ -127,6 +133,20 @@ if value[:1] == '"':
 # single-quoted string, and AnyKernel3 would show the quote characters
 s = s[:m.start()] + 'kernel.string=' + one_line + s[end:]
 open(sh_path, 'w').write(s)
+
+# The installer echoes kernel.string right below the banner — same content,
+# uncentered.  Comment that echo out so the flash log carries the display
+# once; line 402 of the same file keeps reading the property as the
+# ak3-helper module description.
+ub_path = os.path.join(ak3_dir, 'META-INF/com/google/android/update-binary')
+ub_print = 'ui_print "$KERNEL_STRING";'
+ub_suppressed = '# kernel string shown by the centered banner above'
+ub = open(ub_path).read()
+if ub_print in ub:
+    open(ub_path, 'w').write(ub.replace(ub_print, ub_suppressed, 1))
+elif ub_suppressed not in ub:
+    sys.stderr.write('ak3-display: update-binary has no kernel-string echo '
+                     'line; the flash log keeps the duplicate\n')
 
 name = '_'.join(x for x in ([dev, manager] + feats) if x) + '.zip'
 if name_out:
