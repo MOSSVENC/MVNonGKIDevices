@@ -3,7 +3,7 @@
 BBG 是防格机/防砖的 Linux 安全模块，阻止恶意用户态写入关键分区
 （boot / recovery / modem 等）。上游：<https://github.com/vc-teahouse/Baseband-guard>
 
-4.9 上**不需要本地补丁**。从内核根运行上游 `setup.sh` 完成全部集成：
+4.9 由上游 `setup.sh` 一次完成集成（从内核根运行）：
 
 1. 克隆仓库到 `Baseband-guard/`
 2. 符号链接 `security/baseband-guard`

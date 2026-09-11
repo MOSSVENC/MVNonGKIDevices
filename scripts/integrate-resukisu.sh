@@ -95,7 +95,7 @@ PYEOF
       echo "==> auto-hook 4.9 kasan_reset_tag threshold fixed (4.0 -> 5.0)"
     fi
   else
-    echo "WARN: $TGT not found, kasan fix skipped" >&2
+    echo "WARN: $TGT not found — check the auto-hook layout" >&2
   fi
 fi
 

@@ -411,7 +411,7 @@ jobs:
       - name: Package AnyKernel3 zip
         run: |
           gzip -c "$RUNNER_TEMP/out/Image" > "$RUNNER_TEMP/out/Image.gz"
-          # appended base dtb: byte-identical to the dtb carried by the
+          # appended base dtb: the same bytes as the dtb carried by the
           # community Q2 build, self-contained boot kernel segment
           cat "$RUNNER_TEMP/out/Image.gz" "$RUNNER_TEMP/out/mt6853.dtb" > "$RUNNER_TEMP/out/Image.gz-dtb"
           rm -rf "$RUNNER_TEMP/ak3"
@@ -426,7 +426,7 @@ jobs:
           # zip ships Image.gz-dtb (kernel + appended base dtb, the same
           # form as the community Q2 build): AK3 swaps the kernel segment
           # of the on-device boot image and keeps its ramdisk; the dtbo
-          # partition is never touched. Device-name check is skipped
+          # partition is never touched. Device-name checks stay with the ROM
           # (fastboot product name not pinned on MTK).
           # per-build display: the banner file carries the codename/manager
           # and feature lines for the flash screen; FEATURES.txt ships the

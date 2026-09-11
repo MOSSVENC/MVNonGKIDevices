@@ -14,7 +14,7 @@
 # - Patches must apply cleanly: a strict `git apply --check` is required
 #   before the apply, so drifted context is reported instead of merged.
 # - Idempotent: if a patch is already applied (reverse-check passes) it is
-#   skipped; otherwise a clean forward check is required.
+#   treated as applied; otherwise a clean forward check is required.
 # - Any failure exits non-zero without touching the tree.
 #
 set -euo pipefail

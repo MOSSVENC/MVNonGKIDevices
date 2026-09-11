@@ -11,8 +11,8 @@ cgroup 源码修复。
 | `droidspace.config` | 内核 config 片段（由 `merge-defconfig.sh` 并入最终 `.config`），按官方 non-GKI 配置（Kernel-Configuration.md）的 4.9 符号名落位：`CONFIG_NF_CT_NETLINK`、`CONFIG_IP_NF_TARGET_MASQUERADE`（4.9 名）；`CONFIG_SECCOMP_FILTER` 在 4.9 是 `def_bool y`（依赖 `SECCOMP && NET`），随 `CONFIG_SECCOMP=y` 自动成立；关闭 `CONFIG_ANDROID_PARANOID_NETWORK` 使容器网络可用 |
 | `0001-cgroup-noprefix-4.9-port.patch` | cgroup `subsys.file` kernfs 符号链接恢复（`noprefix` 挂载、systemd/runc 风格），移植到 4.9 布局（`kernel/cgroup.c`） |
 
-官方 non-GKI 补丁组中针对 `net/netfilter/xt_qtaguid.c` 的另一补丁
-本 sdm845 4.9 树不包含，故未采用。
+官方 non-GKI 补丁组的两件原件收录在 `official/`；`01` 面向 `net/netfilter/xt_qtaguid.c`
+（本树不带该文件），本 port 采用上表的 `0001` 形态。
 
 ## 上游核对（快照 v6.5.5）
 
