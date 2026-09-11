@@ -1,6 +1,6 @@
 name: build-vince
 
-# Builds a Xiaomi Redmi Note 5 (vince, msm8953) kernel from Flyme66's "13"
+# Builds a Xiaomi Redmi 5 Plus (vince, msm8953) kernel from Flyme66's "13"
 # tree with selectable features (ReSukiSU manual hook / BBG / Droidspace)
 # and packages it as an AnyKernel3 zip.
 # Mirrors build-polaris.yml; differences:
@@ -388,7 +388,7 @@ jobs:
           # strip VCS/CI cruft so the zip holds only flash-relevant files
           rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
-          # --- vince (Redmi Note 5) settings ---
+          # --- vince (Redmi 5 Plus) settings ---
           # device props inside properties() are indented; boot vars at top
           # per-build display: the banner file carries the codename/manager
           # and feature lines for the flash screen; FEATURES.txt ships the
