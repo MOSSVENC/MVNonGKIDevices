@@ -16,6 +16,7 @@ workflow_dispatch 手动触发。
 | realme Q2 5G（国行） | `RMX2117` (mt6853) | 4.14.186 | [realme X7 系 AndroidS 综合源](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source)（9 机共用）@ `master` | `build-RMX2117.yml` |
 
 workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
+特性开关（`enable_bbg` / `enable_droidspace`，另按设备
 出现 `cgroup_port` / `enable_data_isolation` / `auto_fix_49`）。所有开关均不
 预设启用，按构建需要手动选择。
 
@@ -122,6 +123,7 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 <BASE_DEFCONFIG>
   + <DEVICE_FRAGMENTS>
   + resukisu.config.fragment / xxksu.config.fragment / susfs.config.fragment（按 root_mode）
+  + bbg/droidspace fragment（按特性开关）
   + 强制覆盖：CC_WERROR off、KALLSYMS(+ALL)=y
   → 断言（缺失即失败）
 ```
