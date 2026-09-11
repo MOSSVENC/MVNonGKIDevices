@@ -10,6 +10,7 @@ env: ROOT_MANAGER
 Display: two centered lines —
     <codename>  <manager>
     <feature>  <feature> ...
+features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
 omitted. Package name: <codename>_<manager>[_<feature>...].zip
 
 Writes inside <ak3-dir>:

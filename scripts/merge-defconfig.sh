@@ -222,12 +222,6 @@ if [ "${ENABLE_DROIDSPACE:-true}" = "true" ]; then
   fi
 fi
 
-  # Reporting face only: the netlink/network reporting variant stays off
-  # (upstream default for these trees).
-    rc=1
-  else
-  fi
-fi
 
 if [ "${ENABLE_DATA_ISOLATION:-true}" = "true" ]; then
   # The isolation semantics are enforced by the sdcardfs source patch
