@@ -291,6 +291,9 @@ jobs:
       - name: Integrate Droidspace (patch + config)
         if: env.ENABLE_DROIDSPACE == 'true'
         run: |
+          # Official non-GKI patch 2/2 (cgroup prefix symlink) applies as-is
+          # to this MTK tree; patch 1/2 (xt_qtaguid) is inert here because the
+          # tree has no qtaguid — skip it.
           cd "$KROOT"
           P02="$GITHUB_WORKSPACE/patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
           git apply --check "$P02" && git apply "$P02" || \

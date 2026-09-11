@@ -7,6 +7,7 @@
 
 | 文件 | 作用 |
 |---|---|
+| `../official/0001-official-fix-kernel-panic-in-xt_qtaguid.patch` | 官方 non-GKI 补丁 1/2（`net/netfilter/xt_qtaguid.c`）。MTK 4.14 树不含 xt_qtaguid，对 RMX2117 为惰性（no-op）；保留供仍带 qtaguid 的其它 4.14 树 |
 | `../official/0002-official-fix-restore-cgroup-file-prefix-handling.patch` | 官方 non-GKI 补丁的唯一副本（版本目录不存放副本；workflow 直接引用 official 路径）。对 MTK 4.14 树 `kernel/cgroup/cgroup.c` 直接可应用（真实 git apply 验证，落位 `cgroup_add_file`），为 NOPREFIX 挂载下的子系统文件补回 `subsys.name` 前缀名符号链接，供容器工具链按带前缀名查找 |
 | `droidspace.config` | 官方 Kernel-Configuration.md 的 4.14 落位；与 4.9 片段（`patches/droidspace/4.9/droidspace.config`）的差异见文件头 |
 
