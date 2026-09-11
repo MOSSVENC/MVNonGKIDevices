@@ -16,6 +16,12 @@ BBG 是防格机/防砖的 Linux 安全模块，阻止恶意用户态写入关�
 集成后只需 `CONFIG_BBG=y` 进入最终 `.config`（由
 `scripts/integrate-bbg.sh` / `merge-defconfig.sh` 处理）。
 
+## 状态
+
+polaris（mix2s）编译面实测通过：`build-polaris`（`dc8e718`，`enable_bbg`）中上游
+`setup.sh` 完成 selinux 侧接线，`CONFIG_BBG=y` 合并断言通过，并产出内核镜像与
+AK3 包；运行面（拦写分区行为）待刷机实测。
+
 ## 为何不改 CONFIG_LSM
 
 pre-5.1 内核的 BBG 通过旧式 `security_add_hooks(hooks, count,

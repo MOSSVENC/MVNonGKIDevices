@@ -27,3 +27,11 @@ cgroup 源码修复。
 bash scripts/integrate-droidspace.sh <kernel-root> \
   patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch
 ```
+
+## 状态
+
+polaris（mix2s）编译面实测通过：`build-polaris`（`dc8e718`，`enable_droidspace`
++ `cgroup_port`）中 `integrate-droidspace.sh` 落位该 4.9 cgroup port，合并阶段的
+命名空间 / cgroup / 设备节点断言组全过（`CONFIG_SYSVIPC` 至 `CONFIG_BRIDGE`，
+含 `CONFIG_ANDROID_PARANOID_NETWORK is not set`），并产出内核镜像与 AK3 包；
+运行面（容器启动、网络模式）待刷机实测。
