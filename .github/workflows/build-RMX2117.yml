@@ -131,6 +131,19 @@ jobs:
           head -6 "$RUNNER_TEMP/kernel-4.14/Makefile"
           { echo "### kernel clone"; tail -30 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
+      # MODVERSIONS probes every object for exported symbols through
+      # `$(LLVM_NM) … | grep -q __ksymtab` in scripts/Makefile.build. The
+      # early-exiting reader closes the pipe while llvm-nm is still writing,
+      # and LLVM reports the failed write as one fatal-error line per
+      # exporting object (~350 lines per build). The patch reads the probe
+      # output to EOF, which keeps the probe's exit status.
+      - name: Apply kbuild ksymtab probe patch
+        run: |
+          cd "$KROOT"
+          P="$GITHUB_WORKSPACE/patches/rmx2117/0001-kbuild-ksymtab-probe-read-to-eof.patch"
+          git apply --check "$P" || { echo "ksymtab probe patch does not apply cleanly"; exit 1; }
+          git apply "$P"
+
       # --- ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source) ---
       # 4.14 tree-adapted manual-hook patches (patches/resukisu/4.14,
       # 0010-0012 applied for manual-source) + ReSukiSU main + config
