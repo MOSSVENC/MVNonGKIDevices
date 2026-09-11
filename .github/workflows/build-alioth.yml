@@ -1,6 +1,6 @@
 name: build-alioth
 
-# Builds a Xiaomi Redmi K40 / POCO F3 (alioth, sm8250/kona) kernel from
+# Builds a Xiaomi Redmi K40 / POCO F3 / Mi 11X (alioth, sm8250/kona) kernel from
 # MOSSVENC's fork of the LineageOS 4.19 kernel with selectable features
 # (ReSukiSU hook modes / BBG / Droidspace 4.19 / SuSFS 4.19 via the
 # test-tree reference) and packages it as an AnyKernel3 zip.
@@ -418,7 +418,7 @@ jobs:
           rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
           # strip VCS/CI cruft so the zip holds only flash-relevant files
-          # --- alioth (Redmi K40 / POCO F3) settings ---
+          # --- alioth (Redmi K40 / POCO F3 / Mi 11X) settings ---
           # virtual A/B device: kernel Image goes to the boot partition of
           # the current slot; dtbo.img (if produced) is flashed by AK3's
           # flash_generic dtbo from the zip root.
@@ -432,7 +432,7 @@ jobs:
           # (codename_manager_hook_feature...)
           AK3_ZIP="$(cat "$RUNNER_TEMP/zipname.txt")"
           echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
-          echo "=== K40 kernel features (this build) ==="
+          echo "=== Redmi K40 kernel features (this build) ==="
           cat "$RUNNER_TEMP/ak3/FEATURES.txt"
 
           sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=alioth/"          "$RUNNER_TEMP/ak3/anykernel.sh"

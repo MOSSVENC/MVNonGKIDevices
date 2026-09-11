@@ -1,6 +1,6 @@
 name: build-polaris
 
-# Builds a Xiaomi Mi Mix 2S (polaris, sdm845) kernel with selectable
+# Builds a Xiaomi Mi MIX 2S (polaris, sdm845) kernel with selectable
 # features (ReSukiSU manual hook / BBG / Droidspace) and packages it as an
 # AnyKernel3 zip.
 #
@@ -363,7 +363,7 @@ jobs:
           # strip VCS/CI cruft so the zip holds only flash-relevant files
           rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
-          # --- polaris (Mi Mix 2S) settings ---
+          # --- polaris (Mi MIX 2S) settings ---
           # device props inside properties() are indented; boot vars at top
           # per-build display: the banner file carries the codename/manager
           # and feature lines for the flash screen; FEATURES.txt ships the
@@ -375,7 +375,7 @@ jobs:
           # (codename_manager_hook_feature...)
           AK3_ZIP="$(cat "$RUNNER_TEMP/zipname.txt")"
           echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
-          echo "=== Mix2S kernel features (this build) ==="
+          echo "=== Mi MIX 2S kernel features (this build) ==="
           cat "$RUNNER_TEMP/ak3/FEATURES.txt"
 
           sed -i "s/^\(\s*\)device.name1=.*/\1device.name1=polaris/"           "$RUNNER_TEMP/ak3/anykernel.sh"
