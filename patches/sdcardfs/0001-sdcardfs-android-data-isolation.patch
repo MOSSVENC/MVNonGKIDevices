@@ -132,7 +132,7 @@ index 4b9a563..6e92460 100644
 +/*
 + * Chokepoint used by lookup/getattr/open.  Returns 0 (deny) or 1 (allow).
 + * lookup/getattr map a denial to -ENOENT so existence probes see
-+ * "not found" instead of "permission denied" (EACCES would be treated
++ * "not found" instead of "permission denied" (EACCES is treated
 + * as "exists" by stat-based detectors); open maps it to -EACCES.
 + */
 +int sdcardfs_check_private_dir_access(struct inode *parent_node,
