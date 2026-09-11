@@ -38,8 +38,6 @@ on:
         description: enable Droidspaces/LXC kernel support (4.19)
         type: boolean
         default: false
-        type: boolean
-        default: false
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
@@ -291,14 +289,6 @@ jobs:
             echo "restored scripts/min-tool-version.sh"
           fi
 
-        run: |
-          cd "$KROOT"
-          # 4.19 tree-adapted port of the upstream kernel-embedded form:
-          # Kconfig/Makefile wiring lives here because the integration
-          # steps above rewrite those two files.
-            git apply --check "$p" || { echo "$(basename "$p") does not apply cleanly"; exit 1; }
-            git apply "$p"
-          done
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id.

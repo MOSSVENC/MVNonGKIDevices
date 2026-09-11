@@ -34,8 +34,6 @@ on:
         description: enable Droidspaces/LXC kernel support (4.14 cgroup prefix patch + config)
         type: boolean
         default: false
-        type: boolean
-        default: false
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
@@ -300,14 +298,6 @@ jobs:
             { echo "!! droidspace cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.14 patches done (config merged below)"
 
-        run: |
-          cd "$KROOT"
-          # 4.14 tree-adapted port of the upstream kernel-embedded form:
-          # Kconfig/Makefile wiring lives here because the integration
-          # steps above rewrite those two files.
-            git apply --check "$p" || { echo "$(basename "$p") does not apply cleanly"; exit 1; }
-            git apply "$p"
-          done
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id.
@@ -361,7 +351,6 @@ jobs:
           fi
           if [ "$ENABLE_DROIDSPACE" = "true" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.14/droidspace.config"
-          fi
           fi
           # Shared defconfig assembler: alldefconfig from baseline +
           # fragments, then asserts the enabled feature symbol chains.
