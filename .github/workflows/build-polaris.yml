@@ -41,6 +41,8 @@ on:
         description: sdcardfs per-uid Android/data isolation
         type: boolean
         default: false
+        type: boolean
+        default: false
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
@@ -273,6 +275,17 @@ jobs:
         run: |
           bash scripts/apply-patches.sh "$KROOT" \
             "$GITHUB_WORKSPACE/patches/sdcardfs"
+
+        run: |
+          cd "$KROOT"
+          # 4.9 tree-adapted port of the upstream kernel-embedded form:
+          # Kconfig/Makefile wiring lives here because the integration
+          # steps above rewrite those two files.
+                   0002-binder-frozen-transaction-notify \
+                   0003-signal-frozen-kill-notify; do
+            git apply --check "$P" || { echo "$p does not apply cleanly"; exit 1; }
+            git apply "$P"
+          done
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
