@@ -2337,7 +2337,7 @@ new file mode 100644
 index 000000000..211c9e99a
 --- /dev/null
 +++ b/fs/susfs.c
-@@ -0,0 +1,1561 @@
+@@ -0,0 +1,1560 @@
 +#include <linux/version.h>
 +#include <linux/cred.h>
 +#include <linux/fs.h>
@@ -2659,30 +2659,11 @@ index 000000000..211c9e99a
 +			err = -ENOENT;
 +			goto out_path_put_path;
 +		}
-+		if (is_update) {
++		if (is_update)
 +			new_entry->info.spoofed_size = d_backing_inode(path.dentry)->i_size;
-+		} else {
-+			new_entry->is_fuse = true;
-+			new_entry->target_dev = fi->inode.i_sb->s_dev;
-+			new_entry->spoofed_mnt_id = susfs_get_non_sus_mnt_id_from_mnt(real_mount(path.mnt));
-+			no_sus_vfsmnt = susfs_get_non_sus_vfsmnt_from_vfsmnt(path.mnt);
-+			err = statfs_by_dentry(no_sus_vfsmnt->mnt_root, &new_entry->spoofed_kstatfs);
-+			dput(no_sus_vfsmnt->mnt_root);
-+			mntput(no_sus_vfsmnt);
-+			if (err)
-+				goto out_path_put_path;
-+		}
-+		set_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_state);
-+		SUSFS_LOGI("marked AS_FLAGS_SUS_KSTAT on pathname: '%s', is_fuse: %d, fi->inode.i_sb->s_dev: %u, fi->nodeid: %llu, fi->inode.i_ino: %lu, fi->inode.i_state: 0x%lx, spoofed_mnt_id: '%d'\n",
-+					target_pathname, new_entry->is_fuse, fi->inode.i_sb->s_dev, fi->nodeid, fi->inode.i_ino, fi->inode.i_state, new_entry->spoofed_mnt_id);
-+		goto out_path_put_path;
-+	}
 +
-+	if (is_update) {
-+		new_entry->info.spoofed_size = d_backing_inode(path.dentry)->i_size;
-+	} else {
-+		new_entry->is_fuse = false;
-+		new_entry->target_dev = inode->i_sb->s_dev;
++		new_entry->is_fuse = true;
++		new_entry->target_dev = fi->inode.i_sb->s_dev;
 +		new_entry->spoofed_mnt_id = susfs_get_non_sus_mnt_id_from_mnt(real_mount(path.mnt));
 +		no_sus_vfsmnt = susfs_get_non_sus_vfsmnt_from_vfsmnt(path.mnt);
 +		err = statfs_by_dentry(no_sus_vfsmnt->mnt_root, &new_entry->spoofed_kstatfs);
@@ -2690,7 +2671,26 @@ index 000000000..211c9e99a
 +		mntput(no_sus_vfsmnt);
 +		if (err)
 +			goto out_path_put_path;
++
++		set_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_state);
++		SUSFS_LOGI("marked AS_FLAGS_SUS_KSTAT on pathname: '%s', is_fuse: %d, fi->inode.i_sb->s_dev: %u, fi->nodeid: %llu, fi->inode.i_ino: %lu, fi->inode.i_state: 0x%lx, spoofed_mnt_id: '%d'\n",
++					target_pathname, new_entry->is_fuse, fi->inode.i_sb->s_dev, fi->nodeid, fi->inode.i_ino, fi->inode.i_state, new_entry->spoofed_mnt_id);
++		goto out_path_put_path;
 +	}
++
++	if (is_update)
++		new_entry->info.spoofed_size = d_backing_inode(path.dentry)->i_size;
++
++	new_entry->is_fuse = false;
++	new_entry->target_dev = inode->i_sb->s_dev;
++	new_entry->spoofed_mnt_id = susfs_get_non_sus_mnt_id_from_mnt(real_mount(path.mnt));
++	no_sus_vfsmnt = susfs_get_non_sus_vfsmnt_from_vfsmnt(path.mnt);
++	err = statfs_by_dentry(no_sus_vfsmnt->mnt_root, &new_entry->spoofed_kstatfs);
++	dput(no_sus_vfsmnt->mnt_root);
++	mntput(no_sus_vfsmnt);
++	if (err)
++		goto out_path_put_path;
++
 +	set_bit(AS_FLAGS_SUS_KSTAT, &inode->i_state);
 +	SUSFS_LOGI("marked AS_FLAGS_SUS_KSTAT on pathname: '%s', is_fuse: %d, inode->i_sb->s_dev: %u,  inode->i_ino: %lu, inode->i_state: 0x%lx, spoofed_mnt_id: '%d'\n",
 +				target_pathname, new_entry->is_fuse, inode->i_sb->s_dev, inode->i_ino, inode->i_state, new_entry->spoofed_mnt_id);
@@ -2839,7 +2839,6 @@ index 000000000..211c9e99a
 +			memcpy(&new_entry->info, &tmp_entry->info, sizeof(tmp_entry->info));
 +			new_entry->info.target_ino = info.target_ino;
 +			new_entry->target_ino = info.target_ino;
-+			new_entry->target_dev = tmp_entry->target_dev;
 +			new_entry->is_fuse = tmp_entry->is_fuse;
 +			info.err = susfs_mark_inode_sus_kstat(new_entry->info.target_pathname, new_entry, true);
 +			if (info.err) {
@@ -3890,7 +3889,7 @@ index 000000000..211c9e99a
 +}
 +
 +/* susfs_init */
-+void susfs_init(void) {\
++void susfs_init(void) {
 +	SUSFS_LOGI("Initializing susfs_extra_works\n");
 +	INIT_WORK(&susfs_extra_works, susfs_run_extra_works);
 +	SUSFS_LOGI("susfs is initialized! version: " SUSFS_VERSION " \n");
