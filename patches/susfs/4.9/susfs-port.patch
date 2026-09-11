@@ -285,7 +285,7 @@ index bd064a2c3..0138b5fd6 100644
  }
  #endif /* __ARCH_WANT_COMPAT_SYS_GETDENTS64 */
 diff --git a/fs/exec.c b/fs/exec.c
-index 5addf3b..a11b44c 100644
+index 5addf3b00..a11b44cc0 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -57,6 +57,9 @@
