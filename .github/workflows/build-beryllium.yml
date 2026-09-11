@@ -59,6 +59,8 @@ jobs:
       # option falls back to a default (thirteen + all features on).
       KERNEL_REF: ${{ inputs.kernel_ref || 'thirteen' }}
       KERNEL_REPO: https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium.git
+      DEFCONFIG: beryllium_defconfig
+      HOOK_MODE: ${{ inputs.root_mode || 'none' }}
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
@@ -101,7 +103,8 @@ jobs:
           sudo apt-get install -y -qq \
             git zip unzip curl bc bison flex libssl-dev make \
             libncurses-dev python3 python3-pip \
-            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
+            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
+            device-tree-compiler
 
       - name: Download AOSP clang 14 + GCC 4.9 binutils
         run: |
@@ -244,7 +247,11 @@ jobs:
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
         run: |
-          bash scripts/integrate-bbg.sh "$KROOT" \
+          # Upstream setup.sh wires security/baseband-guard and, on these
+          # pre-5.1 trees (no DEFINE_LSM), patches security/selinux
+          # (Makefile + objsec.h bbg_cred). Fragment carries CONFIG_BBG=y;
+          # merge-defconfig.sh asserts it.
+          bash "$GITHUB_WORKSPACE/scripts/integrate-bbg.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/bbg.config.fragment"
 
       - name: Integrate Droidspace (patch + config)
@@ -350,8 +357,9 @@ jobs:
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
           # --- beryllium (Pocophone F1) settings ---
           # device props inside properties() are indented; boot vars at top
-          # per-build display: banner + kernel.string for the flash-time
-          # screen, FEATURES.txt inside the zip for inspection
+          # per-build display: the banner file carries the codename/manager
+          # and feature lines for the flash screen; FEATURES.txt ships the
+          # same text inside the zip
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
             "$RUNNER_TEMP/ak3" "beryllium" \
             "$RUNNER_TEMP/zipname.txt"
@@ -394,6 +402,25 @@ jobs:
           archive: false
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload final config
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: final.config
+          path: ${{ github.workspace }}/logs/final.config
+          archive: false
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Post-build summary
+        if: always()
+        run: |
+          { echo "## beryllium build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
+            echo "- kernel_ref: ${{ env.KERNEL_REF }}"
+            echo "- features: mode=$HOOK_MODE manager=$ROOT_MANAGER bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE"
+            echo "- artifacts: Image.gz-dtb / final.config / beryllium-full.log"
+          } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Upload AnyKernel3 package
         if: success()

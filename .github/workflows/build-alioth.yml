@@ -56,6 +56,8 @@ jobs:
       # option falls back to a default (lineage-23.2 + all features on).
       KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-23.2' }}
       KERNEL_REPO: https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250.git
+      DEFCONFIG: kona-perf_defconfig
+      HOOK_MODE: ${{ inputs.root_mode || 'none' }}
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
@@ -96,7 +98,8 @@ jobs:
           sudo apt-get install -y -qq \
             git zip unzip curl bc bison flex libssl-dev make \
             libncurses-dev python3 python3-pip \
-            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
+            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
+            device-tree-compiler
 
       - name: Download AOSP clang 14 + GCC 4.9 binutils
         run: |
@@ -249,7 +252,11 @@ jobs:
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
         run: |
-          bash scripts/integrate-bbg.sh "$KROOT" \
+          # Upstream setup.sh wires security/baseband-guard and, on these
+          # pre-5.1 trees (no DEFINE_LSM), patches security/selinux
+          # (Makefile + objsec.h bbg_cred). Fragment carries CONFIG_BBG=y;
+          # merge-defconfig.sh asserts it.
+          bash "$GITHUB_WORKSPACE/scripts/integrate-bbg.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/bbg.config.fragment"
 
       - name: Integrate Droidspace (patch + config)
@@ -404,16 +411,20 @@ jobs:
       - name: Package AnyKernel3 zip
         run: |
           rm -rf "$RUNNER_TEMP/ak3"
+          # full AnyKernel3 template (anykernel.sh + tools/ak3-core.sh,
+          # magiskboot, META-INF ... — not a hand-rolled minimal layout
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git \
             "$RUNNER_TEMP/ak3"
           rm -rf "$RUNNER_TEMP/ak3/.git" "$RUNNER_TEMP/ak3/.github" \
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
+          # strip VCS/CI cruft so the zip holds only flash-relevant files
           # --- alioth (Redmi K40 / POCO F3) settings ---
           # virtual A/B device: kernel Image goes to the boot partition of
           # the current slot; dtbo.img (if produced) is flashed by AK3's
           # flash_generic dtbo from the zip root.
-          # per-build display: banner + kernel.string for the flash-time
-          # screen, FEATURES.txt inside the zip for inspection
+          # per-build display: the banner file carries the codename/manager
+          # and feature lines for the flash screen; FEATURES.txt ships the
+          # same text inside the zip
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
             "$RUNNER_TEMP/ak3" "alioth" \
             "$RUNNER_TEMP/zipname.txt"
@@ -465,6 +476,25 @@ jobs:
           archive: false
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Upload final config
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: final.config
+          path: ${{ github.workspace }}/logs/final.config
+          archive: false
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Post-build summary
+        if: always()
+        run: |
+          { echo "## alioth build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
+            echo "- kernel_ref: ${{ env.KERNEL_REF }}"
+            echo "- features: mode=$HOOK_MODE manager=$ROOT_MANAGER bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE"
+            echo "- artifacts: Image / dtbo.img / final.config / alioth-full.log"
+          } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Upload AnyKernel3 package
         if: success()

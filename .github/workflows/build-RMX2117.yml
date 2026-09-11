@@ -84,8 +84,10 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
+            git zip unzip curl bc bison flex libssl-dev make \
+            libncurses-dev python3 python3-pip \
             binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
-            device-tree-compiler python3
+            device-tree-compiler
 
       - name: Download AOSP clang 11 (r383902) + GCC 4.9 binutils
         run: |
@@ -277,10 +279,10 @@ jobs:
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
         run: |
-          # Upstream setup.sh wires security/baseband-guard and, on this
-          # pre-5.1 tree (no DEFINE_LSM), patches security/selinux
-          # (Makefile sepatch + objsec.h bbg_cred). Fragment carries
-          # CONFIG_BBG=y; merge-defconfig.sh asserts it.
+          # Upstream setup.sh wires security/baseband-guard and, on these
+          # pre-5.1 trees (no DEFINE_LSM), patches security/selinux
+          # (Makefile + objsec.h bbg_cred). Fragment carries CONFIG_BBG=y;
+          # merge-defconfig.sh asserts it.
           bash "$GITHUB_WORKSPACE/scripts/integrate-bbg.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/bbg.config.fragment"
 
@@ -399,7 +401,7 @@ jobs:
           fi
           { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/RMX2117-full.log"; } >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Package AnyKernel3 zip (Image.gz-dtb; dtbo partition untouched)
+      - name: Package AnyKernel3 zip
         run: |
           gzip -c "$RUNNER_TEMP/out/Image" > "$RUNNER_TEMP/out/Image.gz"
           # appended base dtb: byte-identical to the dtb carried by the
@@ -419,8 +421,9 @@ jobs:
           # of the on-device boot image and keeps its ramdisk; the dtbo
           # partition is never touched. Device-name check is skipped
           # (fastboot product name not pinned on MTK).
-          # per-build display: banner + kernel.string for the flash-time
-          # screen, FEATURES.txt inside the zip for inspection
+          # per-build display: the banner file carries the codename/manager
+          # and feature lines for the flash screen; FEATURES.txt ships the
+          # same text inside the zip
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
             "$RUNNER_TEMP/ak3" "RMX2117" \
             "$RUNNER_TEMP/zipname.txt"
