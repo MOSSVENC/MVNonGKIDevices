@@ -288,7 +288,7 @@ index ea9e472..d787ded 100644
  	if (IS_ERR(dentry))
  		return dentry;
  	if (unlikely(!d_in_lookup(dentry))) {
-@@ -1756,6 +1842,12 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1756,6 +1842,12 @@ again:
  				if (!error) {
  					d_invalidate(dentry);
  					dput(dentry);
@@ -301,7 +301,7 @@ index ea9e472..d787ded 100644
  					goto again;
  				}
  				dput(dentry);
-@@ -1770,6 +1862,19 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1770,6 +1862,19 @@ again:
  			dentry = old;
  		}
  	}
@@ -443,7 +443,7 @@ index ea9e472..d787ded 100644
  	if (unlikely(error))
  		return error;
  	error = mnt_want_write(path.mnt);
-@@ -3642,24 +3815,57 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
+@@ -3642,24 +3815,57 @@ out2:
  	mnt_drop_write(path.mnt);
  out:
  	path_put(&path);
@@ -1103,7 +1103,7 @@ index 6c0b18a..b0d1669 100644
  #include <trace/events/oom.h>
  #include "internal.h"
  #include "fd.h"
-@@ -1885,6 +1888,10 @@ static const char *proc_pid_get_link(struct dentry *dentry,
+@@ -1885,6 +1888,10 @@ out:
  	return ERR_PTR(error);
  }
  
@@ -1423,7 +1423,7 @@ index 5b8d065..d468d4c 100644
  static __poll_t mounts_poll(struct file *file, poll_table *wait)
  {
  	struct seq_file *m = file->private_data;
-@@ -239,6 +247,162 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
+@@ -239,6 +247,162 @@ out:
  	return err;
  }
  
@@ -2056,10 +2056,18 @@ index 3c5ce8a..76b25d1 100644
  }
  #endif
 diff --git a/fs/stat.c b/fs/stat.c
-index 3765431..3b2c760 100644
+index 3765431..919b3e8 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
-@@ -30,6 +30,15 @@
+@@ -20,6 +20,7 @@
+ 
+ #include <linux/uaccess.h>
+ #include <asm/unistd.h>
++#include "internal.h"
+ 
+ /**
+  * generic_fillattr - Fill in the basic attributes from the inode struct
+@@ -30,6 +31,15 @@
   * found on the VFS inode structure.  This is the default if no getattr inode
   * operation is supplied.
   */
@@ -2075,7 +2083,7 @@ index 3765431..3b2c760 100644
  void generic_fillattr(struct inode *inode, struct kstat *stat)
  {
  	stat->dev = inode->i_sb->s_dev;
-@@ -75,9 +84,45 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
+@@ -75,9 +85,45 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
  	stat->result_mask |= STATX_BASIC_STATS;
  	request_mask &= STATX_ALL;
  	query_flags &= KSTAT_QUERY_FLAGS;
@@ -2121,7 +2129,76 @@ index 3765431..3b2c760 100644
  
  	generic_fillattr(inode, stat);
  	return 0;
-@@ -187,12 +232,22 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
+@@ -129,6 +175,11 @@ EXPORT_SYMBOL(vfs_getattr);
+  *
+  * 0 will be returned on success, and a -ve error code if unsuccessful.
+  */
++#ifdef CONFIG_KSU_SUSFS
++extern struct static_key_true ksu_is_init_rc_hook_enabled;
++extern void ksu_handle_vfs_fstat(int fd, loff_t *kstat_size_ptr);
++#endif // #ifdef CONFIG_KSU_SUSFS
++
+ int vfs_statx_fd(unsigned int fd, struct kstat *stat,
+ 		 u32 request_mask, unsigned int query_flags)
+ {
+@@ -142,6 +193,11 @@ int vfs_statx_fd(unsigned int fd, struct kstat *stat,
+ 	if (f.file) {
+ 		error = vfs_getattr(&f.file->f_path, stat,
+ 				    request_mask, query_flags);
++#ifdef CONFIG_KSU_SUSFS
++		if (static_branch_unlikely(&ksu_is_init_rc_hook_enabled))
++			ksu_handle_vfs_fstat(fd, &stat->size);
++#endif // #ifdef CONFIG_KSU_SUSFS
++
+ 		fdput(f);
+ 	}
+ 	return error;
+@@ -163,6 +219,12 @@ EXPORT_SYMBOL(vfs_statx_fd);
+  *
+  * 0 will be returned on success, and a -ve error code if unsuccessful.
+  */
++#ifdef CONFIG_KSU_SUSFS
++extern struct static_key_true ksu_su_compat_enabled;
++extern bool __ksu_is_allow_uid_for_current(uid_t uid);
++extern int ksu_handle_stat(int *dfd, struct filename **filename, int *flags);
++#endif
++
+ int vfs_statx(int dfd, const char __user *filename, int flags,
+ 	      struct kstat *stat, u32 request_mask)
+ {
+@@ -170,6 +232,10 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
+ 	int error = -EINVAL;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
+ 
++#ifdef CONFIG_KSU_SUSFS
++	struct filename *fname = NULL;
++#endif
++
+ 	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
+ 		       AT_EMPTY_PATH | KSTAT_QUERY_FLAGS)) != 0)
+ 		return -EINVAL;
+@@ -182,17 +248,43 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
+ 		lookup_flags |= LOOKUP_EMPTY;
+ 
+ retry:
++#ifdef CONFIG_KSU_SUSFS
++	fname = getname_flags(filename, lookup_flags, NULL);
++
++	if (likely(susfs_is_current_proc_no_su()))
++		goto orig_flow;
++
++	if (static_branch_likely(&ksu_su_compat_enabled)) {
++		if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val)))
++			ksu_handle_stat(&dfd, &fname, NULL);
++	}
++
++orig_flow:
++	error = filename_lookup(dfd, fname, lookup_flags, &path, NULL);
++	// no putname(fname) here as filename_lookup() has it done for us already;
++#else
+ 	error = user_path_at(dfd, filename, lookup_flags, &path);
++#endif
+ 	if (error)
  		goto out;
  
  	error = vfs_getattr(&path, stat, request_mask, flags);
@@ -4330,7 +4407,7 @@ diff --git a/kernel/sys.c b/kernel/sys.c
 index a19ddda..bd3ab26 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -688,8 +688,18 @@ long __sys_setresuid(uid_t ruid, uid_t euid, uid_t suid)
+@@ -688,8 +688,18 @@ error:
  	return retval;
  }
  
