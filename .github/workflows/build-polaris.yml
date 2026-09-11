@@ -281,12 +281,9 @@ jobs:
           # 4.9 tree-adapted port of the upstream kernel-embedded form:
           # Kconfig/Makefile wiring lives here because the integration
           # steps above rewrite those two files.
-                   0002-binder-frozen-transaction-notify \
-                   0003-signal-frozen-kill-notify; do
-            git apply --check "$P" || { echo "$p does not apply cleanly"; exit 1; }
-            git apply "$P"
+            git apply --check "$p" || { echo "$(basename "$p") does not apply cleanly"; exit 1; }
+            git apply "$p"
           done
-
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id (4.9 uses CONFIG_LOCALVERSION_AUTO).

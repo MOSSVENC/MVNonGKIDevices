@@ -36,6 +36,8 @@ on:
         description: enable Droidspaces/LXC kernel support
         type: boolean
         default: false
+        type: boolean
+        default: false
       cgroup_port:
         description: 4.9 cgroup noprefix compat patch (droidspace)
         type: boolean
@@ -264,6 +266,18 @@ jobs:
             PORT="$GITHUB_WORKSPACE/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
+
+      # plus the binder and signal report hooks. The Kconfig/Makefile wiring lives here
+      # because the integration steps above rewrite those two files.
+        run: |
+          cd "$KROOT"
+          # 4.9 tree-adapted port of the upstream kernel-embedded form:
+          # Kconfig/Makefile wiring lives here because the integration
+          # steps above rewrite those two files.
+            git apply --check "$p" || { echo "$(basename "$p") does not apply cleanly"; exit 1; }
+            git apply "$p"
+          done
+
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
