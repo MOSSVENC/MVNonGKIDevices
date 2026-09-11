@@ -7,6 +7,8 @@ Droidspaces（<https://github.com/ravindu644/Droidspaces-OSS>）容器支持，
 
 官方补丁的唯一副本位于 `../official/`；本版本目录只放 config 片段，
 workflow 直接引用 official 文件。
+上游快照：`localworkspace/mirrors/Droidspaces-OSS` @`2280b59`（v6.5.5）；
+官方 non-GKI 两个补丁与仓库 `../official/` 副本逐字节一致（md5 核对）。
 
 ## 组成
 
