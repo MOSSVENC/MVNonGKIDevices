@@ -1,0 +1,28 @@
+diff --git a/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi b/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
+index 8f203c9..8f464a1 100644
+--- a/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
++++ b/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
+@@ -521,8 +521,8 @@ And public attribution of xiaomi platforms(like alioth and so and)
+ 	qcom,sec-charger-config = <0>;
+ 	qcom,usb-icl-ua = <3000000>;
+ 	qcom,fcc-max-ua = <6000000>;
+-	qcom,fv-max-uv = <4460000>;
+-	qcom,non-fcc-fv-max-uv = <4450000>;
++	qcom,fv-max-uv = <4480000>;
++	qcom,non-fcc-fv-max-uv = <4470000>;
+ 	qcom,dc-icl-ua = <1000000>;
+ 	qcom,auto-recharge-soc = <99>;
+ 	qcom,chg-term-src = <1>;
+@@ -536,10 +536,10 @@ And public attribution of xiaomi platforms(like alioth and so and)
+ 	qcom,battery-data = <&umi_batterydata>;
+ 	mi,six-pin-step-chg-params = <4250000  6000000
+ 				4450000  5400000
+-				4460000  3536000>;
++				4480000  3536000>;
+ 	mi,six-pin-step-chg;
+ 	mi,six-pin-soc-th = <22>;
+-	mi,fcc-batt-unverify-ua = <2000000>;
++	mi,fcc-batt-unverify-ua = <6000000>;
+ 	mi,support-ffc;
+ 	qcom,lpd-disable;
+ 	mi,use-bq-pump;
