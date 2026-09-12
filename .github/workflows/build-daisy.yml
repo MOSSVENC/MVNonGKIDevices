@@ -89,23 +89,7 @@ jobs:
       # Toolchain: AOSP clang 14 (clang-r450784d from android13-release)
       # + system binutils, matching the maintainer's official flow.
       - name: Start full log
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/logs"
-          LOG="$GITHUB_WORKSPACE/logs/daisy-full.log"
-          : > "$LOG"
-          ENVF="$GITHUB_WORKSPACE/logs/bash_env.sh"
-          {
-            [ -n "${BASH_ENV:-}" ] && printf '[ -f %q ] && source %q\n' "$BASH_ENV" "$BASH_ENV"
-            # Sub-shells (*.sh called by steps) source this file again; the exported
-            # sentinel keeps one tee, so script output stays free of duplicates.
-            printf 'if [ -z "${DSH_FULL_LOG_HOOK:-}" ]; then\n'
-            printf '  DSH_FULL_LOG_HOOK=1\n'
-            printf '  export DSH_FULL_LOG_HOOK\n'
-            printf '  exec > >(tee -a %q) 2>&1\n' "$LOG"
-            printf 'fi\n'
-          } > "$ENVF"
-          echo "BASH_ENV=$ENVF" >> "$GITHUB_ENV"
-          echo "full log: $LOG"
+        run: bash scripts/full-log.sh daisy
 
       - name: Install binutils
         run: |
@@ -184,49 +168,7 @@ jobs:
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
       - name: Integrate XXKSU kernel (Backslashxx fork)
         if: env.ROOT_MANAGER == 'xxksu'
-        run: |
-          git clone -q --depth=1 --single-branch \
-            --branch=master \
-            https://github.com/Backslashxx/KernelSU "$RUNNER_TEMP/xxksu"
-          # 4.x kconfig has no '=' comparison; the LKM-only default line
-          # would abort alldefconfig. In-tree KSU=y is set by the fragment.
-          sed -i '/default y if KSU = m/d' "$RUNNER_TEMP/xxksu/kernel/Kconfig"
-          cd "$KROOT"
-          mkdir -p KernelSU
-          ln -sfn "$RUNNER_TEMP/xxksu/kernel" KernelSU/kernel
-          # absolute target: a relative link would resolve under drivers/
-          ln -sfn "$RUNNER_TEMP/xxksu/kernel" drivers/kernelsu
-          grep -q "kernelsu" drivers/Makefile || \
-            printf '\nobj-$(CONFIG_KSU) += kernelsu/\n' >> drivers/Makefile
-          grep -q "drivers/kernelsu/Kconfig" drivers/Kconfig || \
-            sed -i "/endmenu/i\source \"drivers/kernelsu/Kconfig\"" drivers/Kconfig
-          # Hook engines are mutually exclusive at the Kconfig level
-          # (KSU_HACK_ARM64_BRANCH_LINK depends on !KSU_TAMPER_SYSCALL_TABLE).
-          case "$HOOK_TYPE" in
-            branch_link) ENGINE=branch_link ;;
-            syscall_table) ENGINE=syscall_table ;;
-            *) ENGINE=none ;;
-          esac
-          {
-            echo "CONFIG_KSU=y"
-            echo "CONFIG_KSU_LSM_SECURITY_HOOKS=y"
-            case "$ENGINE" in
-              branch_link)
-                echo "CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y"
-                echo "# CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
-                ;;
-              syscall_table)
-                echo "CONFIG_KSU_TAMPER_SYSCALL_TABLE=y"
-                echo "# CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set"
-                ;;
-              *)
-                echo "# CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
-                echo "# CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set"
-                ;;
-            esac
-          } > "$GITHUB_WORKSPACE/xxksu.config.fragment"
-          echo "xxksu mode: $HOOK_TYPE engine: $ENGINE"
-          cat "$GITHUB_WORKSPACE/xxksu.config.fragment"
+        run: bash scripts/integrate-xxksu.sh "$KROOT"
 
       - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
