@@ -73,7 +73,8 @@ jobs:
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
-      KBUILD_BUILD_TIMESTAMP: ${{ inputs.build_time }}
+      CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
+      TZ: UTC
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
@@ -353,6 +354,12 @@ jobs:
           # Module-signing key generation writes RSA progress without newlines;
           # build it serially first with that output silenced so it cannot
           # interleave with the parallel build
+          # uname -v 的构建时刻统一 UTC：填了用填的串，留空按 UTC 现算
+          if [ -n "$CUSTOM_BUILD_TIME" ]; then
+            export KBUILD_BUILD_TIMESTAMP="$CUSTOM_BUILD_TIME"
+          else
+            export KBUILD_BUILD_TIMESTAMP="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+          fi
           if grep -q '^CONFIG_MODULE_SIG=y' "$RUNNER_TEMP/out/.config" 2>/dev/null; then
             make -j1 O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC="clang" \
