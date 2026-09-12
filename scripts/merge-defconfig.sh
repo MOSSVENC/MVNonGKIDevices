@@ -12,6 +12,9 @@
 # Usage:
 #   merge-defconfig.sh <kernel-root> <out-dir> <fragment1> [<fragment2> ...]
 #
+# Optional env: CUSTOM_LOCALVERSION (verbatim suffix), BUILD_TIME_SUFFIX
+# (true appends the UTC build time), CLEAR_LOCALVERSION (true blanks it).
+#
 # Method (Kbuild-native; no dependence on scripts/kconfig/merge_config.sh):
 #   1. concatenate baseline mi845_defconfig + polaris.config + fragments into
 #      one de-duplicated "allconfig" file (later same-name entries override
@@ -68,11 +71,21 @@ for f in "$@"; do append_cfg "$f"; done  # feature fragments (later wins)
 echo "# CONFIG_CC_WERROR is not set" >> "$RAW"
 echo "# CONFIG_CC_WERROR_STRICT is not set" >> "$RAW"   # harmless if absent
 
-# --- LOCALVERSION override (opt-in): CLEAR_LOCALVERSION=true forces an
-# empty CONFIG_LOCALVERSION (e.g. beryllium ships "-Helios™" in its stock
-# defconfig and we want a plain <kernel>[-g<sha>] version string).
-if [ "${CLEAR_LOCALVERSION:-false}" = "true" ]; then
+# --- LOCALVERSION (opt-in): CUSTOM_LOCALVERSION is written verbatim
+# (leading dash included, e.g. -MyKernel); BUILD_TIME_SUFFIX=true appends
+# -YYYYMMDD-HHMM (UTC) to it.  With neither set the defconfig value stays;
+# CLEAR_LOCALVERSION=true blanks it (e.g. beryllium ships "-Helios™" in its
+# stock defconfig and a plain <kernel>[-g<sha>] string is wanted).
+localversion="${CUSTOM_LOCALVERSION:-}"
+if [ "${BUILD_TIME_SUFFIX:-false}" = "true" ]; then
+  localversion="${localversion}-$(date -u +%Y%m%d-%H%M)"
+fi
+if [ -n "$localversion" ]; then
+  echo "CONFIG_LOCALVERSION=\"$localversion\"" >> "$RAW"
+  echo "localversion: $localversion"
+elif [ "${CLEAR_LOCALVERSION:-false}" = "true" ]; then
   echo 'CONFIG_LOCALVERSION=""' >> "$RAW"
+  echo "localversion: (cleared)"
 fi
 
 # --- KALLSYMS_ALL override (always): ReSukiSU resolves its selinux static

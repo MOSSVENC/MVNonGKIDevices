@@ -25,6 +25,14 @@ on:
           - xxksu-branch_link
           - none
         default: none
+      localversion:
+        description: "custom kernel localversion, verbatim (e.g. -MyKernel); empty keeps the defconfig value"
+        type: string
+        default: ""
+      build_time:
+        description: "append the build time (UTC -YYYYMMDD-HHMM) to the kernel localversion"
+        type: boolean
+        default: false
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
@@ -63,6 +71,8 @@ jobs:
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
+      CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
+      BUILD_TIME_SUFFIX: ${{ inputs.build_time }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
@@ -306,6 +316,8 @@ jobs:
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
           HOOK_EXTRA="$HOOK_EXTRA" \
           HOOK_TYPE="$HOOK_TYPE" \
+          CUSTOM_LOCALVERSION="$CUSTOM_LOCALVERSION" \
+          BUILD_TIME_SUFFIX="$BUILD_TIME_SUFFIX" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
 
       - name: Build kernel Image.gz-dtb

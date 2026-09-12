@@ -100,6 +100,8 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 | Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） |
 | Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） |
 | Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） |
+| 自定义 localversion | `localversion` | 原样写入内核 localversion（例如 `-MyKernel`；留空沿用 defconfig 值） |
+| 构建时间后缀 | `build_time` | 把构建时间（UTC `-YYYYMMDD-HHMM`）追加到 localversion |
 
 `auto_fix_49`：resukisu-auto 的 4.x kasan_reset_tag 门槛修正（auto-hook
 分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
