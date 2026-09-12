@@ -360,8 +360,8 @@ jobs:
           # --- daisy (Mi A2 Lite) settings ---
           # device props inside properties() are indented; boot vars at top
           # per-build display: the banner file carries the codename/manager
-          # and feature lines for the flash screen; FEATURES.txt ships the
-          # same text inside the zip
+          # and feature line for the flash screen; FEATURES.txt ships the
+          # same line inside the zip
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
             "$RUNNER_TEMP/ak3" "daisy" \
             "$RUNNER_TEMP/zipname.txt"

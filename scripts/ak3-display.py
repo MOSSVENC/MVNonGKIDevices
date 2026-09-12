@@ -5,24 +5,21 @@ usage: ak3-display.py <ak3-dir> <device-codename> [name-out]
 
 env: ROOT_MANAGER
      ENABLE_BBG ENABLE_DROIDSPACE ENABLE_DATA_ISOLATION
-     CENTER_WIDTH (optional, default 60)
 
-Display: two centered lines —
-    <codename>  <manager>
-    <feature>  <feature> ...
+Display: one left-aligned line —
+    <codename>  <manager> | <feature>  <feature> ...
 features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
 omitted. Package name: <codename>_<manager>[_<feature>...].zip
 
 Writes inside <ak3-dir>:
-  banner        the two lines; AnyKernel3 prints this file line by line
-  FEATURES.txt  the same two lines for at-a-glance package inspection
+  banner        the line; AnyKernel3 prints this file line by line
+  FEATURES.txt  the same line for at-a-glance package inspection
 and rewrites two template files:
-  anykernel.sh  kernel.string takes the one-line form of the same content;
-                its parser is grep + tail + cut -d= -f2-, so a value
-                spanning lines would keep only the first one
+  anykernel.sh  kernel.string takes the same line; its parser is
+                grep + tail + cut -d= -f2-, so the value stays one line
   META-INF/com/google/android/update-binary
                 the installer's own print of kernel.string is commented
-                out, so the flash log carries the display once, centered.
+                out, so the flash log carries the display once.
                 The property stays in place: the installer reads it as the
                 ak3-helper module description.
 A template without the line to rewrite is reported on stderr; the print
@@ -37,8 +34,6 @@ the repacked ramdisk; the boot install block keeps only its two calls.
 import os
 import re
 import sys
-
-CENTER_WIDTH = int(os.environ.get('CENTER_WIDTH', '60'))
 
 ak3_dir = sys.argv[1]
 dev = sys.argv[2]
@@ -62,24 +57,13 @@ else:
 
 line1 = '  '.join(x for x in (dev, manager) if x)
 line2 = '  '.join(feats)
+display = line1 + (' | ' + line2 if line2 else '')
 
-
-def centered(text):
-    if not text:
-        return ''
-    pad = max(0, (CENTER_WIDTH - len(text)) // 2)
-    return ' ' * pad + text
-
-
-display = centered(line1)
-if line2:
-    display += '\n' + centered(line2)
-
-# banner: multi-line flash display (AnyKernel3 prints it with ui_printfile)
+# banner: the flash display line (AnyKernel3 prints it with ui_printfile)
 with open(os.path.join(ak3_dir, 'banner'), 'w') as fh:
     fh.write(display + '\n')
 
-# FEATURES.txt: same content, kept in the package for inspection
+# FEATURES.txt: the same line, kept in the package for inspection
 with open(os.path.join(ak3_dir, 'FEATURES.txt'), 'w') as fh:
     fh.write(display + '\n')
 
@@ -113,8 +97,8 @@ def strip_template_sample(text):
     return '\n'.join(out)
 
 
-# kernel.string: one line, so the single-line property parser keeps it
-one_line = line1 + ('  |  ' + line2 if line2 else '')
+# kernel.string: the same line, so the single-line property parser keeps it
+one_line = display
 sh_path = os.path.join(ak3_dir, 'anykernel.sh')
 s = strip_template_sample(open(sh_path).read())
 m = re.search(r'(?m)^kernel\.string=(.*)$', s)
@@ -134,13 +118,13 @@ if value[:1] == '"':
 s = s[:m.start()] + 'kernel.string=' + one_line + s[end:]
 open(sh_path, 'w').write(s)
 
-# The installer echoes kernel.string right below the banner — same content,
-# uncentered.  Comment that echo out so the flash log carries the display
-# once; line 402 of the same file keeps reading the property as the
-# ak3-helper module description.
+# The installer echoes kernel.string right below the banner — the same
+# line.  Comment that echo out so the flash log carries the display once;
+# line 402 of the same file keeps reading the property as the ak3-helper
+# module description.
 ub_path = os.path.join(ak3_dir, 'META-INF/com/google/android/update-binary')
 ub_print = 'ui_print "$KERNEL_STRING";'
-ub_suppressed = '# kernel string shown by the centered banner above'
+ub_suppressed = '# kernel string shown by the banner above'
 ub = open(ub_path).read()
 if ub_print in ub:
     open(ub_path, 'w').write(ub.replace(ub_print, ub_suppressed, 1))
