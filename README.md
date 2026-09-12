@@ -17,7 +17,8 @@ workflow_dispatch 手动触发。
 
 workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 特性开关（`enable_bbg` / `enable_droidspace`，另按设备
-出现 `cgroup_port` / `enable_data_isolation` / `auto_fix_49`）。所有开关均不
+出现 `cgroup_port` / `enable_data_isolation` / `auto_fix_49` /
+`enable_battery_5000`）。所有开关均不
 预设启用，按构建需要手动选择。
 
 ## root_mode（root 管理器与 hook 组合）
@@ -100,6 +101,7 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 | Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） |
 | Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） |
 | Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） |
+| 5000mAh 电池 | `enable_battery_5000` | 电池参数卡（容量/JEITA/表征）与快充电压上限按 5000mAh 电芯（仅 alioth；电池认证行为不变） |
 | 自定义版本名 | `localversion` | 写进 `uname -r`（例如 `-MyKernel`；留空沿用 defconfig 值） |
 | 自定义构建时间 | `build_time` | 写进 `uname -v` 的日期段（UTC，例 `Tue, 08 Sep 2026 21:01:02 +0000`；留空用构建时刻的 UTC 值） |
 

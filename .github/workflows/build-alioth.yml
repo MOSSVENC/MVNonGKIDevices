@@ -50,6 +50,10 @@ on:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
         default: false
+      enable_battery_5000:
+        description: 5000mAh cell battery profile and fast-charge voltage ceilings
+        type: boolean
+        default: false
 
 concurrency:
   group: alioth-kernel
@@ -69,6 +73,7 @@ jobs:
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
+      ENABLE_BATTERY_5000: ${{ inputs.enable_battery_5000 }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is a 4.9 sdm845 feature
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
@@ -142,14 +147,16 @@ jobs:
           head -6 "$RUNNER_TEMP/kernel/Makefile"
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
-      # arch/arm64/configs/vendor/xiaomi/alioth.config sets
-      # CONFIG_BATT_VERIFY_BY_DS28E16, so the fuel gauge picks its profile from
-      # the umi_batterydata container by qcom,battery-type name: K11A_GY_4520mah /
-      # K11A_FMT_4520mah (the latter is also the verification-failure fallback).
-      # The two patches below carry the 5000mAh cell: both selection names keep
-      # their name and get that cell's data, and the float-voltage ceilings
-      # (fast-charge, non-fast-charge and the six-pin step table) follow it.
+      # Opt-in (enable_battery_5000). arch/arm64/configs/vendor/xiaomi/alioth.config
+      # sets CONFIG_BATT_VERIFY_BY_DS28E16, so the fuel gauge picks its profile
+      # from the umi_batterydata container by qcom,battery-type name:
+      # K11A_GY_4520mah / K11A_FMT_4520mah (the latter is also the
+      # verification-failure fallback). The two patches below carry the 5000mAh
+      # cell: both selection names keep their name and get that cell's data, and
+      # the float-voltage ceilings (fast-charge, non-fast-charge and the six-pin
+      # step table) follow it. Battery authentication is untouched.
       - name: Apply battery patches (5000mAh cell)
+        if: env.ENABLE_BATTERY_5000 == 'true'
         run: |
           cd "$KROOT"
           for P in "$GITHUB_WORKSPACE/patches/alioth/0001-battery-5000mah-profiles.patch" \
