@@ -142,6 +142,21 @@ jobs:
           head -6 "$RUNNER_TEMP/kernel/Makefile"
           { echo "### kernel clone"; tail -40 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
 
+      # arch/arm64/configs/vendor/xiaomi/alioth.config sets
+      # CONFIG_BATT_VERIFY_BY_DS28E16, so the fuel gauge picks its profile from
+      # the umi_batterydata container by qcom,battery-type name: K11A_GY_4520mah /
+      # K11A_FMT_4520mah (the latter is also the verification-failure fallback).
+      # This build keeps both selection names and replaces their cell data with
+      # the 5000mAh profile of this tree (nom-batt-capacity-mah = 5000).
+      - name: Apply 5000mAh battery profile
+        run: |
+          cd "$KROOT"
+          P="$GITHUB_WORKSPACE/patches/alioth/0001-battery-5000mah-profiles.patch"
+          git apply --check "$P" || { echo "battery profile patch does not apply cleanly"; exit 1; }
+          git apply "$P"
+          grep -n 'battery-type\|nom-batt-capacity-mah' \
+            arch/arm64/boot/dts/vendor/qcom/fg-gen4-batterydata-alioth-GY-4520mah.dtsi
+
       - name: Apply ReSukiSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
