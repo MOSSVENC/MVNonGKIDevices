@@ -146,24 +146,20 @@ jobs:
       # CONFIG_BATT_VERIFY_BY_DS28E16, so the fuel gauge picks its profile from
       # the umi_batterydata container by qcom,battery-type name: K11A_GY_4520mah /
       # K11A_FMT_4520mah (the latter is also the verification-failure fallback).
-      # The three patches below carry the 5000mAh cell: both selection names keep
-      # their name and get that cell's data, the fuel gauge reports the battery
-      # as verified (the charger refuses fast charge and holds FCC at 2A without
-      # it), and the charger float-voltage ceilings follow the cell.
-      - name: Apply battery patches (5000mAh cell, FFC)
+      # The two patches below carry the 5000mAh cell: both selection names keep
+      # their name and get that cell's data, and the float-voltage ceilings
+      # (fast-charge, non-fast-charge and the six-pin step table) follow it.
+      - name: Apply battery patches (5000mAh cell)
         run: |
           cd "$KROOT"
           for P in "$GITHUB_WORKSPACE/patches/alioth/0001-battery-5000mah-profiles.patch" \
-                   "$GITHUB_WORKSPACE/patches/alioth/0002-battery-ffc-auth-unlock.patch" \
-                   "$GITHUB_WORKSPACE/patches/alioth/0003-battery-ffc-ceilings.patch"; do
+                   "$GITHUB_WORKSPACE/patches/alioth/0002-battery-ffc-ceilings.patch"; do
             git apply --check "$P" || { echo "battery patch does not apply cleanly: $P"; exit 1; }
             git apply "$P"
           done
           grep -n 'battery-type\|nom-batt-capacity-mah' \
             arch/arm64/boot/dts/vendor/qcom/fg-gen4-batterydata-alioth-GY-4520mah.dtsi
-          grep -n 'fake_authentic = 1' drivers/power/supply/qcom/qpnp-fg-gen4.c
-          grep -n 'qcom,fv-max-uv\|mi,fcc-batt-unverify-ua' \
-            arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
+          grep -n 'qcom,fv-max-uv' arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
 
       - name: Apply ReSukiSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
