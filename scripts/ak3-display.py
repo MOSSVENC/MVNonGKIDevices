@@ -11,7 +11,8 @@ Display: one left-aligned line —
 hook names: ReSukiSU -> AUTO HOOK / SUSFS INLINE HOOK / MANUAL HOOK;
 XXKSU -> SUSFS INLINE HOOK / SYSCALL TABLE HOOK / BRANCH LINK HOOK.
 features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
-omitted. Package name: <codename>_<manager>[_<feature>...].zip
+omitted. Package name: <codename>_<manager>_<hook>[_<feature>...].zip,
+hook token SUSFS / AUTO / MANUAL / SYSCALL_TABLE / BRANCH_LINK.
 
 Writes inside <ak3-dir>:
   banner        the line; AnyKernel3 prints this file line by line
@@ -53,16 +54,18 @@ feats = [name for name, on in feat_flags if on]
 
 if rm == 'resukisu':
     manager = 'ReSukiSU'
-    hook = {'auto': 'AUTO HOOK', 'susfs': 'SUSFS INLINE HOOK'}.get(ht, 'MANUAL HOOK')
+    hook, token = {'auto': ('AUTO HOOK', 'AUTO'),
+                   'susfs': ('SUSFS INLINE HOOK', 'SUSFS'),
+                   }.get(ht, ('MANUAL HOOK', 'MANUAL'))
 elif rm == 'xxksu':
     manager = 'XXKSU'
-    hook = 'SUSFS INLINE HOOK' if ht == 'susfs' else {
-        'syscall_table': 'SYSCALL TABLE HOOK',
-        'branch_link': 'BRANCH LINK HOOK',
-    }.get(ht, 'HOOK')
+    hook, token = {'susfs': ('SUSFS INLINE HOOK', 'SUSFS'),
+                   'syscall_table': ('SYSCALL TABLE HOOK', 'SYSCALL_TABLE'),
+                   'branch_link': ('BRANCH LINK HOOK', 'BRANCH_LINK'),
+                   }.get(ht, ('HOOK', ''))
 else:
     manager = 'STOCK'
-    hook = ''
+    hook = token = ''
 
 line1 = '  '.join(x for x in (dev, manager, hook) if x)
 line2 = '  '.join(feats)
@@ -141,7 +144,7 @@ elif ub_suppressed not in ub:
     sys.stderr.write('ak3-display: update-binary has no kernel-string echo '
                      'line; the flash log keeps the duplicate\n')
 
-name = '_'.join(x for x in ([dev, manager] + feats) if x) + '.zip'
+name = '_'.join(x for x in ([dev, manager, token] + feats) if x) + '.zip'
 if name_out:
     with open(name_out, 'w') as fh:
         fh.write(name + '\n')

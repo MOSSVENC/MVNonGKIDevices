@@ -453,8 +453,8 @@ jobs:
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
             "$RUNNER_TEMP/ak3" "RMX2117" \
             "$RUNNER_TEMP/zipname.txt"
-          # package name follows this build's inputs
-          # (codename_manager_hook_feature...)
+          # package name follows this build's inputs:
+          # <codename>_<manager>_<hook>[_<feature>...].zip
           AK3_ZIP="$(cat "$RUNNER_TEMP/zipname.txt")"
           echo "AK3_ZIP=$AK3_ZIP" >> "$GITHUB_ENV"
           echo "=== RMX2117 kernel features (this build) ==="
