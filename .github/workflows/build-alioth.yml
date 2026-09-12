@@ -422,7 +422,7 @@ jobs:
           # virtual A/B device: kernel Image goes to the boot partition of
           # the current slot; dtbo.img (if produced) is flashed by AK3's
           # flash_generic dtbo from the zip root.
-          # per-build display: the banner file carries the codename/manager
+          # per-build display: the banner file carries the codename/manager/hook
           # and feature line for the flash screen; FEATURES.txt ships the
           # same line inside the zip
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \

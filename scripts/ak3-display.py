@@ -3,11 +3,13 @@
 
 usage: ak3-display.py <ak3-dir> <device-codename> [name-out]
 
-env: ROOT_MANAGER
+env: ROOT_MANAGER HOOK_TYPE
      ENABLE_BBG ENABLE_DROIDSPACE ENABLE_DATA_ISOLATION
 
 Display: one left-aligned line —
-    <codename>  <manager> | <feature>  <feature> ...
+    <codename>  <manager>  <hook> | <feature>  <feature> ...
+hook names: ReSukiSU -> AUTO HOOK / SUSFS INLINE HOOK / MANUAL HOOK;
+XXKSU -> SUSFS INLINE HOOK / SYSCALL TABLE HOOK / BRANCH LINK HOOK.
 features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
 omitted. Package name: <codename>_<manager>[_<feature>...].zip
 
@@ -40,6 +42,7 @@ dev = sys.argv[2]
 name_out = sys.argv[3] if len(sys.argv) > 3 else None
 
 rm = os.environ.get('ROOT_MANAGER', 'none')
+ht = os.environ.get('HOOK_TYPE', '')
 
 feat_flags = [
     ('BBG', os.environ.get('ENABLE_BBG') == 'true'),
@@ -50,12 +53,18 @@ feats = [name for name, on in feat_flags if on]
 
 if rm == 'resukisu':
     manager = 'ReSukiSU'
+    hook = {'auto': 'AUTO HOOK', 'susfs': 'SUSFS INLINE HOOK'}.get(ht, 'MANUAL HOOK')
 elif rm == 'xxksu':
     manager = 'XXKSU'
+    hook = 'SUSFS INLINE HOOK' if ht == 'susfs' else {
+        'syscall_table': 'SYSCALL TABLE HOOK',
+        'branch_link': 'BRANCH LINK HOOK',
+    }.get(ht, 'HOOK')
 else:
     manager = 'STOCK'
+    hook = ''
 
-line1 = '  '.join(x for x in (dev, manager) if x)
+line1 = '  '.join(x for x in (dev, manager, hook) if x)
 line2 = '  '.join(feats)
 display = line1 + (' | ' + line2 if line2 else '')
 

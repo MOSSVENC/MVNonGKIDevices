@@ -390,7 +390,7 @@ jobs:
                  "$RUNNER_TEMP/ak3/.gitignore" "$RUNNER_TEMP/ak3/.gitattributes"
           # --- vince (Redmi 5 Plus) settings ---
           # device props inside properties() are indented; boot vars at top
-          # per-build display: the banner file carries the codename/manager
+          # per-build display: the banner file carries the codename/manager/hook
           # and feature line for the flash screen; FEATURES.txt ships the
           # same line inside the zip
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \

@@ -428,7 +428,7 @@ jobs:
           # of the on-device boot image and keeps its ramdisk; the dtbo
           # partition is never touched. Device-name checks stay with the ROM
           # (fastboot product name not pinned on MTK).
-          # per-build display: the banner file carries the codename/manager
+          # per-build display: the banner file carries the codename/manager/hook
           # and feature line for the flash screen; FEATURES.txt ships the
           # same line inside the zip
           python3 "$GITHUB_WORKSPACE/scripts/ak3-display.py" \
