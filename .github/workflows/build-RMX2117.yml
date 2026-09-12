@@ -31,7 +31,7 @@ on:
         type: string
         default: ""
       build_time:
-        description: "自定义构建时间串，拼在版本名之后（例 20260912-0851）"
+        description: "自定义内核构建时间，写进 uname -v 的日期段（例 Tue, 08 Sep 2026 21:01:02 +0000）"
         type: string
         default: ""
       enable_bbg:
@@ -61,7 +61,7 @@ jobs:
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
-      CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
+      KBUILD_BUILD_TIMESTAMP: ${{ inputs.build_time }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
@@ -376,7 +376,6 @@ jobs:
           HOOK_TYPE="$HOOK_TYPE" \
           HOOK_EXTRA="$HOOK_EXTRA" \
           CUSTOM_LOCALVERSION="$CUSTOM_LOCALVERSION" \
-          CUSTOM_BUILD_TIME="$CUSTOM_BUILD_TIME" \
           bash "$GITHUB_WORKSPACE/scripts/merge-defconfig.sh" "$KROOT" "$RUNNER_TEMP/out" $FRAGS
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
 
