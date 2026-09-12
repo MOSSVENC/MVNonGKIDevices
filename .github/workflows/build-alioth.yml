@@ -31,11 +31,11 @@ on:
           - none
         default: none
       localversion:
-        description: "自定义版本名，原样写进内核版本串（例 -MyKernel）"
+        description: "custom version string, written verbatim into uname -r (e.g. -MyKernel)"
         type: string
         default: ""
       build_time:
-        description: "自定义内核构建时间，写进 uname -v 的日期段（例 Tue, 08 Sep 2026 21:01:02 +0000）"
+        description: "custom build time for the uname -v date field (e.g. Tue, 08 Sep 2026 21:01:02 +0000)"
         type: string
         default: ""
       enable_bbg:
@@ -82,8 +82,9 @@ jobs:
 
       # Unified toolchain across all supported devices: AOSP clang 14
       # (clang-r450784d from android13-release) + Android GCC 4.9 prebuilt
-      # binutils. The 4.19 tree is built with LLVM=1, 复用本仓库 4.9 设备
-      # 的工具链配方（与官方 android-4.19 build.config 的 LLVM=1 一致）。
+      # binutils. The 4.19 tree is built with LLVM=1, reusing the 4.9 device
+      # toolchain recipe of this repo (same LLVM=1 as the official
+      # android-4.19 build.config).
       - name: Start full log
         run: |
           mkdir -p "$GITHUB_WORKSPACE/logs"
@@ -92,8 +93,8 @@ jobs:
           ENVF="$GITHUB_WORKSPACE/logs/bash_env.sh"
           {
             [ -n "${BASH_ENV:-}" ] && printf '[ -f %q ] && source %q\n' "$BASH_ENV" "$BASH_ENV"
-            # 子 bash（步骤里调用的 *.sh）会再次 source 本文件；用导出的哨兵变量保证
-            # 只套一层 tee，否则脚本输出会在日志里重复/叠加
+            # Sub-shells (*.sh called by steps) source this file again; the exported
+            # sentinel keeps one tee, so script output stays free of duplicates.
             printf 'if [ -z "${DSH_FULL_LOG_HOOK:-}" ]; then\n'
             printf '  DSH_FULL_LOG_HOOK=1\n'
             printf '  export DSH_FULL_LOG_HOOK\n'
@@ -354,7 +355,8 @@ jobs:
           # Module-signing key generation writes RSA progress without newlines;
           # build it serially first with that output silenced so it cannot
           # interleave with the parallel build
-          # uname -v 的构建时刻统一 UTC：填了用填的串，留空按 UTC 现算
+          # uname -v timestamp: the build_time input when given, else the
+          # build-start time in UTC.
           if [ -n "$CUSTOM_BUILD_TIME" ]; then
             export KBUILD_BUILD_TIMESTAMP="$CUSTOM_BUILD_TIME"
           else
