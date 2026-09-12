@@ -31,13 +31,13 @@ on:
           - none
         default: none
       localversion:
-        description: "custom kernel localversion, verbatim (e.g. -MyKernel); empty keeps the defconfig value"
+        description: "自定义版本名，原样写进内核版本串（例 -MyKernel）"
         type: string
         default: ""
       build_time:
-        description: "append the build time (UTC -YYYYMMDD-HHMM) to the kernel localversion"
-        type: boolean
-        default: false
+        description: "自定义构建时间串，拼在版本名之后（例 20260912-0851）"
+        type: string
+        default: ""
       enable_bbg:
         description: integrate Baseband-guard (BBG)
         type: boolean
@@ -73,7 +73,7 @@ jobs:
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
-      BUILD_TIME_SUFFIX: ${{ inputs.build_time }}
+      CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
@@ -334,7 +334,7 @@ jobs:
           HOOK_EXTRA="$HOOK_EXTRA" \
           HOOK_TYPE="$HOOK_TYPE" \
           CUSTOM_LOCALVERSION="$CUSTOM_LOCALVERSION" \
-          BUILD_TIME_SUFFIX="$BUILD_TIME_SUFFIX" \
+          CUSTOM_BUILD_TIME="$CUSTOM_BUILD_TIME" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
 
 
