@@ -146,14 +146,20 @@ jobs:
       # container by battery-ID resistor; CONFIG_BATT_VERIFY_BY_DS28E16 is not
       # compiled in this tree, so the single profile left in that container is
       # the one the gauge loads. This build carries the 5000mAh cell profile
-      # (qcom,nom-batt-capacity-mah = 5000) in place of the two 4520mAh ones.
-      - name: Apply 5000mAh battery profile
+      # (qcom,nom-batt-capacity-mah = 5000) in place of the two 4520mAh ones,
+      # and the charge ceilings (charger FV, six-pin step table, PD/QC3 battery
+      # voltage limits, unverified-battery FCC) follow that cell.
+      - name: Apply 5000mAh battery patches
         run: |
           cd "$KROOT"
-          P="$GITHUB_WORKSPACE/patches/alioth/0001-battery-5000mah-profile.patch"
-          git apply --check "$P" || { echo "battery profile patch does not apply cleanly"; exit 1; }
-          git apply "$P"
+          for P in "$GITHUB_WORKSPACE/patches/alioth/0001-battery-5000mah-profile.patch" \
+                   "$GITHUB_WORKSPACE/patches/alioth/0002-battery-5000mah-charge-limits.patch"; do
+            git apply --check "$P" || { echo "battery patch does not apply cleanly: $P"; exit 1; }
+            git apply "$P"
+          done
           grep -n 'fg-gen4-batterydata-alioth-sun-5000mah' \
+            arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
+          grep -n 'qcom,fv-max-uv\|mi,pd-bat-volt-max' \
             arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
 
       - name: Apply ReSukiSU manual-hook patches
