@@ -110,7 +110,11 @@ jobs:
           git clone -q --depth=1 --single-branch --branch android12L-release \
             https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
             "$RUNNER_TEMP/tc/gcc64"
-          ls "$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-gcc" >/dev/null
+          # the prebuilt ships binutils (as/ld/objcopy/...) plus gcc-*
+          # wrappers; the C compiler itself is clang, so the binaries the
+          # build actually resolves are the assembler and linker.
+          ls "$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-as" >/dev/null
+          ls "$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-ld" >/dev/null
           echo "$RUNNER_TEMP/tc/gcc64/bin:$CLANG_BIN" >> "$GITHUB_PATH"
 
       - name: Clone kernel source (not part of this repo)
