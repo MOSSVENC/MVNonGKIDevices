@@ -1,5 +1,5 @@
 diff --git a/drivers/input/input.c b/drivers/input/input.c
-index 378717d1b..449ccec1a 100644
+index 378717d..449ccec 100644
 --- a/drivers/input/input.c
 +++ b/drivers/input/input.c
 @@ -377,10 +377,20 @@ static int input_get_disposition(struct input_dev *dev,
@@ -24,7 +24,7 @@ index 378717d1b..449ccec1a 100644
  	if (disposition != INPUT_IGNORE_EVENT && type != EV_SYN)
  		add_input_randomness(type, code, value);
 diff --git a/fs/Makefile b/fs/Makefile
-index 6c1f25536..6d1b76055 100644
+index 93f521e..255a563 100644
 --- a/fs/Makefile
 +++ b/fs/Makefile
 @@ -13,6 +13,8 @@ obj-y :=	open.o read_write.o file_table.o super.o \
@@ -37,7 +37,7 @@ index 6c1f25536..6d1b76055 100644
  obj-y +=	buffer.o block_dev.o direct-io.o mpage.o
  else
 diff --git a/fs/compat.c b/fs/compat.c
-index bd064a2c3..0138b5fd6 100644
+index bd064a2..0138b5f 100644
 --- a/fs/compat.c
 +++ b/fs/compat.c
 @@ -28,6 +28,11 @@
@@ -353,7 +353,7 @@ index 5addf3b..a11b44c 100644
  	current->fs->in_exec = 0;
  	current->in_execve = 0;
 diff --git a/fs/namei.c b/fs/namei.c
-index e8537d462..a576c2e38 100644
+index e8537d4..a576c2e 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -38,6 +38,9 @@
@@ -838,7 +838,7 @@ index e8537d462..a576c2e38 100644
  	do_delayed_call(&done);
  	return res;
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 21fd423b1..489e963c2 100644
+index 4dba6b7..c17b2ef 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -25,9 +25,20 @@
@@ -1211,7 +1211,7 @@ index 21fd423b1..489e963c2 100644
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 +
 diff --git a/fs/notify/fdinfo.c b/fs/notify/fdinfo.c
-index 317b7e7eb..004ca86b8 100644
+index 317b7e7..004ca86 100644
 --- a/fs/notify/fdinfo.c
 +++ b/fs/notify/fdinfo.c
 @@ -12,6 +12,9 @@
@@ -1338,7 +1338,7 @@ index 317b7e7eb..004ca86b8 100644
  			   inode_mark->wd, inode->i_ino, inode->i_sb->s_dev,
  			   inotify_mark_user_mask(mark));
 diff --git a/fs/open.c b/fs/open.c
-index f2b82c462..180d3f388 100644
+index f2b82c4..180d3f3 100644
 --- a/fs/open.c
 +++ b/fs/open.c
 @@ -31,6 +31,9 @@
@@ -1402,7 +1402,7 @@ index f2b82c462..180d3f388 100644
  		goto out;
  
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 18c035f6e..57d45f150 100644
+index 7a67974..4f93438 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -88,6 +88,9 @@
@@ -1456,10 +1456,10 @@ index 18c035f6e..57d45f150 100644
  				continue;
  
 diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
-index 57d2d15e8..36a2a57ba 100644
+index 6c80638..86e924f 100644
 --- a/fs/proc/cmdline.c
 +++ b/fs/proc/cmdline.c
-@@ -6,6 +6,11 @@
+@@ -7,6 +7,11 @@
  #include <asm/setup.h>
  #endif
  
@@ -1471,7 +1471,7 @@ index 57d2d15e8..36a2a57ba 100644
  #ifdef CONFIG_INITRAMFS_IGNORE_SKIP_FLAG
  #define INITRAMFS_STR_FIND "skip_initramf"
  #define INITRAMFS_STR_REPLACE "want_initramf"
-@@ -28,6 +33,13 @@ static void proc_command_line_init(void) {
+@@ -31,6 +36,13 @@ static char new_command_line[COMMAND_LINE_SIZE];
  
  static int cmdline_proc_show(struct seq_file *m, void *v)
  {
@@ -1486,7 +1486,7 @@ index 57d2d15e8..36a2a57ba 100644
  	seq_printf(m, "%s\n", proc_command_line);
  #else
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
-index 4274f83bf..8a24e5ec9 100644
+index 4274f83..8a24e5e 100644
 --- a/fs/proc/fd.c
 +++ b/fs/proc/fd.c
 @@ -11,17 +11,31 @@
@@ -1608,7 +1608,7 @@ index 4274f83bf..8a24e5ec9 100644
  	if (seq_has_overflowed(m))
  		goto out;
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index 1d06ab4aa..c85e4982e 100644
+index c8b859f..85d0e76 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -17,6 +17,9 @@
@@ -1621,7 +1621,7 @@ index 1d06ab4aa..c85e4982e 100644
  
  #include <asm/elf.h>
  #include <asm/uaccess.h>
-@@ -347,6 +350,14 @@ static void show_vma_header_prefix(struct seq_file *m,
+@@ -343,6 +346,14 @@ static void show_vma_header_prefix(struct seq_file *m,
  		   MAJOR(dev), MINOR(dev), ino);
  }
  
@@ -1636,7 +1636,7 @@ index 1d06ab4aa..c85e4982e 100644
  static void
  show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
  {
-@@ -362,9 +373,36 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
+@@ -358,9 +369,36 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
  
  	if (file) {
  		struct inode *inode = file_inode(vma->vm_file);
@@ -1673,7 +1673,7 @@ index 1d06ab4aa..c85e4982e 100644
  	}
  
  	/* We don't show the stack guard page in /proc/maps */
-@@ -822,6 +860,11 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
+@@ -818,6 +856,11 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
  		mss = &mss_stack;
  	}
  
@@ -1685,7 +1685,7 @@ index 1d06ab4aa..c85e4982e 100644
  	smaps_walk.private = mss;
  
  #ifdef CONFIG_SHMEM
-@@ -911,7 +954,6 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
+@@ -907,7 +950,6 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
  			   (unsigned long)(mss->swap_pss >> (10 + PSS_SHIFT)),
  			   (unsigned long)(mss->pss_locked >> (10 + PSS_SHIFT)));
  
@@ -1693,7 +1693,7 @@ index 1d06ab4aa..c85e4982e 100644
  	if (!rollup_mode) {
  		arch_show_smap(m, vma);
  		show_smap_vma_flags(m, vma);
-@@ -1570,6 +1612,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -1566,6 +1608,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  	while (count && (start_vaddr < end_vaddr)) {
  		int len;
  		unsigned long end;
@@ -1703,7 +1703,7 @@ index 1d06ab4aa..c85e4982e 100644
  
  		pm.pos = 0;
  		end = (start_vaddr + PAGEMAP_WALK_SIZE) & PAGEMAP_WALK_MASK;
-@@ -1577,7 +1622,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -1573,7 +1618,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  		if (end < start_vaddr || end > end_vaddr)
  			end = end_vaddr;
  		down_read(&mm->mmap_sem);
@@ -1720,7 +1720,7 @@ index 1d06ab4aa..c85e4982e 100644
  		start_vaddr = end;
  
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-index 6863773af..8ff0e7411 100644
+index 6863773..8ff0e74 100644
 --- a/fs/proc_namespace.c
 +++ b/fs/proc_namespace.c
 @@ -11,10 +11,18 @@
@@ -1942,7 +1942,7 @@ index 6863773af..8ff0e7411 100644
  }
  
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 901231269..72c8e3c4a 100644
+index 9012312..72c8e3c 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
 @@ -581,11 +581,20 @@ static inline void file_pos_write(struct file *file, loff_t pos)
@@ -1967,7 +1967,7 @@ index 901231269..72c8e3c4a 100644
  		loff_t pos = file_pos_read(f.file);
  		ret = vfs_read(f.file, buf, count, &pos);
 diff --git a/fs/readdir.c b/fs/readdir.c
-index 1059f2a9b..4a0fb3c30 100644
+index 1059f2a..4a0fb3c 100644
 --- a/fs/readdir.c
 +++ b/fs/readdir.c
 @@ -18,6 +18,11 @@
@@ -2216,7 +2216,7 @@ index 1059f2a9b..4a0fb3c30 100644
  	return error;
  }
 diff --git a/fs/stat.c b/fs/stat.c
-index 068fdbcc9..b6f003e54 100644
+index 068fdbc..b6f003e 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -17,6 +17,17 @@
@@ -2374,7 +2374,7 @@ index 068fdbcc9..b6f003e54 100644
  		if (retry_estale(error, lookup_flags)) {
  			lookup_flags |= LOOKUP_REVAL;
 diff --git a/fs/statfs.c b/fs/statfs.c
-index 083dc0ac9..4778d89be 100644
+index 083dc0a..4778d89 100644
 --- a/fs/statfs.c
 +++ b/fs/statfs.c
 @@ -5,6 +5,9 @@
@@ -2459,7 +2459,7 @@ index 083dc0ac9..4778d89be 100644
  		buf->f_flags = calculate_f_flags(path->mnt);
 diff --git a/fs/susfs.c b/fs/susfs.c
 new file mode 100644
-index 000000000..f71b292b2
+index 0000000..f71b292
 --- /dev/null
 +++ b/fs/susfs.c
 @@ -0,0 +1,1549 @@
@@ -4014,7 +4014,7 @@ index 000000000..f71b292b2
 +
 diff --git a/include/linux/susfs.h b/include/linux/susfs.h
 new file mode 100644
-index 000000000..77e11b6e9
+index 0000000..77e11b6
 --- /dev/null
 +++ b/include/linux/susfs.h
 @@ -0,0 +1,243 @@
@@ -4263,7 +4263,7 @@ index 000000000..77e11b6e9
 +#endif
 diff --git a/include/linux/susfs_def.h b/include/linux/susfs_def.h
 new file mode 100644
-index 000000000..be189b94a
+index 0000000..be189b9
 --- /dev/null
 +++ b/include/linux/susfs_def.h
 @@ -0,0 +1,162 @@
@@ -4430,7 +4430,7 @@ index 000000000..be189b94a
 +		susfs_is_current_proc_umounted_app()
 +#endif // #ifndef KSU_SUSFS_DEF_H
 diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
-index a0c3365c8..08bf53d0f 100644
+index a0c3365..08bf53d 100644
 --- a/kernel/kallsyms.c
 +++ b/kernel/kallsyms.c
 @@ -24,6 +24,9 @@
@@ -4482,7 +4482,7 @@ index a0c3365c8..08bf53d0f 100644
  }
  
 diff --git a/kernel/reboot.c b/kernel/reboot.c
-index 2946ed1d9..12eb57c30 100644
+index 2946ed1..12eb57c 100644
 --- a/kernel/reboot.c
 +++ b/kernel/reboot.c
 @@ -277,12 +277,20 @@ static DEFINE_MUTEX(reboot_mutex);
@@ -4507,7 +4507,7 @@ index 2946ed1d9..12eb57c30 100644
  	/* We only trust the superuser with rebooting the system. */
  	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
 diff --git a/kernel/sys.c b/kernel/sys.c
-index a7f823224..a91e361c0 100644
+index d5cafeb..f82d288 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -582,6 +582,10 @@ SYSCALL_DEFINE1(setuid, uid_t, uid)
@@ -4555,7 +4555,7 @@ index a7f823224..a91e361c0 100644
  	if (copy_to_user(name, &tmp, sizeof(tmp)))
  		return -EFAULT;
 diff --git a/mm/memory.c b/mm/memory.c
-index 55be7a88c..3f26e49a4 100755
+index 9916001..b5e7587 100755
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -73,6 +73,10 @@
@@ -4569,7 +4569,7 @@ index 55be7a88c..3f26e49a4 100755
  #include "internal.h"
  
  #define CREATE_TRACE_POINTS
-@@ -4462,12 +4466,20 @@ int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
+@@ -4466,12 +4470,20 @@ int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
  	int write = gup_flags & FOLL_WRITE;
  
  	down_read(&mm->mmap_sem);
@@ -4591,7 +4591,7 @@ index 55be7a88c..3f26e49a4 100755
  				gup_flags, &page, &vma);
  		if (ret <= 0) {
 diff --git a/security/selinux/avc.c b/security/selinux/avc.c
-index ad57a5917cea..238163455dea 100644
+index ad57a59..2381634 100644
 --- a/security/selinux/avc.c
 +++ b/security/selinux/avc.c
 @@ -165,6 +165,12 @@ static void avc_dump_av(struct audit_buffer *ab, u16 tclass, u32 av)
@@ -4638,7 +4638,7 @@ index ad57a5917cea..238163455dea 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 91c5af8ca168..ac07e4b79ee3 100644
+index 91c5af8..ac07e4b 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
 @@ -2310,6 +2310,12 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
