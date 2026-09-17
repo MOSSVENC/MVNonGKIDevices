@@ -196,7 +196,7 @@ jobs:
           cd "$KROOT"
           # ReSukiSU setup (main branch; wires drivers/kernelsu + Kconfig)
           curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
-          bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
+          bash "$GITHUB_WORKSPACE/scripts/apply-susfs-port.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
