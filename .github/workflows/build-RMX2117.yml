@@ -88,7 +88,8 @@ jobs:
         run: |
           # Official toolchain per build.config.mtk.aarch64 in the kernel
           # tree: clang-r383902 (clang 11) + aarch64-linux-android-4.9
-          # binutils with the androidkernel- prefix.
+          # binutils from the standard aarch64-linux-android-4.9 prebuilt
+          # (the prefix this tree's own build scripts pass to make).
           for br in android12-release android11-release android12L-release; do
             if git ls-remote --heads \
                 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
@@ -109,7 +110,7 @@ jobs:
           git clone -q --depth=1 --single-branch --branch android12L-release \
             https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
             "$RUNNER_TEMP/tc/gcc64"
-          ls "$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-androidkernel-gcc" >/dev/null || true
+          ls "$RUNNER_TEMP/tc/gcc64/bin/aarch64-linux-android-gcc" >/dev/null
           echo "$RUNNER_TEMP/tc/gcc64/bin:$CLANG_BIN" >> "$GITHUB_PATH"
 
       - name: Clone kernel source (not part of this repo)
@@ -310,7 +311,7 @@ jobs:
           if grep -q '^CONFIG_MODULE_SIG=y' "$RUNNER_TEMP/out/.config" 2>/dev/null; then
             make -j1 O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-androidkernel- \
+            CROSS_COMPILE=aarch64-linux-android- \
             LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
             quiet=silent_ certs/ >"$RUNNER_TEMP/certs.log" 2>&1 || {
               echo "certs prebuild failed:" >&2
@@ -318,14 +319,14 @@ jobs:
           fi
           make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-androidkernel- \
+            CROSS_COMPILE=aarch64-linux-android- \
             LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
             Image \
             2>&1 || rc=$?
           if [ "$rc" = 0 ]; then
             make O="$RUNNER_TEMP/out" ARCH=arm64 \
               CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-              CROSS_COMPILE=aarch64-linux-androidkernel- \
+              CROSS_COMPILE=aarch64-linux-android- \
               LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy \
               dtbs 2>&1 || rc=$?
           fi
