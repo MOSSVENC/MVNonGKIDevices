@@ -27,7 +27,7 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 |---|---|---|
 | `resukisu-manual-lsm` | ReSukiSU main | 源码补丁 + 自动 hook（input 经内核 input_handler；setuid/initrc 经 LSM AUTO） |
 | `resukisu-manual-source` | ReSukiSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read，0010-0012） |
-| `resukisu-auto` | ReSukiSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
+| `resukisu-auto` | ReSukiSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁，构建侧开 `KALLSYMS_ALL`；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
 | `resukisu-susfs` | ReSukiSU main | SuSFS inline hook（应用各设备树适配补丁） |
 | `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | hook 类型 `syscall_table` |
 | `xxksu-branch_link` | Backslashxx KernelSU fork（master） | hook 类型 `branch_link` |

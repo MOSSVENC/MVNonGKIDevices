@@ -121,8 +121,12 @@ CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
 CONFIG_KSU_SUSFS_SUS_MAP=y
 EOF
 elif [ "$TYPE" = "auto" ]; then
-  # auto-hook branch: runtime inline-hook engine; its Kconfig has no
-  # CONFIG_KSU_MANUAL_HOOK_AUTO_* symbols (those exist only on main).
+  # auto-hook branch: entry-level inline-hook engine, no source call sites.
+  # Its Kconfig has no CONFIG_KSU_MANUAL_HOOK_AUTO_* symbols (those exist only
+  # on main). KALLSYMS_ALL is what makes the engine usable: with it off the
+  # branch's manual_hook_check.mk requires the ksu_handle_* call sites in the
+  # source and static_export_check.mk adds selinuxfs exports, so the auto build
+  # fails on trees that carry neither.
   echo "==> hook_type=auto (ReSukiSU auto-hook branch)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y
@@ -130,6 +134,7 @@ CONFIG_KSU=y
 CONFIG_KSU_MANUAL_HOOK=y
 # CONFIG_KSU_TRACEPOINT_HOOK is not set
 # CONFIG_KSU_SUSFS is not set
+CONFIG_KALLSYMS_ALL=y
 EOF
 elif [ "$MODE" = "manual" ]; then
   # Manual extra hooks: AUTO off -> ReSukiSU requires ksu_handle_setresuid /
