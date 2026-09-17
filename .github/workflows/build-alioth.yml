@@ -178,42 +178,7 @@ jobs:
 
       - name: Apply SuSFS 4.19 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
-        run: |
-          cd "$KROOT"
-          P="$GITHUB_WORKSPACE/patches/susfs/4.19/susfs-port.patch"
-          git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
-          git apply "$P"
-          echo "SuSFS 4.19 port applied:"
-          grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
-          # ReSukiSU's inline_hook_check.mk requires the ksu_handle_* call
-          # sites (setresuid/execveat/faccessat/sys_read/stat/reboot/input)
-          # in the kernel sources when using the SuSFS inline hook; the port
-          # carries all of them for this tree.
-          # verify the faces ReSukiSU's inline_hook_check.mk demands
-          MISSING=""
-          for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
-                      "ksu_handle_post_execveat_sucompat:fs/exec.c" \
-                      "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
-                      "ksu_handle_stat:fs/stat.c" "ksu_handle_vfs_fstat:fs/stat.c" \
-                      "ksu_handle_sys_reboot:kernel/reboot.c" \
-                      "ksu_handle_input_handle_event:drivers/input/input.c"; do
-            sym="${spec%%:*}"; file="${spec##*:}"
-            grep -q "$sym" "$file" || MISSING="$MISSING $sym($file)"
-          done
-          # the post-execve call must sit after the exec attempt
-          post=$(grep -n '(void)ksu_handle_post_execveat_sucompat(' fs/exec.c | head -1 | cut -d: -f1)
-          done_line=$(grep -n 'exec_binprm(bprm)' fs/exec.c | head -1 | cut -d: -f1)
-          [ -n "$post" ] && [ -n "$done_line" ] && [ "$post" -gt "$done_line" ] || {
-            echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
-            exit 1; }
-          # fs/open.c and fs/stat.c call filename_lookup(); the port
-          # de-statics it for the 4.x tree
-          grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"
-          if [ -n "$MISSING" ]; then
-            echo "port left missing:$MISSING" >&2
-            exit 1
-          fi
-          echo "SuSFS KSU-interaction hooks present"
+        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.19/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'

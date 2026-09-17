@@ -196,38 +196,7 @@ jobs:
           cd "$KROOT"
           # ReSukiSU setup (main branch; wires drivers/kernelsu + Kconfig)
           curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
-          # SuSFS 4.14 kernel-side port (patches/susfs/4.14/)
-          P="$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
-          git apply --check "$P" || { echo "test patch does not apply cleanly"; exit 1; }
-          git apply "$P"
-          echo "SuSFS 4.14 port applied:"
-          grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
-          # inline hook call sites (setresuid/execveat/faccessat/sys_read/
-          # stat/reboot/input) are part of the port
-          MISSING=""
-          for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
-                      "ksu_handle_post_execveat_sucompat:fs/exec.c" \
-                      "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
-                      "ksu_handle_stat:fs/stat.c" "ksu_handle_vfs_fstat:fs/stat.c" \
-                      "ksu_handle_sys_reboot:kernel/reboot.c" \
-                      "ksu_handle_input_handle_event:drivers/input/input.c"; do
-            sym="${spec%%:*}"; file="${spec##*:}"
-            grep -q "$sym" "$file" || MISSING="$MISSING $sym($file)"
-          done
-          # the post-execve call must sit after the exec attempt
-          post=$(grep -n '(void)ksu_handle_post_execveat_sucompat(' fs/exec.c | head -1 | cut -d: -f1)
-          done_line=$(grep -n 'exec_binprm(bprm)' fs/exec.c | head -1 | cut -d: -f1)
-          [ -n "$post" ] && [ -n "$done_line" ] && [ "$post" -gt "$done_line" ] || {
-            echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
-            exit 1; }
-          # fs/open.c and fs/stat.c call filename_lookup(); the port
-          # de-statics it for the 4.x tree
-          grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"
-          if [ -n "$MISSING" ]; then
-            echo "port left missing:$MISSING" >&2
-            exit 1
-          fi
-          echo "SuSFS KSU-interaction hooks present"
+          bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
