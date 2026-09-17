@@ -103,10 +103,14 @@ fi
 if [ "$TYPE" = "susfs" ]; then
   # SuSFS inline hook: kernel-side susfs is applied by the caller
   # (patches/susfs/), KernelSU-side Kconfig provides the KSU_SUSFS
-  # symbols; select the full feature set.
+  # symbols; select the full feature set. KALLSYMS_ALL keeps the
+  # static_export_check gate off: without it nine selinux symbols
+  # (write_op, sel_mutex, selinux_ops, policy_rwlock, ...) must be
+  # de-static'd and exported in the tree.
   echo "==> hook_type=susfs (ReSukiSU + SuSFS inline hook)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y
+CONFIG_KALLSYMS_ALL=y
 # CONFIG_KSU_DEBUG is not set
 # CONFIG_KSU_TRACEPOINT_HOOK is not set
 CONFIG_KSU_SUSFS=y
@@ -143,6 +147,7 @@ elif [ "$MODE" = "manual" ]; then
   echo "==> hook_extra_mode=manual (source patches + AUTO off)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y
+CONFIG_KALLSYMS_ALL=y
 # CONFIG_KSU_DEBUG is not set
 CONFIG_KSU_MANUAL_HOOK=y
 # CONFIG_KSU_TRACEPOINT_HOOK is not set
@@ -156,6 +161,7 @@ else
   echo "==> hook_extra_mode=lsm (AUTO machinery)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y
+CONFIG_KALLSYMS_ALL=y
 # CONFIG_KSU_DEBUG is not set
 CONFIG_KSU_MANUAL_HOOK=y
 # CONFIG_KSU_TRACEPOINT_HOOK is not set
