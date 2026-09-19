@@ -4625,10 +4625,21 @@ index 59fa20b..31adb2b 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index e98728a..59d9e6b 100644
+index e98728a9c..7367bbd43 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
-@@ -2429,17 +2429,38 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
+@@ -99,6 +99,10 @@
+ #include "avc_ss.h"
+ 
+ struct selinux_state selinux_state;
++#ifdef CONFIG_KSU_SUSFS
++extern struct selinux_state fake_state;
++extern bool ksu_selinux_hide_running __read_mostly;
++#endif // #ifdef CONFIG_KSU_SUSFS
+ 
+ /* SECMARK reference count */
+ static atomic_t selinux_secmark_refcount = ATOMIC_INIT(0);
+@@ -2429,17 +2433,38 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
  			    const struct task_security_struct *old_tsec,
  			    const struct task_security_struct *new_tsec)
  {
@@ -4667,3 +4678,23 @@ index e98728a..59d9e6b 100644
  	/*
  	 * If the policy enables the nnp_nosuid_transition policy capability,
  	 * then we permit transitions under NNP or nosuid if the
+diff --git a/security/selinux/selinuxfs.c b/security/selinux/selinuxfs.c
+index dba17ea51..0dc5c660a 100644
+--- a/security/selinux/selinuxfs.c
++++ b/security/selinux/selinuxfs.c
+@@ -42,6 +42,15 @@
+ #include "objsec.h"
+ #include "conditional.h"
+ 
++#ifdef CONFIG_KSU_SUSFS
++extern struct selinux_state fake_state;
++extern struct page *fake_status;
++extern struct static_key_false fake_status_initialize_key;
++extern bool ksu_selinux_hide_running __read_mostly;
++extern bool ksu_selinux_hide_enabled __read_mostly;
++extern void initialize_fake_status(void);
++#endif // #ifdef CONFIG_KSU_SUSFS
++
+ enum sel_inos {
+ 	SEL_ROOT_INO = 2,
+ 	SEL_LOAD,	/* load policy */
