@@ -112,20 +112,10 @@ jobs:
           echo "$RUNNER_TEMP/tc/gcc64/bin:$CLANG_BIN" >> "$GITHUB_PATH"
 
       - name: Clone kernel source (not part of this repo)
-        run: |
-          set -o pipefail
-          git config --global http.postBuffer 524288000
-          # Source tree lives in a kernel-4.14/ directory: oplus power
-          # headers (oplus_battery_mtk6853R.h) include tcpm.h through a
-          # ../../../../kernel-4.14/... relative path that assumes the
-          # OPPO build layout.
-          git clone --depth=1 --filter=blob:none \
-            --branch="$KERNEL_REF" \
-            "$KERNEL_REPO" \
-            "$RUNNER_TEMP/kernel-4.14" 2>&1 | tee /tmp/clone.log
-          echo "KROOT=$RUNNER_TEMP/kernel-4.14" >> "$GITHUB_ENV"
-          head -6 "$RUNNER_TEMP/kernel-4.14/Makefile"
-          { echo "### kernel clone"; tail -30 /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
+        # Source tree lives in a kernel-4.14/ directory: oplus power headers
+        # (oplus_battery_mtk6853R.h) include tcpm.h through a ../../../../kernel-4.14/...
+        # relative path that assumes the OPPO build layout.
+        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel-4.14" 30
 
       # MODVERSIONS probes every object for exported symbols through
       # `$(LLVM_NM) … | grep -q __ksymtab` in scripts/Makefile.build. The
