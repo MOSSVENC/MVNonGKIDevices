@@ -171,17 +171,7 @@ jobs:
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id (4.9 uses CONFIG_LOCALVERSION_AUTO).
       - name: Commit patched kernel tree (drop -dirty from version)
-        run: |
-          cd "$KROOT"
-          git config user.email "action@localhost"
-          git config user.name "kernel-builder"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "no changes to commit (clean tree)"
-          else
-            git commit -q -m "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace)"
-            echo "committed patched tree: $(git rev-parse --short HEAD)"
-          fi
+        run: bash "$GITHUB_WORKSPACE/scripts/commit-kernel-tree.sh" "$KROOT" "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace)"
 
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
