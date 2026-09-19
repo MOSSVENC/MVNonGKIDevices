@@ -419,14 +419,9 @@ jobs:
           retention-days: 14
 
       - name: Post-build summary
-        if: always()
         run: |
-          { echo "## RMX2117 build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
-            echo "- kernel_ref: ${{ env.KERNEL_REF }}"
-            echo "- features: mode=$HOOK_MODE manager=$ROOT_MANAGER bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE"
-            echo "- artifacts: Image / mt6853.dtb / final.config / RMX2117-full.log"
-            echo "- dtbo partition image: carried over from stock firmware"
-          } >> "$GITHUB_STEP_SUMMARY" || true
+          bash scripts/post-build-summary.sh RMX2117 "Image / mt6853.dtb / final.config / RMX2117-full.log" "- dtbo partition image: carried over from stock firmware"
+
       - name: Upload AnyKernel3 package
         if: success()
         uses: actions/upload-artifact@v7

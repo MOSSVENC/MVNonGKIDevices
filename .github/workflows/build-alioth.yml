@@ -421,13 +421,7 @@ jobs:
           retention-days: 14
 
       - name: Post-build summary
-        if: always()
-        run: |
-          { echo "## alioth build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
-            echo "- kernel_ref: ${{ env.KERNEL_REF }}"
-            echo "- features: mode=$HOOK_MODE manager=$ROOT_MANAGER bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE"
-            echo "- artifacts: Image / dtbo.img / final.config / alioth-full.log"
-          } >> "$GITHUB_STEP_SUMMARY" || true
+        run: bash scripts/post-build-summary.sh alioth "Image / dtbo.img / final.config / alioth-full.log"
 
       - name: Upload AnyKernel3 package
         if: success()

@@ -310,13 +310,7 @@ jobs:
           retention-days: 14
 
       - name: Post-build summary
-        if: always()
-        run: |
-          { echo "## vince build (${{ env.DEFCONFIG }}, ${{ env.HOOK_MODE }})"
-            echo "- kernel_ref: ${{ env.KERNEL_REF }}"
-            echo "- features: mode=$HOOK_MODE manager=$ROOT_MANAGER bbg=$ENABLE_BBG droidspace=$ENABLE_DROIDSPACE"
-            echo "- artifacts: Image.gz-dtb / final.config / vince-full.log"
-          } >> "$GITHUB_STEP_SUMMARY" || true
+        run: bash scripts/post-build-summary.sh vince "Image.gz-dtb / final.config / vince-full.log"
 
       - name: Upload AnyKernel3 package
         if: success()
