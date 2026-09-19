@@ -107,7 +107,7 @@ index eef84eb..65e0794 100644
  	current->fs->in_exec = 0;
  	current->in_execve = 0;
 diff --git a/fs/namei.c b/fs/namei.c
-index ea9e472..2dfe7a8 100644
+index ea9e472..78e2ff0 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -40,6 +40,9 @@
@@ -431,27 +431,25 @@ index ea9e472..2dfe7a8 100644
 +	{
 +		fake_filename = susfs_open_redirect_spoof_do_sys_openat(path.dentry->d_inode);
 +		if (fake_filename && !IS_ERR(fake_filename)) {
++			struct path fake_path;
++
++			/* filename_lookup() consumes fake_filename */
++			error = filename_lookup(old_dfd, fake_filename, flags | LOOKUP_DIRECTORY, &fake_path, NULL);
 +			path_put(&path);
-+			restore_nameidata();
-+			set_nameidata(nd, old_dfd, fake_filename);
-+			error = path_lookupat(nd, flags | LOOKUP_DIRECTORY, &path);
-+			if (unlikely(error)) {
-+				putname(fake_filename);
++			if (unlikely(error))
 +				return error;
-+			}
++			path = fake_path;
 +		}
 +	}
 +#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
  	if (unlikely(error))
  		return error;
  	error = mnt_want_write(path.mnt);
-@@ -3642,24 +3817,57 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
+@@ -3642,24 +3817,53 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
  	mnt_drop_write(path.mnt);
  out:
  	path_put(&path);
 +#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-+	if (fake_filename && !IS_ERR(fake_filename))
-+		putname(fake_filename);
 +#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
  	return error;
  }
@@ -471,14 +469,14 @@ index ea9e472..2dfe7a8 100644
 +		{
 +			fake_filename = susfs_open_redirect_spoof_do_sys_openat(path.dentry->d_inode);
 +			if (fake_filename && !IS_ERR(fake_filename)) {
++				struct path fake_path;
++
++				/* filename_lookup() consumes fake_filename */
++				error = filename_lookup(old_dfd, fake_filename, flags, &fake_path, NULL);
 +				path_put(&path);
-+				restore_nameidata();
-+				set_nameidata(nd, old_dfd, fake_filename);
-+				error = path_lookupat(nd, flags, &path);
-+				if (unlikely(error)) {
-+					putname(fake_filename);
++				if (unlikely(error))
 +					return error;
-+				}
++				path = fake_path;
 +			}
 +		}
 +#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
@@ -487,8 +485,6 @@ index ea9e472..2dfe7a8 100644
  		path_put(&path);
  	}
 +#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-+	if (fake_filename && !IS_ERR(fake_filename))
-+		putname(fake_filename);
 +#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
  	return error;
  }
@@ -503,7 +499,7 @@ index ea9e472..2dfe7a8 100644
  	struct file *file;
  	int error;
  
-@@ -3678,8 +3886,31 @@ static struct file *path_openat(struct nameidata *nd,
+@@ -3678,8 +3882,31 @@ static struct file *path_openat(struct nameidata *nd,
  			nd->flags &= ~(LOOKUP_OPEN|LOOKUP_CREATE|LOOKUP_EXCL);
  			s = trailing_symlink(nd);
  		}
@@ -535,7 +531,7 @@ index ea9e472..2dfe7a8 100644
  	if (likely(!error)) {
  		if (likely(file->f_mode & FMODE_OPENED))
  			return file;
-@@ -3696,6 +3927,10 @@ static struct file *path_openat(struct nameidata *nd,
+@@ -3696,6 +3923,10 @@ static struct file *path_openat(struct nameidata *nd,
  	return ERR_PTR(error);
  }
  
@@ -546,7 +542,7 @@ index ea9e472..2dfe7a8 100644
  struct file *do_filp_open(int dfd, struct filename *pathname,
  		const struct open_flags *op)
  {
-@@ -4908,7 +5143,18 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
+@@ -4908,7 +5139,18 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
  
  	if (unlikely(!(inode->i_opflags & IOP_DEFAULT_READLINK))) {
  		if (unlikely(inode->i_op->readlink))
@@ -565,7 +561,7 @@ index ea9e472..2dfe7a8 100644
  
  		if (!d_is_symlink(dentry))
  			return -EINVAL;
-@@ -4924,6 +5170,15 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
+@@ -4924,6 +5166,15 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
  		if (IS_ERR(link))
  			return PTR_ERR(link);
  	}
