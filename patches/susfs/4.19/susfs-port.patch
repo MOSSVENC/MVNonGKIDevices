@@ -107,7 +107,7 @@ index eef84eb..65e0794 100644
  	current->fs->in_exec = 0;
  	current->in_execve = 0;
 diff --git a/fs/namei.c b/fs/namei.c
-index ea9e472..d787ded 100644
+index ea9e472..2dfe7a8 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -40,6 +40,9 @@
@@ -199,12 +199,14 @@ index ea9e472..d787ded 100644
  	if (unlikely(!dentry))
  		return ERR_PTR(-ENOMEM);
  
-@@ -1643,6 +1681,24 @@ static struct dentry *__lookup_hash(const struct qstr *name,
+@@ -1643,6 +1681,26 @@ static struct dentry *__lookup_hash(const struct qstr *name,
  		dput(dentry);
  		dentry = old;
  	}
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +	if (unlikely(dentry) && !IS_ERR(dentry) && dentry->d_inode && !found_sus_path && susfs_is_inode_sus_path(dentry->d_inode)) {
++		bool is_fuse = dentry->d_inode->i_sb->s_magic == FUSE_SUPER_MAGIC;
++
 +		if (d_in_lookup(dentry))
 +			d_lookup_done(dentry);
 +		if (!(flags & LOOKUP_RCU))
@@ -213,7 +215,7 @@ index ea9e472..d787ded 100644
 +		//   it is trying to find the fuse sus path with the create flag, then
 +		//   at least we can prevent the fake qstr file from from being created,
 +		//   although it is futile to do this, it is better than doing nothing.
-+		if (dentry->d_inode->i_sb->s_magic == FUSE_SUPER_MAGIC &&
++		if (is_fuse &&
 +			(flags & (LOOKUP_CREATE | LOOKUP_EXCL)))
 +			return ERR_PTR(-EACCES);
 +		dentry = d_alloc(base, &susfs_fake_qstr_name);
@@ -224,7 +226,7 @@ index ea9e472..d787ded 100644
  	return dentry;
  }
  
-@@ -1653,6 +1709,9 @@ static int lookup_fast(struct nameidata *nd,
+@@ -1653,6 +1711,9 @@ static int lookup_fast(struct nameidata *nd,
  	struct vfsmount *mnt = nd->path.mnt;
  	struct dentry *dentry, *parent = nd->path.dentry;
  	int status = 1;
@@ -234,7 +236,7 @@ index ea9e472..d787ded 100644
  	int err;
  
  	/*
-@@ -1664,6 +1723,16 @@ static int lookup_fast(struct nameidata *nd,
+@@ -1664,6 +1725,16 @@ static int lookup_fast(struct nameidata *nd,
  		unsigned seq;
  		bool negative;
  		dentry = __d_lookup_rcu(parent, &nd->last, &seq);
@@ -251,7 +253,7 @@ index ea9e472..d787ded 100644
  		if (unlikely(!dentry)) {
  			if (unlazy_walk(nd))
  				return -ECHILD;
-@@ -1710,6 +1779,16 @@ static int lookup_fast(struct nameidata *nd,
+@@ -1710,6 +1781,16 @@ static int lookup_fast(struct nameidata *nd,
  			status = d_revalidate(dentry, nd->flags);
  	} else {
  		dentry = __d_lookup(parent, &nd->last);
@@ -268,7 +270,7 @@ index ea9e472..d787ded 100644
  		if (unlikely(!dentry))
  			return 0;
  		status = d_revalidate(dentry, nd->flags);
-@@ -1741,12 +1820,19 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1741,12 +1822,19 @@ static struct dentry *__lookup_slow(const struct qstr *name,
  	struct dentry *dentry, *old;
  	struct inode *inode = dir->d_inode;
  	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
@@ -288,7 +290,7 @@ index ea9e472..d787ded 100644
  	if (IS_ERR(dentry))
  		return dentry;
  	if (unlikely(!d_in_lookup(dentry))) {
-@@ -1756,6 +1842,12 @@ again:
+@@ -1756,6 +1844,12 @@ static struct dentry *__lookup_slow(const struct qstr *name,
  				if (!error) {
  					d_invalidate(dentry);
  					dput(dentry);
@@ -301,7 +303,7 @@ index ea9e472..d787ded 100644
  					goto again;
  				}
  				dput(dentry);
-@@ -1770,6 +1862,19 @@ again:
+@@ -1770,6 +1864,19 @@ static struct dentry *__lookup_slow(const struct qstr *name,
  			dentry = old;
  		}
  	}
@@ -321,7 +323,7 @@ index ea9e472..d787ded 100644
  	return dentry;
  }
  
-@@ -1902,6 +2007,11 @@ static int walk_component(struct nameidata *nd, int flags)
+@@ -1902,6 +2009,11 @@ static int walk_component(struct nameidata *nd, int flags)
  	if (unlikely(err <= 0)) {
  		if (err < 0)
  			return err;
@@ -333,7 +335,7 @@ index ea9e472..d787ded 100644
  		path.dentry = lookup_slow(&nd->last, nd->path.dentry,
  					  nd->flags);
  		if (IS_ERR(path.dentry))
-@@ -2180,6 +2290,17 @@ static int link_path_walk(const char *name, struct nameidata *nd)
+@@ -2180,6 +2292,17 @@ static int link_path_walk(const char *name, struct nameidata *nd)
  		if (err)
  			return err;
  
@@ -351,7 +353,7 @@ index ea9e472..d787ded 100644
  		hash_len = hash_name(nd->path.dentry, name);
  
  		type = LAST_NORM;
-@@ -2363,6 +2484,9 @@ static inline int lookup_last(struct nameidata *nd)
+@@ -2363,6 +2486,9 @@ static inline int lookup_last(struct nameidata *nd)
  {
  	if (nd->last_type == LAST_NORM && nd->last.name[nd->last.len])
  		nd->flags |= LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
@@ -361,7 +363,7 @@ index ea9e472..d787ded 100644
  
  	nd->flags &= ~LOOKUP_PARENT;
  	return walk_component(nd, 0);
-@@ -3274,15 +3398,39 @@ static int lookup_open(struct nameidata *nd, struct path *path,
+@@ -3274,15 +3400,39 @@ static int lookup_open(struct nameidata *nd, struct path *path,
  	int error, create_error = 0;
  	umode_t mode = op->mode;
  	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
@@ -401,7 +403,7 @@ index ea9e472..d787ded 100644
  			if (IS_ERR(dentry))
  				return PTR_ERR(dentry);
  		}
-@@ -3407,6 +3555,10 @@ static int do_last(struct nameidata *nd,
+@@ -3407,6 +3557,10 @@ static int do_last(struct nameidata *nd,
  	struct path path;
  	int error;
  
@@ -412,7 +414,7 @@ index ea9e472..d787ded 100644
  	nd->flags &= ~LOOKUP_PARENT;
  	nd->flags |= op->intent;
  
-@@ -3617,9 +3769,30 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
+@@ -3617,9 +3771,30 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
  		const struct open_flags *op,
  		struct file *file)
  {
@@ -443,7 +445,7 @@ index ea9e472..d787ded 100644
  	if (unlikely(error))
  		return error;
  	error = mnt_want_write(path.mnt);
-@@ -3642,24 +3815,57 @@ out2:
+@@ -3642,24 +3817,57 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
  	mnt_drop_write(path.mnt);
  out:
  	path_put(&path);
@@ -501,7 +503,7 @@ index ea9e472..d787ded 100644
  	struct file *file;
  	int error;
  
-@@ -3678,8 +3884,31 @@ static struct file *path_openat(struct nameidata *nd,
+@@ -3678,8 +3886,31 @@ static struct file *path_openat(struct nameidata *nd,
  			nd->flags &= ~(LOOKUP_OPEN|LOOKUP_CREATE|LOOKUP_EXCL);
  			s = trailing_symlink(nd);
  		}
@@ -533,7 +535,7 @@ index ea9e472..d787ded 100644
  	if (likely(!error)) {
  		if (likely(file->f_mode & FMODE_OPENED))
  			return file;
-@@ -3696,6 +3925,10 @@ static struct file *path_openat(struct nameidata *nd,
+@@ -3696,6 +3927,10 @@ static struct file *path_openat(struct nameidata *nd,
  	return ERR_PTR(error);
  }
  
@@ -544,7 +546,7 @@ index ea9e472..d787ded 100644
  struct file *do_filp_open(int dfd, struct filename *pathname,
  		const struct open_flags *op)
  {
-@@ -4908,7 +5141,18 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
+@@ -4908,7 +5143,18 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
  
  	if (unlikely(!(inode->i_opflags & IOP_DEFAULT_READLINK))) {
  		if (unlikely(inode->i_op->readlink))
@@ -563,7 +565,7 @@ index ea9e472..d787ded 100644
  
  		if (!d_is_symlink(dentry))
  			return -EINVAL;
-@@ -4924,6 +5168,15 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
+@@ -4924,6 +5170,15 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
  		if (IS_ERR(link))
  			return PTR_ERR(link);
  	}
