@@ -2505,10 +2505,10 @@ index 206b576ce..47fcb24ed 100644
  		return -ENOMEM;
 diff --git a/fs/susfs.c b/fs/susfs.c
 new file mode 100644
-index 000000000..f71b292b2
+index 000000000..b4eca8a64
 --- /dev/null
 +++ b/fs/susfs.c
-@@ -0,0 +1,1549 @@
+@@ -0,0 +1,1550 @@
 +#include <linux/version.h>
 +#include <linux/cred.h>
 +#include <linux/fs.h>
@@ -2532,6 +2532,7 @@ index 000000000..f71b292b2
 +#include <linux/workqueue.h>
 +#include <linux/fsnotify_backend.h>
 +#include <linux/jump_label.h>
++#include <linux/security.h>
 +#include <linux/susfs.h>
 +#include "fuse/fuse_i.h"
 +#include "mount.h"
