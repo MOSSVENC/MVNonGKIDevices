@@ -4459,10 +4459,10 @@ index 4ad367a..edba0b7 100644
  }
  
 diff --git a/kernel/reboot.c b/kernel/reboot.c
-index bd30a97..e6b5b59 100644
+index bd30a973f..0da451f5d 100644
 --- a/kernel/reboot.c
 +++ b/kernel/reboot.c
-@@ -277,12 +277,22 @@ static DEFINE_MUTEX(reboot_mutex);
+@@ -277,12 +277,25 @@ static DEFINE_MUTEX(reboot_mutex);
   *
   * reboot doesn't sync: do that yourself before calling this.
   */
@@ -4477,9 +4477,12 @@ index bd30a97..e6b5b59 100644
  	char buffer[256];
  	int ret = 0;
 +#ifdef CONFIG_KSU_SUSFS
-+    if (system_state == SYSTEM_RUNNING) {
-+        ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
-+    }
++	ret = ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
++	if (ret) {
++		goto orig_flow;
++	}
++	return ret;
++orig_flow:
 +#endif
 +
  
