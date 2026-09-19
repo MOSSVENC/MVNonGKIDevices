@@ -1722,7 +1722,7 @@ index c8b859f..85d0e76 100644
  		start_vaddr = end;
  
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-index 6863773..8ff0e74 100644
+index 6863773..bbc9d85 100644
 --- a/fs/proc_namespace.c
 +++ b/fs/proc_namespace.c
 @@ -11,10 +11,18 @@
@@ -1744,7 +1744,7 @@ index 6863773..8ff0e74 100644
  static unsigned mounts_poll(struct file *file, poll_table *wait)
  {
  	struct seq_file *m = file->private_data;
-@@ -236,6 +244,163 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
+@@ -236,6 +244,164 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
  	return err;
  }
  
@@ -1775,6 +1775,7 @@ index 6863773..8ff0e74 100644
 +	seq_putc(m, ' ');
 +	show_type(m, sb);
 +	seq_puts(m, __mnt_is_readonly(mnt) ? " ro" : " rw");
++	seq_puts(m, sb_rdonly(sb) ? " ro" : " rw");
 +	err = show_sb_opts(m, sb);
 +	if (err)
 +		goto out;
@@ -1908,7 +1909,7 @@ index 6863773..8ff0e74 100644
  static int mounts_open_common(struct inode *inode, struct file *file,
  			      int (*show)(struct seq_file *, struct vfsmount *))
  {
-@@ -303,16 +468,34 @@ static int mounts_release(struct inode *inode, struct file *file)
+@@ -303,16 +469,34 @@ static int mounts_release(struct inode *inode, struct file *file)
  
  static int mounts_open(struct inode *inode, struct file *file)
  {
