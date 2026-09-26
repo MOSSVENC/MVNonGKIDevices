@@ -101,6 +101,7 @@ jobs:
         run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       - name: Apply ReSukiSU manual-hook patches
+        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/daisy/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/resukisu/4.9/001[0-2]-*.patch"
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)

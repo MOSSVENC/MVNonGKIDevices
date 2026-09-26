@@ -102,6 +102,7 @@ jobs:
         run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845.git "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       - name: Apply ReSukiSU manual-hook patches
+        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9" "$GITHUB_WORKSPACE/patches/resukisu/4.9"
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
