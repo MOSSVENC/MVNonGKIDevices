@@ -274,6 +274,7 @@ jobs:
           retention-days: 14
 
       - name: Post-build summary
+        if: always()
         run: bash scripts/post-build-summary.sh vince "Image.gz-dtb / final.config / vince-full.log"
 
       - name: Upload AnyKernel3 package

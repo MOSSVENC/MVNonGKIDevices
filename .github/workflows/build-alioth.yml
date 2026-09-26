@@ -402,6 +402,7 @@ jobs:
           retention-days: 14
 
       - name: Post-build summary
+        if: always()
         run: bash scripts/post-build-summary.sh alioth "Image / dtbo.img / final.config / alioth-full.log"
 
       - name: Upload AnyKernel3 package

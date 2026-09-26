@@ -399,6 +399,7 @@ jobs:
           retention-days: 14
 
       - name: Post-build summary
+        if: always()
         run: |
           bash scripts/post-build-summary.sh RMX2117 "Image / mt6853.dtb / final.config / RMX2117-full.log" "- dtbo partition image: carried over from stock firmware"
 

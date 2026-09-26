@@ -244,6 +244,7 @@ jobs:
           retention-days: 14
 
       - name: Post-build summary
+        if: always()
         run: bash scripts/post-build-summary.sh daisy "Image.gz-dtb / final.config / daisy-full.log"
 
       - name: Upload AnyKernel3 package
