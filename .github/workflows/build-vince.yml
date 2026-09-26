@@ -131,22 +131,7 @@ jobs:
           grep -rn 'kernelsu' drivers/Makefile drivers/Kconfig scripts/Kbuild.include 2>/dev/null || echo "  (no kernelsu wiring left)"
 
       - name: Apply ReSukiSU manual-hook patches
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
-        run: |
-          # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
-          # the kernel root, so relative paths would not resolve.
-          C="$GITHUB_WORKSPACE/patches/resukisu/4.9"
-          # vince: strip legacy-KSU hook blocks first, then the ReSukiSU
-          # manual hooks with the vince-specific 0004 (reboot.c has the
-          # unguarded pullDownReset decl — differs from common/0004).
-          PATCHES="$C/0001-fs-stat-ksu-manual-hook.patch $C/0002-fs-exec-ksu-manual-hook.patch $C/0003-fs-open-ksu-manual-hook.patch $C/vince/0004-kernel-reboot-ksu-manual-hook.patch"
-          if [ "$HOOK_EXTRA" = "manual" ]; then
-            echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCHES="$PATCHES $(ls $C/001[0-2]-*.patch | sort)"
-          else
-            echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
-          fi
-          bash scripts/apply-patches.sh "$KROOT" $PATCHES
+        run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/vince/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/resukisu/4.9/001[0-2]-*.patch"
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'

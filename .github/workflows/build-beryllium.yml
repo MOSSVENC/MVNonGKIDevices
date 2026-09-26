@@ -102,18 +102,7 @@ jobs:
         run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       - name: Apply ReSukiSU manual-hook patches
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
-        run: |
-          # NOTE: pass ABSOLUTE patch-dir paths — apply-patches.sh cd's into
-          # the kernel root, so relative paths would not resolve.
-          PATCH_DIRS="$GITHUB_WORKSPACE/patches/resukisu/4.9"
-          if [ "$HOOK_EXTRA" = "manual" ]; then
-            echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCH_DIRS="$PATCH_DIRS $GITHUB_WORKSPACE/patches/resukisu/4.9"
-          else
-            echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
-          fi
-          bash scripts/apply-patches.sh "$KROOT" $PATCH_DIRS
+        run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9" "$GITHUB_WORKSPACE/patches/resukisu/4.9"
 
       - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'
