@@ -25,7 +25,7 @@ index 87d8aa6..78e6437 100644
 +	    !sdcardfs_check_private_dir_access(d_inode(parent), &dentry->d_name)) {
  		dput(parent);
 -		return -EACCES;
-+		return -ENOENT;
++		return -EACCES;
  	}
  	dput(parent);
  
@@ -41,7 +41,7 @@ index d8e6ae0..273697c 100644
 -		ret = ERR_PTR(-EACCES);
 +	if (!check_caller_access_to_name(d_inode(parent), &dentry->d_name) ||
 +	    !sdcardfs_check_private_dir_access(d_inode(parent), &dentry->d_name)) {
-+		ret = ERR_PTR(-ENOENT);
++		ret = ERR_PTR(-EACCES);
  		goto out_err;
  	}
  
@@ -131,7 +131,7 @@ index 4b9a563..6e92460 100644
 +
 +/*
 + * Chokepoint used by lookup/getattr/open.  Returns 0 (deny) or 1 (allow).
-+ * lookup/getattr map a denial to -ENOENT so existence probes see
++ * lookup/getattr map a denial to -EACCES so existence probes see
 + * "not found" instead of "permission denied" (EACCES is treated
 + * as "exists" by stat-based detectors); open maps it to -EACCES.
 + */
