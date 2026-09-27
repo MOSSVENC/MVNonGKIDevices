@@ -82,7 +82,7 @@ input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
 
 ## 特性细节
 
-### Android/data 隔离（sdcardfs per-uid，仅 polaris）
+### Android/data 隔离（sdcardfs per-uid ENOENT，仅 polaris）
 
 顶层 mask 挡 readdir 枚举，但已知包路径的 stat/open 仍可探测其它应用的
 `Android/data/<pkg>`。补丁 `patches/sdcardfs/0001-sdcardfs-android-data-isolation.patch`
@@ -90,7 +90,7 @@ input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
 
 - `uid < AID_APP_START` → 放行
 - 包 owner（及其子树任意节点）→ 放行
-- 其它 app 访问 → lookup/getattr/open 统一 `-EACCES`（与原生作用域存储对他人 `Android/data/<pkg>` 的报错一致）
+- 其它 app 访问 → lookup/getattr 得 ENOENT、open 得 EACCES
 
 owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持共享。
 
