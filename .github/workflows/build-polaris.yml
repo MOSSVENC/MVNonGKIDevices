@@ -87,7 +87,7 @@ jobs:
         run: bash scripts/install-binutils.sh
 
       - name: Download LLVM 19 + GCC 4.9 binutils
-        run: bash scripts/download-toolchain.sh llvmorg-19.1.7 "" --gcc32
+        run: bash scripts/download-toolchain.sh llvmorg-19.1.7 - --gcc32
 
       - name: Clone kernel source (not part of this repo)
         run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
