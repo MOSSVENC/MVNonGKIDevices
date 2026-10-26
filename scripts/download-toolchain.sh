@@ -52,7 +52,18 @@ case "$clang_spec" in
     mkdir -p "$TC/llvm"
     tar -xJf "$TC/llvm.tar.xz" -C "$TC/llvm" --strip-components=1
     rm -f "$TC/llvm.tar.xz"
-    CLANG_BIN="$TC/llvm/local/bin"
+    # The release archive ships the binaries under <root>/bin (a sibling
+    # <root>/local tree exists too but carries no toolchain); locate the
+    # directory that actually holds clang instead of assuming the name.
+    CLANG_BIN=""
+    for cand in "$TC/llvm/bin" "$TC/llvm/local/bin"; do
+      if [ -x "$cand/clang" ] && [ -x "$cand/ld.lld" ]; then CLANG_BIN="$cand"; break; fi
+    done
+    if [ -z "$CLANG_BIN" ]; then
+      found=$(find "$TC/llvm" -maxdepth 3 -type f -name clang -perm -u+x 2>/dev/null | head -1)
+      [ -n "$found" ] && CLANG_BIN=$(dirname "$found")
+    fi
+    [ -n "$CLANG_BIN" ] || { echo "ERROR: clang not found in the extracted LLVM tree" >&2; exit 1; }
     ;;
   *)
     if [ "$clang_branch" = "-" ]; then
