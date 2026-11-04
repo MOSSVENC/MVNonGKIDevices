@@ -17,10 +17,10 @@ on:
         description: "root manager & hook mode: see README section \"root_mode\""
         type: choice
         options:
-          - resukisu-manual-lsm
-          - resukisu-manual-source
-          - resukisu-auto
-          - resukisu-susfs
+          - bakasu-manual-lsm
+          - bakasu-manual-source
+          - bakasu-auto
+          - bakasu-susfs
           - none
         default: none
       localversion:
@@ -48,7 +48,7 @@ on:
         type: boolean
         default: false
       auto_fix_49:
-        description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
+        description: "4.x auto-hook kasan_reset_tag guard fix (bakasu-auto)"
         type: boolean
         default: false
 
@@ -67,8 +67,8 @@ jobs:
       KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-22.2' }}
       DEFCONFIG: mi845_defconfig
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
@@ -100,19 +100,19 @@ jobs:
         run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       - name: Apply BakaSU manual-hook patches
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
-        run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9" "$GITHUB_WORKSPACE/patches/resukisu/4.9"
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
+        run: bash "$GITHUB_WORKSPACE/scripts/apply-bakasu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/bakasu/4.9" "$GITHUB_WORKSPACE/patches/bakasu/4.9"
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
-        if: env.ROOT_MANAGER == 'resukisu'
+        if: env.ROOT_MANAGER == 'bakasu'
         run: |
-          bash scripts/integrate-resukisu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
+          bash scripts/integrate-bakasu.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
       # SuSFS kernel-side port must run AFTER BakaSU setup.sh: the hook
       # generator checks drivers/kernelsu/ for ksu_handle_* before wiring
       # kernel/sys.c etc.
-      - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
+      - name: Apply SuSFS 4.9 port (root_mode=bakasu-susfs)
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
         run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
@@ -144,13 +144,13 @@ jobs:
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id (4.9 uses CONFIG_LOCALVERSION_AUTO).
       - name: Commit patched kernel tree (drop -dirty from version)
-        run: bash "$GITHUB_WORKSPACE/scripts/commit-kernel-tree.sh" "$KROOT" "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace/sdcardfs)"
+        run: bash "$GITHUB_WORKSPACE/scripts/commit-kernel-tree.sh" "$KROOT" "apply MVNonGKIDevices feature patches (bakasu/bbg/droidspace/sdcardfs)"
 
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
           FRAGS=""
-          if [ "$ROOT_MANAGER" = "resukisu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          if [ "$ROOT_MANAGER" = "bakasu" ]; then
+            FRAGS="$FRAGS $GITHUB_WORKSPACE/bakasu.config.fragment"
           fi
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# apply-resukisu-manual-hooks.sh — apply the BakaSU manual-hook patch set.
+# apply-bakasu-manual-hooks.sh — apply the BakaSU manual-hook patch set.
 #
-# usage: apply-resukisu-manual-hooks.sh <kernel-root> <patch-spec> [<extra-spec>]
+# usage: apply-bakasu-manual-hooks.sh <kernel-root> <patch-spec> [<extra-spec>]
 #
 #   <kernel-root>  kernel checkout the patches are applied to
 #   <patch-spec>   directory or space-separated patch list for apply-patches.sh
@@ -15,8 +15,8 @@
 #
 set -uo pipefail
 
-kroot="${1:?usage: apply-resukisu-manual-hooks.sh <kernel-root> <patch-spec> [<extra-spec>]}"
-spec="${2:?usage: apply-resukisu-manual-hooks.sh <kernel-root> <patch-spec> [<extra-spec>]}"
+kroot="${1:?usage: apply-bakasu-manual-hooks.sh <kernel-root> <patch-spec> [<extra-spec>]}"
+spec="${2:?usage: apply-bakasu-manual-hooks.sh <kernel-root> <patch-spec> [<extra-spec>]}"
 extra="${3:-}"
 
 if [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then

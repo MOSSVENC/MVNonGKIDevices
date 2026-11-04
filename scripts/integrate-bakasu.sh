@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# integrate-resukisu.sh — BakaSU integration into a kernel tree.
+# integrate-bakasu.sh — BakaSU integration into a kernel tree.
 #
-# Usage: integrate-resukisu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]
+# Usage: integrate-bakasu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]
 #
 #   hook_extra_mode: lsm     (default) — the 3 optional hooks (setuid / initrc
 #                                      / input) are handled by BakaSU's LSM
@@ -10,7 +10,7 @@
 #                                      source patches are applied and the three
 #                                      CONFIG_KSU_MANUAL_HOOK_AUTO_* are =y.
 #                    manual            — the 3 optional hooks are applied as real
-#                                      source patches (patches/resukisu/4.9/
+#                                      source patches (patches/bakasu/4.9/
 #                                      0010..0012) and the three
 #                                      AUTO options are turned OFF so BakaSU's
 #                                      compile-time check requires the manually
@@ -41,8 +41,8 @@
 #
 set -euo pipefail
 
-KROOT="${1:?usage: integrate-resukisu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]}"
-FRAG="${2:-$(pwd)/resukisu.config.fragment}"
+KROOT="${1:?usage: integrate-bakasu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]}"
+FRAG="${2:-$(pwd)/bakasu.config.fragment}"
 MODE="${3:-lsm}"
 TYPE="${4:-manual}"
 FIX49="${5:-true}"   # auto 模式下修正 auto-hook 分支对 <5.0 内核的 kasan_reset_tag 门槛
@@ -143,7 +143,7 @@ EOF
 elif [ "$MODE" = "manual" ]; then
   # Manual extra hooks: AUTO off -> BakaSU requires ksu_handle_setresuid /
   # ksu_handle_sys_read / ksu_handle_input_handle_event present in the source
-  # (they are added by patches/resukisu/4.9/0010..0012).
+  # (they are added by patches/bakasu/4.9/0010..0012).
   echo "==> hook_extra_mode=manual (source patches + AUTO off)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y
@@ -173,4 +173,4 @@ EOF
 fi
 
 echo "BakaSU fragment written: $FRAG"
-echo "integrate-resukisu.sh: done (hook_extra_mode=$MODE, hook_type=$TYPE)"
+echo "integrate-bakasu.sh: done (hook_extra_mode=$MODE, hook_type=$TYPE)"

@@ -5,7 +5,7 @@
 #   1. baseline:        vendor/xiaomi/mi845_defconfig   (LOS-official base)
 #   2. device fragment: vendor/xiaomi/polaris.config    (LOS device tree +=)
 #   3. feature fragments (only the enabled ones; caller supplies paths):
-#        resukisu.config.fragment   (CONFIG_KSU / MANUAL_HOOK ...)
+#        bakasu.config.fragment   (CONFIG_KSU / MANUAL_HOOK ...)
 #        bbg.config.fragment        (CONFIG_BBG ...)
 #        droidspace.config          (patches/droidspace/4.9/droidspace.config)
 #
@@ -26,7 +26,7 @@
 #   3. make olddefconfig (belt & braces)
 #   4. assert critical symbols; any miss fails the build loudly
 #
-# The kernel tree must already be patched and integrated (resukisu / bbg
+# The kernel tree must already be patched and integrated (bakasu / bbg
 # setup.sh run) BEFORE this runs, so their Kconfig symbols resolve.
 #
 set -euo pipefail
@@ -148,12 +148,12 @@ rc=0
 assert_cfg CONFIG_KALLSYMS || rc=1
 assert_cfg CONFIG_KALLSYMS_ALL || rc=1
 
-# Root manager dispatch: resukisu (BakaSU hook modes) or none. Workflows
-# that predate root_manager pass ENABLE_RESUKISU only and are mapped here.
+# Root manager dispatch: bakasu (BakaSU hook modes) or none. Workflows
+# when ROOT_MANAGER is absent, ENABLE_BAKASU maps to it here.
 if [ -z "${ROOT_MANAGER:-}" ]; then
-  if [ "${ENABLE_RESUKISU:-true}" = "true" ]; then ROOT_MANAGER=resukisu; else ROOT_MANAGER=none; fi
+  if [ "${ENABLE_BAKASU:-true}" = "true" ]; then ROOT_MANAGER=bakasu; else ROOT_MANAGER=none; fi
 fi
-if [ "${ROOT_MANAGER:-none}" = "resukisu" ]; then
+if [ "${ROOT_MANAGER:-none}" = "bakasu" ]; then
   assert_cfg CONFIG_KSU || rc=1
   if [ "${HOOK_TYPE:-manual}" = "susfs" ]; then
     # SuSFS inline hook: KSU_SUSFS is a KernelSU-side choice (mutually

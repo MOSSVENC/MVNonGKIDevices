@@ -22,10 +22,10 @@ on:
         description: "root manager & hook mode: see README section \"root_mode\""
         type: choice
         options:
-          - resukisu-manual-lsm
-          - resukisu-manual-source
-          - resukisu-auto
-          - resukisu-susfs
+          - bakasu-manual-lsm
+          - bakasu-manual-source
+          - bakasu-auto
+          - bakasu-susfs
           - none
         default: none
       localversion:
@@ -45,7 +45,7 @@ on:
         type: boolean
         default: false
       auto_fix_49:
-        description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
+        description: "4.x auto-hook kasan_reset_tag guard fix (bakasu-auto)"
         type: boolean
         default: false
       enable_battery_5000:
@@ -68,12 +68,12 @@ jobs:
       KERNEL_REPO: https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250.git
       DEFCONFIG: kona-perf_defconfig
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || 'none' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       ENABLE_BATTERY_5000: ${{ inputs.enable_battery_5000 }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is a 4.9 sdm845 feature
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
@@ -122,35 +122,35 @@ jobs:
           grep -n 'qcom,fv-max-uv' arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
 
       - name: Apply BakaSU manual-hook patches
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
           # File-level list: shared shapes (stat/exec/reboot/input) live
-          # in resukisu/4.9 as the single copy; 4.19-local files cover the
+          # in bakasu/4.9 as the single copy; 4.19-local files cover the
           # 4.19-shaped parts (faccessat wrapper, __sys setresuid, ksys_read
           # wrapper).
-          PATCHES="$GITHUB_WORKSPACE/patches/resukisu/4.19/0001-fs-stat-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0003-fs-open-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+          PATCHES="$GITHUB_WORKSPACE/patches/bakasu/4.19/0001-fs-stat-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0002-fs-exec-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.19/0003-fs-open-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0010-input-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0011-setuid-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0012-sysread-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0010-input-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.19/0011-setuid-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.19/0012-sysread-manual-hook.patch"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
           bash scripts/apply-patches.sh "$KROOT" $PATCHES
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
-        if: env.ROOT_MANAGER == 'resukisu'
+        if: env.ROOT_MANAGER == 'bakasu'
         run: |
-          bash scripts/integrate-resukisu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
+          bash scripts/integrate-bakasu.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # SuSFS 4.19 kernel-side port from the test-tree 5.10->4.19 pipeline,
-      - name: Apply SuSFS 4.19 port (root_mode=resukisu-susfs)
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
+      - name: Apply SuSFS 4.19 port (root_mode=bakasu-susfs)
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
         run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.19/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
@@ -197,13 +197,13 @@ jobs:
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id.
       - name: Commit patched kernel tree (drop -dirty from version)
-        run: bash "$GITHUB_WORKSPACE/scripts/commit-kernel-tree.sh" "$KROOT" "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace/susfs)"
+        run: bash "$GITHUB_WORKSPACE/scripts/commit-kernel-tree.sh" "$KROOT" "apply MVNonGKIDevices feature patches (bakasu/bbg/droidspace/susfs)"
 
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
           FRAGS=""
-          if [ "$ROOT_MANAGER" = "resukisu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          if [ "$ROOT_MANAGER" = "bakasu" ]; then
+            FRAGS="$FRAGS $GITHUB_WORKSPACE/bakasu.config.fragment"
           fi
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.19/droidspace.config"

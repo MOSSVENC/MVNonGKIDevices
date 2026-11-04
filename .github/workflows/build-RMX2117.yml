@@ -18,10 +18,10 @@ on:
         description: "root manager & hook mode: see README section \"root_mode\""
         type: choice
         options:
-          - resukisu-manual-lsm
-          - resukisu-manual-source
-          - resukisu-auto
-          - resukisu-susfs
+          - bakasu-manual-lsm
+          - bakasu-manual-source
+          - bakasu-auto
+          - bakasu-susfs
           - none
         default: none
       localversion:
@@ -41,7 +41,7 @@ on:
         type: boolean
         default: false
       auto_fix_49:
-        description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
+        description: "4.x auto-hook kasan_reset_tag guard fix (bakasu-auto)"
         type: boolean
         default: false
 concurrency:
@@ -54,9 +54,9 @@ jobs:
     timeout-minutes: 240
     env:
       KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || 'none' }}
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
@@ -129,46 +129,46 @@ jobs:
           git apply "$P"
 
       # --- BakaSU manual hooks (hook_mode=manual-lsm / manual-source) ---
-      # 4.14 tree-adapted manual-hook patches (patches/resukisu/4.14,
+      # 4.14 tree-adapted manual-hook patches (patches/bakasu/4.14,
       # 0010-0012 applied for manual-source) + BakaSU main + config
-      # fragment via integrate-resukisu.sh.
+      # fragment via integrate-bakasu.sh.
       - name: Integrate BakaSU manual hooks (hook_mode=manual-lsm / manual-source)
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'manual'
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'manual'
         run: |
           cd "$KROOT"
           # File-level list: shared shapes (stat/reboot) live in
-          # resukisu/4.9 as the single copy; MTK-local files in 4.14.
-          PATCHES="$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0002-fs-exec-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0003-fs-open-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+          # bakasu/4.9 as the single copy; MTK-local files in 4.14.
+          PATCHES="$GITHUB_WORKSPACE/patches/bakasu/4.9/0001-fs-stat-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0002-fs-exec-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0003-fs-open-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0010-input-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0011-setuid-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.14/0012-sysread-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0010-input-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0011-setuid-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0012-sysread-manual-hook.patch"
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
           # NOTE: absolute patch paths; apply-patches.sh cd's into KROOT
           bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" $PATCHES
-          bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" manual
+          bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" manual
 
       # --- BakaSU auto hooks (hook_mode=auto) ---
-      # BakaSU auto-hook branch via integrate-resukisu.sh (no source
+      # BakaSU auto-hook branch via integrate-bakasu.sh (no source
       # patches; hook calls come from the runtime inline-hook engine).
       - name: Integrate BakaSU (auto-hook branch)
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'auto'
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'auto'
         run: |
-          bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" lsm auto "$AUTO_FIX_49"
-      # --- SuSFS 4.14 (root_mode=resukisu-susfs) ---
+          bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" lsm auto "$AUTO_FIX_49"
+      # --- SuSFS 4.14 (root_mode=bakasu-susfs) ---
       # Tree-adapted port patches/susfs/4.14/susfs-port.patch (git
       # apply-verified on MTK 4.14.186 snapshots) + BakaSU main; the
       # port carries the inline-hook call sites.
-      - name: Apply SuSFS 4.14 port (root_mode=resukisu-susfs)
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
+      - name: Apply SuSFS 4.14 port (root_mode=bakasu-susfs)
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
           # BakaSU setup (main branch; wires drivers/kernelsu + Kconfig)
@@ -211,7 +211,7 @@ jobs:
           export ARCH=arm64
           export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
           FRAGS=""
-          if [ "$ROOT_MANAGER" = "resukisu" ]; then
+          if [ "$ROOT_MANAGER" = "bakasu" ]; then
             if [ "$HOOK_TYPE" = "susfs" ]; then
               cat > "$GITHUB_WORKSPACE/susfs.config.fragment" <<'FRAGEOF'
           CONFIG_KSU=y
@@ -230,7 +230,7 @@ jobs:
           FRAGEOF
               FRAGS="$GITHUB_WORKSPACE/susfs.config.fragment"
             else
-              FRAGS="$GITHUB_WORKSPACE/resukisu.config.fragment"
+              FRAGS="$GITHUB_WORKSPACE/bakasu.config.fragment"
             fi
           fi
           if [ "$ENABLE_BBG" = "true" ]; then

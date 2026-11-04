@@ -11,14 +11,14 @@
 | `0003-fs-open` | MTK 本地：内联 `SYSCALL_DEFINE3(faccessat)` 函数体（MTK 树 fallocate/注释上下文） |
 | `0010-input` / `0011-setuid` / `0012-sysread` | MTK 本地可选组（MTK input_event / 4.17- setresuid 函数体 / 含 OPLUS_IOMONITOR 区的内联 read 函数体），`hook_extra=manual` 模式使用 |
 
-文档形态参考（网页摘录）见 `localworkspace/evidence/resukisu-docs/docs/manual-integrate-zh.md`。
+文档形态参考（网页摘录）见 `localworkspace/evidence/bakasu-docs/docs/manual-integrate-zh.md`。
 
 ## 应用（必加组）
 
 ```bash
 bash scripts/apply-patches.sh <kernel-root> \
-  patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch \
-  patches/resukisu/4.14/0002-fs-exec-ksu-manual-hook.patch \
-  patches/resukisu/4.14/0003-fs-open-ksu-manual-hook.patch \
-  patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch
+  patches/bakasu/4.9/0001-fs-stat-ksu-manual-hook.patch \
+  patches/bakasu/4.14/0002-fs-exec-ksu-manual-hook.patch \
+  patches/bakasu/4.14/0003-fs-open-ksu-manual-hook.patch \
+  patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch
 ```

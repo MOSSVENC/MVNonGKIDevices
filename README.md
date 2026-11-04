@@ -34,22 +34,22 @@
 
 | `root_mode` | root 管理器 | hook 形态 |
 |---|---|---|
-| `resukisu-manual-lsm` | BakaSU main | 源码补丁 + 自动 hook（input 经内核 input_handler；setuid/initrc 经 LSM AUTO） |
-| `resukisu-manual-source` | BakaSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read） |
-| `resukisu-auto` | BakaSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁，构建侧开 `KALLSYMS_ALL`；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
-| `resukisu-susfs` | BakaSU main | SuSFS inline hook（应用各设备树适配补丁） |
+| `bakasu-manual-lsm` | BakaSU main | 源码补丁 + 自动 hook（input 经内核 input_handler；setuid/initrc 经 LSM AUTO） |
+| `bakasu-manual-source` | BakaSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read） |
+| `bakasu-auto` | BakaSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁，构建侧开 `KALLSYMS_ALL`；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
+| `bakasu-susfs` | BakaSU main | SuSFS inline hook（应用各设备树适配补丁） |
 | `none`（默认） | — | stock，无 root 集成 |
 
-值集六设备一致，共 5 值。`root_mode` 前缀沿用 `resukisu-`（workflow 接口名），
+值集六设备一致，共 5 值。`root_mode` 值以 `bakasu-` 为前缀（workflow 接口名），
 管理器本体是 BakaSU。
 
 ## BakaSU manual hook 七类
 
 按 [bakasu.org manual-integrate](https://bakasu.org/zh-Hans/guide/manual-integrate.html)
-（本地工作区 `localworkspace/evidence/resukisu-docs/` 有页面收录），
+（本地工作区 `localworkspace/evidence/bakasu-docs/` 有页面收录），
 4 类必须改源码、3 类可选。
 
-| hook | 内核文件 | 必打 | `resukisu-manual-lsm` | `resukisu-manual-source` |
+| hook | 内核文件 | 必打 | `bakasu-manual-lsm` | `bakasu-manual-source` |
 |---|---|---|---|---|
 | stat | fs/stat.c | 是 | 源码补丁 | 源码补丁 |
 | execve | fs/exec.c | 是 | 源码补丁 | 源码补丁 |
@@ -112,7 +112,7 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 | 自定义版本名 | `localversion` | 写进 `uname -r`（例如 `-MyKernel`；留空沿用 defconfig 值） |
 | 自定义构建时间 | `build_time` | 写进 `uname -v` 的日期段（UTC，例 `Tue, 08 Sep 2026 21:01:02 +0000`；留空用构建时刻的 UTC 值） |
 
-`auto_fix_49`：`resukisu-auto` 的 4.x kasan_reset_tag 门槛修正（auto-hook
+`auto_fix_49`：`bakasu-auto` 的 4.x kasan_reset_tag 门槛修正（auto-hook
 分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
 
 susfs 应用路径（全部为树适配 port）：
@@ -136,7 +136,7 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 ```
 <BASE_DEFCONFIG>
   + <DEVICE_FRAGMENTS>
-  + resukisu.config.fragment / susfs.config.fragment（按 root_mode）
+  + bakasu.config.fragment / susfs.config.fragment（按 root_mode）
   + bbg / droidspace fragment（按特性开关）
   + 强制覆盖：CC_WERROR off、KALLSYMS(+ALL)=y
   → 断言（缺失即失败）
@@ -160,7 +160,7 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 ```
 patches/
   droidspace/          official/ 官方 non-GKI 补丁 + 4.9/4.14/4.19 config
-  resukisu/            4.9/4.14/4.19 树适配补丁（文件级清单跨目录引用）
+  bakasu/            4.9/4.14/4.19 树适配补丁（文件级清单跨目录引用）
   susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
   bbg/                 集成说明（无本地补丁）
   sdcardfs/            Android/data 隔离（仅 polaris）
@@ -171,7 +171,7 @@ localworkspace/        本机工作区（gitignored；布局见 localworkspace/R
 .github/workflows/     每设备 CI
 ```
 
-上游素材镜像（susfs / resukisu）、旧 shipped 归档与维护工具（sync/parity/管线）
+上游素材镜像（susfs / bakasu）、旧 shipped 归档与维护工具（sync/parity/管线）
 均位于本地工作区（`localworkspace/`），不随仓库分发；官方补丁中 CI 直接应用的
 （droidspace）保留在 `official/`。
 
@@ -198,22 +198,22 @@ localworkspace/        本机工作区（gitignored；布局见 localworkspace/R
 KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xiaomi_sdm845
 cd "$KROOT"
 
-# 1. BakaSU manual hook 源码补丁（root_mode=resukisu-auto / susfs 时跳过）
+# 1. BakaSU manual hook 源码补丁（root_mode=bakasu-auto / susfs 时跳过）
 #    参数是补丁目录：目录内 0001-0004 / 0010-0012 按序应用
-bash <repo>/scripts/apply-resukisu-manual-hooks.sh "$KROOT" \
-  <repo>/patches/resukisu/4.9 <repo>/patches/resukisu/4.9
+bash <repo>/scripts/apply-bakasu-manual-hooks.sh "$KROOT" \
+  <repo>/patches/bakasu/4.9 <repo>/patches/bakasu/4.9
 
-# 2. 集成（manual 示例；auto / susfs 换 integrate-resukisu.sh 参数）
-bash <repo>/scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm manual true
+# 2. 集成（manual 示例；auto / susfs 换 integrate-bakasu.sh 参数）
+bash <repo>/scripts/integrate-bakasu.sh "$KROOT" ./bakasu.config.fragment lsm manual true
 bash <repo>/scripts/integrate-bbg.sh "$KROOT" ./bbg.config.fragment
 PORT=<repo>/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch
 bash <repo>/scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
 # 3. 合并 defconfig
-FRAGS="./resukisu.config.fragment ./bbg.config.fragment <repo>/patches/droidspace/4.9/droidspace.config"
+FRAGS="./bakasu.config.fragment ./bbg.config.fragment <repo>/patches/droidspace/4.9/droidspace.config"
 BASE_DEFCONFIG=arch/arm64/configs/vendor/xiaomi/mi845_defconfig \
 DEVICE_FRAGMENTS="arch/arm64/configs/vendor/xiaomi/polaris.config" \
-ROOT_MANAGER=resukisu ENABLE_BBG=true ENABLE_DROIDSPACE=true \
+ROOT_MANAGER=bakasu ENABLE_BBG=true ENABLE_DROIDSPACE=true \
   bash <repo>/scripts/merge-defconfig.sh "$KROOT" /tmp/out $FRAGS
 
 # 4. clang 14 编译（配方见"工具链"）
@@ -227,10 +227,10 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 
 ## 边界
 
-- susfs：`resukisu-susfs`；各设备落位件由本地管线（`localworkspace/pipelines/`）维护
+- susfs：`bakasu-susfs`；各设备落位件由本地管线（`localworkspace/pipelines/`）维护
 - Android/data 隔离仅 polaris；alioth（4.19 kona）无 sdcardfs
 - vince 树自带旧 KernelSU：集成前用
-  `patches/resukisu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 剥离
+  `patches/bakasu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 剥离
 - Droidspace cgroup 移植补丁非致命：apply 失败自动跳过
 - BakaSU 管理器（Manager APK）版本需自行匹配；setup.sh 按 root_mode
   分支拉取（manual=main、auto=auto-hook）

@@ -51,7 +51,7 @@ feat_flags = [
 ]
 feats = [name for name, on in feat_flags if on]
 
-if rm == 'resukisu':
+if rm == 'bakasu':
     manager = 'BakaSU'
     hook, token = {'auto': ('AUTO HOOK', 'AUTO'),
                    'susfs': ('SUSFS INLINE HOOK', 'SUSFS'),

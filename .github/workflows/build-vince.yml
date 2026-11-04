@@ -20,10 +20,10 @@ on:
         description: "root manager & hook mode: see README section \"root_mode\""
         type: choice
         options:
-          - resukisu-manual-lsm
-          - resukisu-manual-source
-          - resukisu-auto
-          - resukisu-susfs
+          - bakasu-manual-lsm
+          - bakasu-manual-source
+          - bakasu-auto
+          - bakasu-susfs
           - none
         default: none
       localversion:
@@ -47,7 +47,7 @@ on:
         type: boolean
         default: false
       auto_fix_49:
-        description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
+        description: "4.x auto-hook kasan_reset_tag guard fix (bakasu-auto)"
         type: boolean
         default: false
 
@@ -66,12 +66,12 @@ jobs:
       KERNEL_REPO: https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince.git
       DEFCONFIG: vince-perf_defconfig
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || 'none' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
@@ -116,7 +116,7 @@ jobs:
           # eb0503). Applied with git apply -R directly — NOT via
           # apply-patches.sh, whose idempotency check mis-detects a reverse
           # patch as already-applied on a tree that still contains the hooks.
-          git apply -R "$GITHUB_WORKSPACE/patches/resukisu/4.9/vince/0000-remove-legacy-ksu-hooks.patch"
+          git apply -R "$GITHUB_WORKSPACE/patches/bakasu/4.9/vince/0000-remove-legacy-ksu-hooks.patch"
           rm -rf drivers/kernelsu scripts/kernelsu.sh
           sed -i '/kernelsu/d' drivers/Makefile
           sed -i '\|source "drivers/kernelsu/Kconfig"|d' drivers/Kconfig
@@ -129,18 +129,18 @@ jobs:
           grep -rn 'kernelsu' drivers/Makefile drivers/Kconfig scripts/Kbuild.include 2>/dev/null || echo "  (no kernelsu wiring left)"
 
       - name: Apply BakaSU manual-hook patches
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
-        run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/vince/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/resukisu/4.9/001[0-2]-*.patch"
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
+        run: bash "$GITHUB_WORKSPACE/scripts/apply-bakasu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/bakasu/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/bakasu/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/bakasu/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/bakasu/4.9/vince/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/bakasu/4.9/001[0-2]-*.patch"
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
-        if: env.ROOT_MANAGER == 'resukisu'
+        if: env.ROOT_MANAGER == 'bakasu'
         run: |
-          bash scripts/integrate-resukisu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
+          bash scripts/integrate-bakasu.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # SuSFS kernel-side port from the test-tree vince reference, applied
-      - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
-        if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
+      - name: Apply SuSFS 4.9 port (root_mode=bakasu-susfs)
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
         run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.9/vince/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
@@ -166,13 +166,13 @@ jobs:
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id (4.9 uses CONFIG_LOCALVERSION_AUTO).
       - name: Commit patched kernel tree (drop -dirty from version)
-        run: bash "$GITHUB_WORKSPACE/scripts/commit-kernel-tree.sh" "$KROOT" "apply MVNonGKIDevices feature patches (resukisu/bbg/droidspace)"
+        run: bash "$GITHUB_WORKSPACE/scripts/commit-kernel-tree.sh" "$KROOT" "apply MVNonGKIDevices feature patches (bakasu/bbg/droidspace)"
 
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
           FRAGS=""
-          if [ "$ROOT_MANAGER" = "resukisu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
+          if [ "$ROOT_MANAGER" = "bakasu" ]; then
+            FRAGS="$FRAGS $GITHUB_WORKSPACE/bakasu.config.fragment"
           fi
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
