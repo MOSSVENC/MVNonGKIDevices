@@ -4,7 +4,7 @@ SuSFS 资产由三部分构成：
 
 - **功能面**：gki-android12-5.10 上游快照（`50_add_susfs_in_gki-android12-5.10.patch`、
   `fs/susfs.c`、`include/linux/susfs.h`、`include/linux/susfs_def.h`、KernelSU 侧
-  `10_enable_susfs_for_ksu.patch`）。功能集基准，当前同步到 `b112e9e`
+  `10_enable_susfs_for_ksu.patch`）。功能集基准，当前同步到 `b0e474642c`
   （`SUSFS_VERSION "v2.3.0"`）。
 - **各版本形态**：内核版本参考补丁（4.4 / 4.9 / 4.14 / 4.19 / 5.4 各一份）与目标树自身
   的头文件，决定声明位置、`fsnotify_ops.handle_event` 参数表、文件名类型、proc/fdinfo
@@ -18,16 +18,22 @@ SuSFS 资产由三部分构成：
 
 | 路径 | 树 | 规模 | 校验 |
 |---|---|---|---|
-| `4.9/susfs-port.patch` | polaris 4.9.337 | 27 文件 / 3471 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-polaris` 的 susfs 模式 |
-| `4.9/beryllium/susfs-port.patch` | beryllium 4.9.337 | 26 文件 / 3469 新增行 | 同上；设备属性段为 `security/selinux/avc.c` 与 `ss/services.c`，编译面见 `build-beryllium` |
-| `4.9/daisy/susfs-port.patch` | daisy 4.9.337 | 27 文件 / 3472 新增行 | 同上；设备属性段为 `fs/proc/cmdline.c` 与 `ss/services.c`，编译面见 `build-daisy` |
-| `4.9/vince/susfs-port.patch` | vince 4.9.337 | 25 文件 / 3452 新增行 | 同上；`fs/proc/cmdline.c` 用 vince 变体，编译面见 `build-vince` |
-| `4.14/susfs-port.patch` | RMX2117 MTK 4.14.186 | 25 文件 / 3517 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-RMX2117` 的 susfs 模式 |
-| `4.19/susfs-port.patch` | alioth kona 4.19.325 | 25 文件 / 3500 新增行 | 同上，编译面见 `build-alioth` |
+| `4.9/susfs-port.patch` | polaris 4.9.337 | 31 文件 / 4756 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-polaris` 的 susfs 模式 |
+| `4.9/beryllium/susfs-port.patch` | beryllium 4.9.337 | 31 文件 / 4795 新增行 | 同上；设备属性段为 `security/selinux/avc.c` 与 `ss/services.c`，编译面见 `build-beryllium` |
+| `4.9/daisy/susfs-port.patch` | daisy 4.9.337 | 31 文件 / 4757 新增行 | 同上；设备属性段为 `fs/proc/cmdline.c` 与 `ss/services.c`，编译面见 `build-daisy` |
+| `4.9/vince/susfs-port.patch` | vince 4.9.337 | 31 文件 / 4778 新增行 | 同上；`fs/proc/cmdline.c` 用 vince 变体，编译面见 `build-vince` |
+| `4.14/susfs-port.patch` | RMX2117 MTK 4.14.186 | 30 文件 / 4808 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-RMX2117` 的 susfs 模式 |
+| `4.19/susfs-port.patch` | alioth kona 4.19.325 | 30 文件 / 4780 新增行 | 同上，编译面见 `build-alioth` |
 
-四台 4.9 的 `security/selinux/ss/services.c` 段只在树内无 `selinux_state` 时随 port 提供；
-4.14/4.19 的 `fs/statfs.c` 与 `fs/susfs.c` 取目标树的内核形态（4.19 的 `handle_event`
-不带 mark 参数、文件名类型为 `const unsigned char *`）。
+`security/selinux` 的 sus context→sid / compute_av 面按树内形态落地：无
+`struct selinux_state` 的 4.9 树用全局 `policydb`/`sidtab`/`policy_rwlock`，带 state 的树
+取 `state->ss`（4.14/4.19 与 beryllium/vince）。`fs/statfs.c` 与 `fs/susfs.c` 取目标树的
+内核形态（4.19 的 `handle_event` 不带 mark 参数；文件名类型按树为 `const unsigned char *`
+或 qstr）。
+
+`b0e47464` 新增的 `priority_uid_filter` 面按 4.9/4.14 形态携带（`block/ioprio.c`、
+`kernel/sys.c` 的守卫块；4.9 用 `vzalloc` 与偏移式 `kernel_read`）；该面的 Kconfig 与命令
+由 BakaSU 侧提供，其未定义该符号时这一面不参与编译。
 
 ## 上游跟踪
 
