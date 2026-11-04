@@ -10,7 +10,7 @@
 
 | 设备 | 代号 | 内核 | 内核源 / 分支 | workflow |
 |---|---|---|---|---|
-| Xiaomi Mi MIX 2S | `polaris` (sdm845) | 4.19.325 | [polaris-avium/kernel_xiaomi_sdm845](https://github.com/polaris-avium/kernel_xiaomi_sdm845) @ `avium-16.2`（AviumUI Android 16） | `build-polaris.yml` |
+| Xiaomi Mi MIX 2S | `polaris` (sdm845) | 4.9.337 | [MOSSVENC/android_kernel_xiaomi_sdm845](https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845) @ `lineage-22.2` | `build-polaris.yml` |
 | Xiaomi POCO F1 | `beryllium` (sdm845) | 4.9.337 | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
 | Xiaomi Mi A2 Lite | `daisy` (msm8953) | 4.9.337 | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
 | Xiaomi Redmi 5 Plus | `vince` (msm8953) | 4.9.337 | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
@@ -24,7 +24,7 @@
 
 | 输入 | 出现于 | 说明 |
 |---|---|---|
-| `cgroup_port` | beryllium / daisy / vince | 4.9 cgroup noprefix compat 补丁（需同时开 droidspace） |
+| `cgroup_port` | polaris / beryllium / daisy / vince | 4.9 cgroup noprefix compat 补丁（需同时开 droidspace） |
 | `enable_data_isolation` | polaris | sdcardfs per-uid `Android/data` 隔离 |
 | `enable_battery_5000` | alioth | 5000mAh 电芯参数与快充电压上限 |
 
@@ -71,8 +71,8 @@
 | `0011-setuid` | 共享 | 4.14 自有 | **4.19 自有** |
 | `0012-sysread` | 共享 | 4.14 自有 | **4.19 自有** |
 
-4.19 设备（polaris / alioth）由 workflow 以文件级清单跨目录引用：共享形态取
-`4.9/`，形态特有的取 `4.19/`。`fs/stat.c` 两版本差异在 include 形态
+alioth（4.19）由 workflow 以文件级清单跨目录引用：共享形态取 `4.9/`，
+形态特有的取 `4.19/`。`fs/stat.c` 两版本差异在 include 形态
 （4.9 `<asm/uaccess.h>`、4.19 `<linux/uaccess.h>`）与 64 位 stat 入口位置，
 所以各自持有。
 
@@ -84,8 +84,7 @@ input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
 
 | 设备 | 配方 |
 |---|---|
-| polaris（4.19） | LLVM 19（llvmorg-19.1.7）+ GCC 4.9 binutils |
-| alioth / beryllium / daisy / vince | AOSP clang 14（clang-r450784d，android13-release）+ GCC 4.9 binutils，`LD=ld.lld LLVM=1 LLVM_IAS=1`，4.9 另需 `CROSS_COMPILE_ARM32` 绝对前缀（compat vDSO） |
+| polaris / alioth / beryllium / daisy / vince | AOSP clang 14（clang-r450784d，android13-release）+ GCC 4.9 binutils，`LD=ld.lld LLVM=1 LLVM_IAS=1`，4.9 另需 `CROSS_COMPILE_ARM32` 绝对前缀（compat vDSO） |
 | RMX2117（4.14） | 官方 `build.config.mtk.aarch64` 配方：clang r383902 + GCC 4.9 的 `aarch64-linux-androidkernel-` 前缀，`LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy` |
 
 ## 特性细节
@@ -120,7 +119,8 @@ susfs 应用路径（全部为树适配 port）：
 
 | 设备 | port |
 |---|---|
-| polaris / alioth | `patches/susfs/4.19/susfs-port.patch` |
+| polaris | `patches/susfs/4.9/susfs-port.patch` |
+| alioth | `patches/susfs/4.19/susfs-port.patch` |
 | beryllium / daisy / vince | `patches/susfs/4.9/<设备>/susfs-port.patch` |
 | RMX2117 | `patches/susfs/4.14/susfs-port.patch` |
 
@@ -150,30 +150,10 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 
 | 设备 | BASE_DEFCONFIG | DEVICE_FRAGMENTS |
 |---|---|---|
-| polaris | `vendor/sdm845-perf_defconfig` | `vendor/debugfs.config`、`vendor/xiaomi/sdm845-common.config`、`vendor/xiaomi/polaris.config` |
+| polaris | `vendor/xiaomi/mi845_defconfig` | `vendor/xiaomi/polaris.config` |
 | alioth | `vendor/kona-perf_defconfig` | `vendor/debugfs.config`、`vendor/xiaomi/sm8250-common.config`、`vendor/xiaomi/alioth.config` |
 | beryllium / daisy / vince | 自带自包含 defconfig | 见各自 workflow |
 | RMX2117 | `k6853v1_64_6360_defconfig` | 见 workflow |
-
-polaris 的三个片段与 ROM 设备树的 `TARGET_KERNEL_CONFIG` 同源
-（`BoardConfigCommon.mk` 声明 `vendor/sdm845-perf_defconfig` +
-`vendor/xiaomi/sdm845-common.config`，polaris 的 `BoardConfig.mk` 追加
-`vendor/xiaomi/polaris.config`）。
-
-## polaris 与 AviumUI 的对应关系
-
-polaris 这一线面向 AviumUI（Android 16，基于 LineageOS/AOSP）：
-内核、设备树、vendor 全部来自 `polaris-avium` 组织，正本则在 `duckyduckG`。
-
-| 层 | 仓库（`avium-16.2` 分支） |
-|---|---|
-| 内核 | `polaris-avium/kernel_xiaomi_sdm845`（4.19.325） |
-| 设备树 | `polaris-avium/device_xiaomi_polaris`、`device_xiaomi_sdm845-common` |
-| vendor | `polaris-avium/vendor_xiaomi_polaris`、`vendor_xiaomi_sdm845-common` |
-
-本仓库编出的内核与 ROM 自带内核同源，因此 susfs / BakaSU 的移植面不分叉。
-自编 ROM 的 manifest 与命令见 `localworkspace/pipelines/rom-avium/`
-（`local_manifest-polaris.xml`、`build-notes.md`）。
 
 ## 目录结构
 
@@ -210,35 +190,33 @@ localworkspace/        本机工作区（gitignored；布局见 localworkspace/R
   待真机验证
 - 树内 Kconfig 带 CRLF 与老代码告警，warnings-only 编译
 
-## 手动复现（polaris 4.19 示例）
+## 手动复现（polaris 示例）
 
 其它设备换 clone 源 / 分支 / defconfig / 补丁清单（见各 workflow）：
 
 ```bash
-KROOT=/path/to/kernel-clone   # git clone -b avium-16.2 .../kernel_xiaomi_sdm845
+KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xiaomi_sdm845
 cd "$KROOT"
 
 # 1. BakaSU manual hook 源码补丁（root_mode=resukisu-auto / susfs 时跳过）
-#    4.19 形态：shared 取 4.9，形态特有取 4.19
-bash <repo>/scripts/apply-patches.sh "$KROOT" \
-  <repo>/patches/resukisu/4.19/0001-fs-stat-ksu-manual-hook.patch \
-  <repo>/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch \
-  <repo>/patches/resukisu/4.19/0003-fs-open-ksu-manual-hook.patch \
-  <repo>/patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch
+#    参数是补丁目录：目录内 0001-0004 / 0010-0012 按序应用
+bash <repo>/scripts/apply-resukisu-manual-hooks.sh "$KROOT" \
+  <repo>/patches/resukisu/4.9 <repo>/patches/resukisu/4.9
 
 # 2. 集成（manual 示例；auto / susfs 换 integrate-resukisu.sh 参数）
 bash <repo>/scripts/integrate-resukisu.sh "$KROOT" ./resukisu.config.fragment lsm manual true
 bash <repo>/scripts/integrate-bbg.sh "$KROOT" ./bbg.config.fragment
-bash <repo>/scripts/integrate-droidspace.sh "$KROOT" ""
+PORT=<repo>/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch
+bash <repo>/scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
 # 3. 合并 defconfig
-FRAGS="./resukisu.config.fragment ./bbg.config.fragment <repo>/patches/droidspace/4.19/droidspace.config"
-BASE_DEFCONFIG=arch/arm64/configs/vendor/sdm845-perf_defconfig \
-DEVICE_FRAGMENTS="arch/arm64/configs/vendor/debugfs.config arch/arm64/configs/vendor/xiaomi/sdm845-common.config arch/arm64/configs/vendor/xiaomi/polaris.config" \
+FRAGS="./resukisu.config.fragment ./bbg.config.fragment <repo>/patches/droidspace/4.9/droidspace.config"
+BASE_DEFCONFIG=arch/arm64/configs/vendor/xiaomi/mi845_defconfig \
+DEVICE_FRAGMENTS="arch/arm64/configs/vendor/xiaomi/polaris.config" \
 ROOT_MANAGER=resukisu ENABLE_BBG=true ENABLE_DROIDSPACE=true \
   bash <repo>/scripts/merge-defconfig.sh "$KROOT" /tmp/out $FRAGS
 
-# 4. LLVM 19 编译（配方见"工具链"）
+# 4. clang 14 编译（配方见"工具链"）
 make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
   CLANG_TRIPLE=aarch64-linux-gnu- \
   CROSS_COMPILE=<gcc64>/bin/aarch64-linux-android- \
@@ -249,8 +227,6 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 
 ## 边界
 
-- polaris 面向 AviumUI Android 16；换 ROM 需重新核对内核版本线、defconfig
-  与 dtbo 归属，本仓库不保证跨 ROM 通用
 - susfs：`resukisu-susfs`；各设备落位件由本地管线（`localworkspace/pipelines/`）维护
 - Android/data 隔离仅 polaris；alioth（4.19 kona）无 sdcardfs
 - vince 树自带旧 KernelSU：集成前用
