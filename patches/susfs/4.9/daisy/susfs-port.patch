@@ -5449,6 +5449,17 @@ diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
 index 4abba0e..bc9ed6f 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
+@@ -95,6 +95,10 @@
+ #include "audit.h"
+ #include "avc_ss.h"
+ 
++#ifdef CONFIG_KSU_SUSFS
++extern bool ksu_selinux_hide_running __read_mostly;
++#endif
++
+ /* SECMARK reference count */
+ static atomic_t selinux_secmark_refcount = ATOMIC_INIT(0);
+ 
 @@ -2318,16 +2318,37 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
  			    const struct task_security_struct *old_tsec,
  			    const struct task_security_struct *new_tsec)

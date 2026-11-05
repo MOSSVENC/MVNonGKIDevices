@@ -5449,10 +5449,21 @@ index a16c72c2a..d447496cc 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 4abba0e16..bc9ed6f02 100644
+index 4abba0e16..d5d53f33e 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
-@@ -2318,16 +2318,37 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
+@@ -95,6 +95,10 @@
+ #include "audit.h"
+ #include "avc_ss.h"
+ 
++#ifdef CONFIG_KSU_SUSFS
++extern bool ksu_selinux_hide_running __read_mostly;
++#endif
++
+ /* SECMARK reference count */
+ static atomic_t selinux_secmark_refcount = ATOMIC_INIT(0);
+ 
+@@ -2318,16 +2322,37 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
  			    const struct task_security_struct *old_tsec,
  			    const struct task_security_struct *new_tsec)
  {
@@ -5490,7 +5501,7 @@ index 4abba0e16..bc9ed6f02 100644
  	/*
  	 * The only transitions we permit under NNP or nosuid
  	 * are transitions to bounded SIDs, i.e. SIDs that are
-@@ -6038,6 +6059,146 @@ static int selinux_setprocattr(struct task_struct *p,
+@@ -6038,6 +6063,146 @@ static int selinux_setprocattr(struct task_struct *p,
  	abort_creds(new);
  	return error;
  }
@@ -5637,7 +5648,7 @@ index 4abba0e16..bc9ed6f02 100644
  
  static int selinux_ismaclabel(const char *name)
  {
-@@ -6432,7 +6593,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
+@@ -6432,7 +6597,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
  	LSM_HOOK_INIT(d_instantiate, selinux_d_instantiate),
  
  	LSM_HOOK_INIT(getprocattr, selinux_getprocattr),
@@ -5650,14 +5661,15 @@ index 4abba0e16..bc9ed6f02 100644
  	LSM_HOOK_INIT(ismaclabel, selinux_ismaclabel),
  	LSM_HOOK_INIT(secid_to_secctx, selinux_secid_to_secctx),
 diff --git a/security/selinux/selinuxfs.c b/security/selinux/selinuxfs.c
-index a033306d1..4f254fb82 100644
+index a033306d1..6c70f7326 100644
 --- a/security/selinux/selinuxfs.c
 +++ b/security/selinux/selinuxfs.c
-@@ -41,6 +41,20 @@
+@@ -40,6 +40,20 @@
+ #include "security.h"
  #include "objsec.h"
  #include "conditional.h"
 +#include <linux/cred.h>
- 
++
 +#ifdef CONFIG_KSU_SUSFS
 +extern struct page *fake_status;
 +extern struct static_key_false fake_status_initialize_key;
@@ -5670,11 +5682,10 @@ index a033306d1..4f254fb82 100644
 +extern void susfs_security_compute_av_user(u32 ssid, u32 tsid, u16 tclass,
 +			      struct av_decision *avd);
 +#endif // #ifdef CONFIG_KSU_SUSFS
-+
+ 
  /* Policy capability filenames */
  static char *policycap_names[] = {
- 	"network_peer_controls",
-@@ -215,11 +228,27 @@ static int sel_open_handle_status(struct inode *inode, struct file *filp)
+@@ -215,11 +229,27 @@ static int sel_open_handle_status(struct inode *inode, struct file *filp)
  {
  	struct page    *status = selinux_kernel_status_page();
  
@@ -5702,7 +5713,7 @@ index a033306d1..4f254fb82 100644
  	return 0;
  }
  
-@@ -585,6 +614,47 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
+@@ -585,6 +615,47 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
  	return length;
  }
  
@@ -5750,7 +5761,7 @@ index a033306d1..4f254fb82 100644
  static ssize_t sel_read_checkreqprot(struct file *filp, char __user *buf,
  				     size_t count, loff_t *ppos)
  {
-@@ -714,18 +784,30 @@ static const struct file_operations sel_transition_ops = {
+@@ -714,18 +785,30 @@ static const struct file_operations sel_transition_ops = {
   * Remaining nodes use transaction based IO methods like nfsd/nfsctl.c
   */
  static ssize_t sel_write_access(struct file *file, char *buf, size_t size);
@@ -5781,7 +5792,7 @@ index a033306d1..4f254fb82 100644
  };
  
  static ssize_t selinux_transaction_write(struct file *file, const char __user *buf, size_t size, loff_t *pos)
-@@ -809,6 +891,62 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
+@@ -809,6 +892,62 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
  	return length;
  }
  

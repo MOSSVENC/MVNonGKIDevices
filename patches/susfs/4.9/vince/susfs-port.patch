@@ -5452,6 +5452,17 @@ diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
 index de95b3c..513ee3c 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
+@@ -95,6 +95,10 @@
+ #include "audit.h"
+ #include "avc_ss.h"
+ 
++#ifdef CONFIG_KSU_SUSFS
++extern bool ksu_selinux_hide_running __read_mostly;
++#endif
++
+ struct selinux_state selinux_state;
+ 
+ /* SECMARK reference count */
 @@ -6194,6 +6194,166 @@ static int selinux_setprocattr(struct task_struct *p,
  	abort_creds(new);
  	return error;

@@ -23,7 +23,8 @@ echo "SuSFS port applied:"
 grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
 MISSING=""
-for spec in "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
+for spec in "ksu_selinux_hide_running:security/selinux/hooks.c" \
+            "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
             "ksu_handle_post_execveat_sucompat:fs/exec.c" \
             "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
             "ksu_handle_stat:fs/stat.c" "ksu_handle_vfs_fstat:fs/stat.c" \
