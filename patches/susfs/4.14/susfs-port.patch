@@ -2522,10 +2522,10 @@ index ffb1310f7..bbeff96c7 100644
  		return -ENOMEM;
 diff --git a/fs/susfs.c b/fs/susfs.c
 new file mode 100644
-index 000000000..84f3c39e1
+index 000000000..646d76825
 --- /dev/null
 +++ b/fs/susfs.c
-@@ -0,0 +1,2173 @@
+@@ -0,0 +1,2175 @@
 +#include <linux/version.h>
 +#include <linux/cred.h>
 +#include <linux/fs.h>
@@ -2701,6 +2701,7 @@ index 000000000..84f3c39e1
 +	}
 +}
 +
++#ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER
 +/*
 + * Switches the selinux domain of the current process to the KernelSU one, so
 + * that the data paths of the apps can be accessed despite of the selinux
@@ -2749,6 +2750,7 @@ index 000000000..84f3c39e1
 +
 +	commit_creds(orig_cred);
 +}
++#endif // #ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER
 +
 +/* sus_path */
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH

@@ -47,6 +47,15 @@ grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(f
 grep -q 'return selinux_setprocattr' security/selinux/hooks.c || \
     MISSING="$MISSING selinux_setprocattr fallback(security/selinux/hooks.c)"
 
+awk '
+  /^#ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER$/ { guarded = 1; next }
+  /^#endif.*CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER/ { guarded = 0 }
+  /static struct cred \*susfs_switch_to_ksu_domain\(/ { if (!guarded) bad = 1; saw = 1 }
+  /static void susfs_restore_creds\(/ { if (!guarded) bad = 1; saw = 1 }
+  END { exit !(saw && !bad) }
+' fs/susfs.c || \
+    MISSING="$MISSING priority-cred helpers not config-guarded(fs/susfs.c)"
+
 if [ -n "$MISSING" ]; then
   echo "port left missing:$MISSING" >&2
   exit 1
