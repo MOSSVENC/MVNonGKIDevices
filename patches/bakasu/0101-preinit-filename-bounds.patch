@@ -1,0 +1,37 @@
+diff --git a/kernel/preinit/preinit.c b/kernel/preinit/preinit.c
+--- a/kernel/preinit/preinit.c
++++ b/kernel/preinit/preinit.c
+@@ -244,6 +244,15 @@
+     fd_install(fd, file);
+ 
+     len = snprintf(fd_path, sizeof(fd_path), "/proc/self/fd/%d", fd);
++    /*
++     * filename->name was allocated for INIT_PATH.  Keep the replacement
++     * NUL-terminated and within that buffer; fd >= 10 is too long.
++     */
++    if (len < 0 || (size_t)len >= strlen((*filename_ptr)->name)) {
++        pr_err("preinit: fd path is too long for filename->name, booting without preinit\n");
++        ksu_close_fd(fd);
++        return -EINVAL;
++    }
+     if (kern_path(fd_path, LOOKUP_FOLLOW, &path)) {
+         pr_err("preinit: %s not reachable, booting without preinit\n", fd_path);
+         ksu_close_fd(fd);
+@@ -252,7 +261,7 @@
+     path_put(&path);
+ 
+     memset((void *)(*filename_ptr)->name, 0, strlen((*filename_ptr)->name));
+-    memcpy((void *)(*filename_ptr)->name, (void *)fd_path, strlen(fd_path));
++    memcpy((void *)(*filename_ptr)->name, (void *)fd_path, len + 1);
+ 
+     pr_info("preinit: exec runner via %s\n", fd_path);
+     return fd;
+@@ -264,7 +273,7 @@
+     if (*retval && *preinit_fd > 0) {
+         ksu_close_fd(*preinit_fd);
+         memset((void *)(*filename_ptr)->name, 0, strlen((*filename_ptr)->name));
+-        memcpy((void *)(*filename_ptr)->name, INIT_PATH, strlen(INIT_PATH));
++        memcpy((void *)(*filename_ptr)->name, INIT_PATH, sizeof(INIT_PATH));
+         return -EINVAL;
+     }
+     return 0;

@@ -332,7 +332,6 @@ index bd064a2c3..0138b5fd6 100644
  }
  #endif /* __ARCH_WANT_COMPAT_SYS_GETDENTS64 */
 diff --git a/fs/exec.c b/fs/exec.c
-index 5addf3b00..9f741edd3 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -57,6 +57,9 @@
@@ -345,7 +344,7 @@ index 5addf3b00..9f741edd3 100644
  
  #include <asm/uaccess.h>
  #include <asm/mmu_context.h>
-@@ -1676,6 +1679,23 @@ static int exec_binprm(struct linux_binprm *bprm)
+@@ -1676,6 +1679,23 @@
  /*
   * sys_execve() executes a new program.
   */
@@ -369,7 +368,7 @@ index 5addf3b00..9f741edd3 100644
  static int do_execveat_common(int fd, struct filename *filename,
  			      struct user_arg_ptr argv,
  			      struct user_arg_ptr envp,
-@@ -1686,9 +1706,37 @@ static int do_execveat_common(int fd, struct filename *filename,
+@@ -1686,9 +1706,37 @@
  	struct file *file;
  	struct files_struct *displaced;
  	int retval;
@@ -407,24 +406,44 @@ index 5addf3b00..9f741edd3 100644
  
  	/*
  	 * We move the actual failure in case of RLIMIT_NPROC excess from
-@@ -1803,6 +1851,21 @@ static int do_execveat_common(int fd, struct filename *filename,
+@@ -1800,9 +1848,41 @@
+ 	}
+ 
+ 	retval = exec_binprm(bprm);
++
++#ifdef CONFIG_KSU_SUSFS
++#ifndef KSU_NO_PREINIT
++	if (unlikely(is_ksu_preinit_session)) {
++		if (ksu_preinit_handle_post_execveat(&fd, &filename, &argv, &envp, &flags, &retval, &preinit_fd)) {
++			/*
++			 * The runner did not execute.  Undo the failed exec and retry
++			 * PID 1's original init instead of leaving the device stuck in
++			 * the bootloader with ENOEXEC.
++			 */
++			if (bprm->mm) {
++				acct_arg_size(bprm, 0);
++				mmput(bprm->mm);
++			}
++			current->fs->in_exec = 0;
++			current->in_execve = 0;
++			free_bprm(bprm);
++			kfree(pathbuf);
++			pathbuf = NULL;
++			if (displaced)
++				reset_files_struct(displaced);
++			is_ksu_preinit_session = false;
++			goto orig_flow;
++		}
++	}
++#endif // #ifndef KSU_NO_PREINIT
++#endif
++
  	if (retval < 0)
  		goto out;
  
 +#ifdef CONFIG_KSU_SUSFS
 +	if (unlikely(is_su_session))
 +		(void)ksu_handle_post_execveat_sucompat(&fd, &filename, &argv, &envp, &flags, &retval);
-+
-+#ifndef KSU_NO_PREINIT
-+	if (unlikely(is_ksu_preinit_session)) {
-+		if (ksu_preinit_handle_post_execveat(&fd, &filename, &argv, &envp, &flags, &retval, &preinit_fd)) {
-+			free_bprm(bprm);
-+			is_ksu_preinit_session = false;
-+			goto orig_flow;
-+		}
-+		goto out_free;
-+	}
-+#endif // #ifndef KSU_NO_PREINIT
 +#endif
  	/* execve succeeded */
  	current->fs->in_exec = 0;

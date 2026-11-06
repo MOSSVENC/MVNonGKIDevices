@@ -29,7 +29,7 @@ SuSFS 资产由三部分构成：
 `struct selinux_state` 的 4.9 树用全局 `policydb`/`sidtab`/`policy_rwlock`，带 state 的树
 取 `state->ss`（4.14/4.19 与 beryllium/vince）。4.9 port 在 `security/selinux/hooks.c`
 保留 `ksu_selinux_hide_running` 声明，BakaSU 的 `susfs_compat.mk` 据此导出
-selinux-hide 符号。`setprocattr` 仅在 app 的 `current` 属性且 selinux-hide 正在运行时进入 SuSFS，否则回退原始 SELinux 实现。`priority_uid_filter` 的 cred 切换 helper 仅在对应 Kconfig 开启时编译，未开启时不产生 unused function。`fs/statfs.c` 与 `fs/susfs.c` 取目标树的
+selinux-hide 符号。`setprocattr` 仅在 app 的 `current` 属性且 selinux-hide 正在运行时进入 SuSFS，否则回退原始 SELinux 实现。PID 1 preinit 失败路径已在 4.9/4.14/4.19 三套 exec 形态中修正：handler 位于失败分支之前，runner 返回 `ENOEXEC` 时清理本次 bprm 并重试原始 `/system/bin/init`，不再提前 `goto out_free` 留下 `in_execve=1`。`priority_uid_filter` 的 cred 切换 helper 仅在对应 Kconfig 开启时编译，未开启时不产生 unused function。`fs/statfs.c` 与 `fs/susfs.c` 取目标树的
 内核形态（4.19 的 `handle_event` 不带 mark 参数；文件名类型按树为 `const unsigned char *`
 或 qstr）。
 

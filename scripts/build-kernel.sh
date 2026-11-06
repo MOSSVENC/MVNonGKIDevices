@@ -61,6 +61,22 @@ make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
   CROSS_COMPILE_ARM32="$RUNNER_TEMP/tc/gcc32/bin/arm-linux-androideabi-" \
   LD=ld.lld LLVM=1 LLVM_IAS=1 \
   2>&1 || rc=$?
+
+# BakaSU embeds its PID 1 preinit runner into the kernel image.  That runner
+# must be native AArch64: if it is hosted x86_64, execve() returns ENOEXEC
+# before Android userspace starts.  Fail the build before packaging even when
+# the kernel compiles successfully.
+RUNNER="$RUNNER_TEMP/out/drivers/kernelsu/preinit/runner.elf"
+if [ "$rc" = 0 ] && [ -f "$RUNNER" ]; then
+  RUNNER_MACHINE="$(readelf -h "$RUNNER" 2>/dev/null | sed -n 's/^[[:space:]]*Machine:[[:space:]]*//p' | head -n1)"
+  if [ "$RUNNER_MACHINE" != "AArch64" ]; then
+    echo "ERROR: BakaSU preinit runner is not AArch64 (readelf: ${RUNNER_MACHINE:-unknown})" >&2
+    rc=1
+  else
+    echo "BakaSU preinit runner: AArch64"
+  fi
+fi
+
 cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
 cp -f "$RUNNER_TEMP/out/arch/arm64/boot/$image" "$RUNNER_TEMP/out/$image" 2>/dev/null || true
 [ -f "$RUNNER_TEMP/out/arch/arm64/boot/$image" ] || { echo "$image not produced"; rc=1; }

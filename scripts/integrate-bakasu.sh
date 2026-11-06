@@ -41,6 +41,9 @@
 #
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+
 KROOT="${1:?usage: integrate-bakasu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]}"
 FRAG="${2:-$(pwd)/bakasu.config.fragment}"
 MODE="${3:-lsm}"
@@ -70,6 +73,38 @@ fi
 [ -L drivers/kernelsu ] || { echo "ERROR: drivers/kernelsu symlink missing after setup.sh" >&2; exit 1; }
 [ -f drivers/kernelsu/Kconfig ] || { echo "ERROR: drivers/kernelsu/Kconfig missing" >&2; exit 1; }
 grep -q "obj-\$(CONFIG_KSU) += kernelsu/" drivers/Makefile || { echo "ERROR: drivers/Makefile not wired" >&2; exit 1; }
+
+# --- 1a. harden BakaSU's PID 1 preinit path ---
+# BakaSU builds the embedded PID 1 runner with $(CC) but relies on the kernel's
+# computed CLANG_FLAGS.  4.x Kbuild does not export that variable to sub-makes,
+# so host clang silently emits an x86_64 runner.  The kernel then replaces
+# /system/bin/init with an ELF that cannot execute on the device, and PID 1
+# never reaches userspace.  Patch the generator to pass the target triple
+# explicitly; build-kernel.sh additionally verifies the generated ELF machine.
+# The second patch keeps /proc/self/fd/<fd> within the filename buffer and
+# NUL-terminated (fd >= 10 used to overflow the old /system/bin/init buffer).
+apply_bakasu_patch() {
+  local file="$1" marker="$2" patch="$3" label="$4"
+  [ -f "$file" ] || return 0
+  if grep -q "$marker" "$file"; then
+    echo "$label already present, skipping"
+  elif git -C KernelSU apply --check "$patch"; then
+    git -C KernelSU apply "$patch"
+    echo "$label applied"
+  else
+    echo "ERROR: BakaSU layout changed; update $patch" >&2
+    exit 1
+  fi
+}
+
+PREINIT_MK="KernelSU/kernel/tools/code_generation/preinit_runner/preinit_runner.mk"
+PREINIT_C="KernelSU/kernel/preinit/preinit.c"
+apply_bakasu_patch "$PREINIT_MK" "KSU_RUNNER_TARGET_FLAGS" \
+  "$REPO_ROOT/patches/bakasu/0100-preinit-runner-target-arch.patch" \
+  "BakaSU preinit runner target fix"
+apply_bakasu_patch "$PREINIT_C" "filename->name was allocated for INIT_PATH" \
+  "$REPO_ROOT/patches/bakasu/0101-preinit-filename-bounds.patch" \
+  "BakaSU preinit filename bounds fix"
 
 # --- 1b. auto-hook <5.0 compatibility fix (opt-in, default on) ---
 # The auto-hook branch guards kasan_reset_tag() (added in v5.0) with

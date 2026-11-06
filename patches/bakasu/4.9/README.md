@@ -8,6 +8,8 @@
 | `0001-fs-stat` / `0002-fs-exec` / `0003-fs-open` / `0004-kernel-reboot` | 必加组（本内核族所需形态；open 走内联 `SYSCALL_DEFINE3(faccessat)` 函数体） |
 | `0010-input` / `0011-setuid` / `0012-sysread` | 可选组，仅 `hook_extra=manual` 模式应用；`hook_extra=lsm`（默认）由 BakaSU 的 LSM / input_handler AUTO 机制覆盖 |
 | `daisy/0004` / `vince/0004` | reboot hook 的设备树变体（两者 reboot.c 上下文不同）；这两棵树用变体代替 `0004`。`vince/0000-remove-legacy-ksu-hooks.patch` 在集成前剥离树自带旧 KernelSU 埋点 |
+| `../0100-preinit-runner-target-arch.patch` | BakaSU checkout 补丁（不是内核树补丁）：4.x Kbuild 不向子 make 导出 `CLANG_FLAGS`，BakaSU 的 PID 1 preinit runner 会由宿主 clang 编成 x86_64。补丁显式传入 `CLANG_TRIPLE`，`build-kernel.sh` 再用 `readelf` 拒绝非 AArch64 runner |
+| `../0101-preinit-filename-bounds.patch` | 同一 checkout 的边界修复：`/proc/self/fd/<fd>` 必须连同 NUL 放进原 `/system/bin/init` 的 `filename->name` 缓冲；`fd >= 10` 时安全放弃 preinit，而不是越界 |
 
 文档形态参考（网页摘录）见 `localworkspace/evidence/bakasu-docs/docs/manual-integrate-zh.md`；文档版本页与
 本目录文件的对应：stat/exec/reboot 为 3.14+ 形态，open 为 4.19- 形态，

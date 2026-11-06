@@ -42,6 +42,19 @@ done_line=$(grep -n 'exec_binprm(bprm)' fs/exec.c | head -1 | cut -d: -f1)
   echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
   exit 1; }
 
+# The 4.9/4.14/4.19 exec paths do their own success cleanup.  The preinit
+# post-exec handler must therefore run before the failure branch and retry the
+# real init after ENOEXEC; the old port skipped cleanup and only ran after a
+# successful runner exec, so a non-native runner bricked PID 1.
+grep -q 'The runner did not execute' fs/exec.c || \
+    MISSING="$MISSING preinit ENOEXEC retry(fs/exec.c)"
+awk '
+  /if \(ksu_preinit_handle_post_execveat\(/ { pre = NR }
+  /if \(retval < 0\)/ && pre && !seen { post = NR; seen = 1 }
+  END { exit !(seen && pre < post) }
+' fs/exec.c || \
+    MISSING="$MISSING preinit handler before exec failure branch(fs/exec.c)"
+
 grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"
 
 grep -q 'return selinux_setprocattr' security/selinux/hooks.c || \

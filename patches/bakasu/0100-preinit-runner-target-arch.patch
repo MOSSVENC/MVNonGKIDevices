@@ -1,0 +1,38 @@
+diff --git a/kernel/tools/code_generation/preinit_runner/preinit_runner.mk b/kernel/tools/code_generation/preinit_runner/preinit_runner.mk
+--- a/kernel/tools/code_generation/preinit_runner/preinit_runner.mk
++++ b/kernel/tools/code_generation/preinit_runner/preinit_runner.mk
+@@ -18,8 +18,23 @@
+ KSU_RUNNER_TARGET := $(obj)/preinit/runner.elf
+ KSU_RUNNER_SRC := $(KSU_SRC)/preinit/runner
+ 
+-KSU_RUNNER_CFLAGS := $(CLANG_FLAGS) -std=gnu11 -Os -Wall \
+-	-nostdinc -isystem $(shell $(CC) -print-file-name=include) \
++# 4.x Kbuild does not export its computed CLANG_FLAGS to sub-makes.  Without an
++# explicit target, the host clang (x86_64) produces an x86_64 runner, and PID 1
++# then gets ENOEXEC before Android can boot.  Use the target triple passed to
++# the kernel build (CLANG_TRIPLE), with ARCH fallbacks for direct Kbuild calls.
++KSU_RUNNER_CLANG_TRIPLE := $(notdir $(CLANG_TRIPLE:%-=%))
++ifeq ($(strip $(KSU_RUNNER_CLANG_TRIPLE)),)
++ifeq ($(ARCH),arm64)
++KSU_RUNNER_CLANG_TRIPLE := aarch64-linux-gnu
++endif
++ifeq ($(ARCH),arm)
++KSU_RUNNER_CLANG_TRIPLE := arm-linux-gnueabi
++endif
++endif
++KSU_RUNNER_TARGET_FLAGS := $(if $(strip $(KSU_RUNNER_CLANG_TRIPLE)),--target=$(KSU_RUNNER_CLANG_TRIPLE))
++
++KSU_RUNNER_CFLAGS := $(CLANG_FLAGS) $(KSU_RUNNER_TARGET_FLAGS) -std=gnu11 -Os -Wall \
++	-nostdinc -isystem $(shell $(CC) $(KSU_RUNNER_TARGET_FLAGS) -print-file-name=include) \
+ 	-I$(KSU_RUNNER_SRC)/nolibc -I$(KSU_UAPI_INC) \
+ 	-I$(KSU_SRC)/include \
+ 	-ffreestanding -fno-stack-protector -fno-pic -fno-pie \
+@@ -28,7 +43,7 @@
+ 
+ KSU_RUNNER_LIBS :=
+ ifeq ($(ARCH),arm)
+-KSU_RUNNER_LIBS := $(shell $(CC) $(CLANG_FLAGS) -print-libgcc-file-name)
++KSU_RUNNER_LIBS := $(shell $(CC) $(CLANG_FLAGS) $(KSU_RUNNER_TARGET_FLAGS) -print-libgcc-file-name)
+ endif
+ 
+ quiet_cmd_ksu_runner = CC      $@
