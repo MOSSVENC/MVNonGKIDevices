@@ -4701,7 +4701,7 @@ index 000000000..84f3c39e1
 +
 diff --git a/include/linux/susfs.h b/include/linux/susfs.h
 new file mode 100644
-index 0000000..57be18a
+index 000000000..02038d5b2
 --- /dev/null
 +++ b/include/linux/susfs.h
 @@ -0,0 +1,260 @@
@@ -5399,7 +5399,7 @@ index 59fa20b53..31adb2b94 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index e98728a9c..c849e848c 100644
+index e98728a9c..715b0afe1 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
 @@ -99,6 +99,12 @@
@@ -5454,7 +5454,7 @@ index e98728a9c..c849e848c 100644
  	/*
  	 * If the policy enables the nnp_nosuid_transition policy capability,
  	 * then we permit transitions under NNP or nosuid if the
-@@ -6308,6 +6335,148 @@ static int selinux_setprocattr(const char *name, void *value, size_t size)
+@@ -6308,6 +6335,159 @@ static int selinux_setprocattr(const char *name, void *value, size_t size)
  	return error;
  }
  
@@ -5598,17 +5598,28 @@ index e98728a9c..c849e848c 100644
 +	abort_creds(new);
 +	return error;
 +}
++
++static int handle_selinux_setprocattr(const char *name, void *value, size_t size)
++{
++	if (likely(!strcmp(name, "current") &&
++		   current_uid().val >= 10000 &&
++		   ksu_selinux_hide_running))
++		return susfs_selinux_setprocattr(name, value, size);
++
++	return selinux_setprocattr(name, value, size);
++}
++
 +#endif // #ifdef CONFIG_KSU_SUSFS // #ifdef CONFIG_KSU_SUSFS
 +
  static int selinux_ismaclabel(const char *name)
  {
  	return (strcmp(name, XATTR_SELINUX_SUFFIX) == 0);
-@@ -6839,7 +7008,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
+@@ -6839,7 +7019,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
  	LSM_HOOK_INIT(d_instantiate, selinux_d_instantiate),
  
  	LSM_HOOK_INIT(getprocattr, selinux_getprocattr),
 +#ifdef CONFIG_KSU_SUSFS
-+	LSM_HOOK_INIT(setprocattr, susfs_selinux_setprocattr),
++	LSM_HOOK_INIT(setprocattr, handle_selinux_setprocattr),
 +#else
  	LSM_HOOK_INIT(setprocattr, selinux_setprocattr),
 +#endif // #ifdef CONFIG_KSU_SUSFS
@@ -5616,14 +5627,15 @@ index e98728a9c..c849e848c 100644
  	LSM_HOOK_INIT(ismaclabel, selinux_ismaclabel),
  	LSM_HOOK_INIT(secid_to_secctx, selinux_secid_to_secctx),
 diff --git a/security/selinux/selinuxfs.c b/security/selinux/selinuxfs.c
-index dba17ea51..119f87633 100644
+index dba17ea51..9fd464be2 100644
 --- a/security/selinux/selinuxfs.c
 +++ b/security/selinux/selinuxfs.c
-@@ -42,6 +42,22 @@
+@@ -41,6 +41,22 @@
+ #include "security.h"
  #include "objsec.h"
  #include "conditional.h"
 +#include <linux/cred.h>
- 
++
 +#ifdef CONFIG_KSU_SUSFS
 +extern struct page *fake_status;
 +extern struct static_key_false fake_status_initialize_key;
@@ -5638,11 +5650,10 @@ index dba17ea51..119f87633 100644
 +			      u16 tclass,
 +			      struct av_decision *avd);
 +#endif // #ifdef CONFIG_KSU_SUSFS
-+
+ 
  enum sel_inos {
  	SEL_ROOT_INO = 2,
- 	SEL_LOAD,	/* load policy */
-@@ -221,13 +236,29 @@ static int sel_open_handle_status(struct inode *inode, struct file *filp)
+@@ -221,13 +237,29 @@ static int sel_open_handle_status(struct inode *inode, struct file *filp)
  	struct selinux_fs_info *fsi = file_inode(filp)->i_sb->s_fs_info;
  	struct page    *status = selinux_kernel_status_page(fsi->state);
  
@@ -5673,7 +5684,7 @@ index dba17ea51..119f87633 100644
  
  static ssize_t sel_read_handle_status(struct file *filp, char __user *buf,
  				      size_t count, loff_t *ppos)
-@@ -626,6 +657,53 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
+@@ -626,6 +658,53 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
  	return length;
  }
  
@@ -5727,7 +5738,7 @@ index dba17ea51..119f87633 100644
  static ssize_t sel_read_checkreqprot(struct file *filp, char __user *buf,
  				     size_t count, loff_t *ppos)
  {
-@@ -766,14 +844,26 @@ static ssize_t sel_write_create(struct file *file, char *buf, size_t size);
+@@ -766,14 +845,26 @@ static ssize_t sel_write_create(struct file *file, char *buf, size_t size);
  static ssize_t sel_write_relabel(struct file *file, char *buf, size_t size);
  static ssize_t sel_write_user(struct file *file, char *buf, size_t size);
  static ssize_t sel_write_member(struct file *file, char *buf, size_t size);
@@ -5754,7 +5765,7 @@ index dba17ea51..119f87633 100644
  };
  
  static ssize_t selinux_transaction_write(struct file *file, const char __user *buf, size_t size, loff_t *pos)
-@@ -861,6 +951,65 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
+@@ -861,6 +952,65 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
  	return length;
  }
  

@@ -5449,7 +5449,7 @@ index a16c72c2a..d447496cc 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 4abba0e16..d5d53f33e 100644
+index 4abba0e16..b05983b07 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
 @@ -95,6 +95,10 @@
@@ -5501,10 +5501,14 @@ index 4abba0e16..d5d53f33e 100644
  	/*
  	 * The only transitions we permit under NNP or nosuid
  	 * are transitions to bounded SIDs, i.e. SIDs that are
-@@ -6038,6 +6063,146 @@ static int selinux_setprocattr(struct task_struct *p,
- 	abort_creds(new);
- 	return error;
- }
+@@ -6034,11 +6059,163 @@ static int selinux_setprocattr(struct task_struct *p,
+ 	commit_creds(new);
+ 	return size;
+ 
++abort_change:
++	abort_creds(new);
++	return error;
++}
 +#ifdef CONFIG_KSU_SUSFS
 +extern int susfs_security_context_to_sid(const char *scontext, u32 scontext_len,
 +			    u32 *sid, gfp_t gfp);
@@ -5639,21 +5643,34 @@ index 4abba0e16..d5d53f33e 100644
 +	commit_creds(new);
 +	return size;
 +
-+abort_change:
-+	abort_creds(new);
-+	return error;
+ abort_change:
+ 	abort_creds(new);
+ 	return error;
+ }
+ 
++static int handle_selinux_setprocattr(struct task_struct *p,
++				      char *name, void *value, size_t size)
++{
++	if (likely(!strcmp(name, "current") &&
++		   current_uid().val >= 10000 &&
++		   ksu_selinux_hide_running))
++		return susfs_selinux_setprocattr(p, name, value, size);
++
++	return selinux_setprocattr(p, name, value, size);
 +}
++
 +#endif // #ifdef CONFIG_KSU_SUSFS
 +
- 
++
  static int selinux_ismaclabel(const char *name)
  {
-@@ -6432,7 +6597,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
+ 	return (strcmp(name, XATTR_SELINUX_SUFFIX) == 0);
+@@ -6432,7 +6609,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
  	LSM_HOOK_INIT(d_instantiate, selinux_d_instantiate),
  
  	LSM_HOOK_INIT(getprocattr, selinux_getprocattr),
 +#ifdef CONFIG_KSU_SUSFS
-+	LSM_HOOK_INIT(setprocattr, susfs_selinux_setprocattr),
++	LSM_HOOK_INIT(setprocattr, handle_selinux_setprocattr),
 +#else
  	LSM_HOOK_INIT(setprocattr, selinux_setprocattr),
 +#endif // #ifdef CONFIG_KSU_SUSFS

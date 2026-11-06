@@ -24,6 +24,7 @@ grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
 MISSING=""
 for spec in "ksu_selinux_hide_running:security/selinux/hooks.c" \
+            "handle_selinux_setprocattr:security/selinux/hooks.c" \
             "ksu_handle_setresuid:kernel/sys.c" "ksu_handle_execveat:fs/exec.c" \
             "ksu_handle_post_execveat_sucompat:fs/exec.c" \
             "ksu_handle_faccessat:fs/open.c" "ksu_handle_sys_read:fs/read_write.c" \
@@ -42,6 +43,9 @@ done_line=$(grep -n 'exec_binprm(bprm)' fs/exec.c | head -1 | cut -d: -f1)
   exit 1; }
 
 grep -q '^int filename_lookup' fs/namei.c || MISSING="$MISSING filename_lookup(fs/namei.c)"
+
+grep -q 'return selinux_setprocattr' security/selinux/hooks.c || \
+    MISSING="$MISSING selinux_setprocattr fallback(security/selinux/hooks.c)"
 
 if [ -n "$MISSING" ]; then
   echo "port left missing:$MISSING" >&2

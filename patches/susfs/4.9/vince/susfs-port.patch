@@ -5449,7 +5449,7 @@ index f5ce006..e43b34a 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index de95b3c..513ee3c 100644
+index de95b3c..120f41d 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
 @@ -95,6 +95,10 @@
@@ -5463,7 +5463,7 @@ index de95b3c..513ee3c 100644
  struct selinux_state selinux_state;
  
  /* SECMARK reference count */
-@@ -6194,6 +6194,166 @@ static int selinux_setprocattr(struct task_struct *p,
+@@ -6194,6 +6198,178 @@ static int selinux_setprocattr(struct task_struct *p,
  	abort_creds(new);
  	return error;
  }
@@ -5625,17 +5625,29 @@ index de95b3c..513ee3c 100644
 +	abort_creds(new);
 +	return error;
 +}
++
++static int handle_selinux_setprocattr(struct task_struct *p,
++				      char *name, void *value, size_t size)
++{
++	if (likely(!strcmp(name, "current") &&
++		   current_uid().val >= 10000 &&
++		   ksu_selinux_hide_running))
++		return susfs_selinux_setprocattr(p, name, value, size);
++
++	return selinux_setprocattr(p, name, value, size);
++}
++
 +#endif // #ifdef CONFIG_KSU_SUSFS
 +
  
  static int selinux_ismaclabel(const char *name)
  {
-@@ -6660,7 +6820,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
+@@ -6660,7 +6836,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
  	LSM_HOOK_INIT(d_instantiate, selinux_d_instantiate),
  
  	LSM_HOOK_INIT(getprocattr, selinux_getprocattr),
 +#ifdef CONFIG_KSU_SUSFS
-+	LSM_HOOK_INIT(setprocattr, susfs_selinux_setprocattr),
++	LSM_HOOK_INIT(setprocattr, handle_selinux_setprocattr),
 +#else
  	LSM_HOOK_INIT(setprocattr, selinux_setprocattr),
 +#endif // #ifdef CONFIG_KSU_SUSFS
@@ -5643,14 +5655,15 @@ index de95b3c..513ee3c 100644
  	LSM_HOOK_INIT(ismaclabel, selinux_ismaclabel),
  	LSM_HOOK_INIT(secid_to_secctx, selinux_secid_to_secctx),
 diff --git a/security/selinux/selinuxfs.c b/security/selinux/selinuxfs.c
-index 13b485c..2b2acba 100644
+index 13b485c..5f59dd0 100644
 --- a/security/selinux/selinuxfs.c
 +++ b/security/selinux/selinuxfs.c
-@@ -42,6 +42,23 @@
+@@ -41,6 +41,23 @@
+ #include "security.h"
  #include "objsec.h"
  #include "conditional.h"
 +#include <linux/cred.h>
- 
++
 +#ifdef CONFIG_KSU_SUSFS
 +extern struct page *fake_status;
 +extern struct static_key_false fake_status_initialize_key;
@@ -5666,11 +5679,10 @@ index 13b485c..2b2acba 100644
 +			      u32 ssid, u32 tsid, u16 tclass,
 +			      struct av_decision *avd);
 +#endif // #ifdef CONFIG_KSU_SUSFS
-+
+ 
  enum sel_inos {
  	SEL_ROOT_INO = 2,
- 	SEL_LOAD,	/* load policy */
-@@ -219,11 +235,27 @@ static int sel_open_handle_status(struct inode *inode, struct file *filp)
+@@ -219,11 +236,27 @@ static int sel_open_handle_status(struct inode *inode, struct file *filp)
  	struct selinux_fs_info *fsi = file_inode(filp)->i_sb->s_fs_info;
  	struct page    *status = selinux_kernel_status_page(fsi->state);
  
@@ -5698,7 +5710,7 @@ index 13b485c..2b2acba 100644
  	return 0;
  }
  
-@@ -625,6 +657,51 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
+@@ -625,6 +658,51 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
  	return length;
  }
  
@@ -5750,7 +5762,7 @@ index 13b485c..2b2acba 100644
  static ssize_t sel_read_checkreqprot(struct file *filp, char __user *buf,
  				     size_t count, loff_t *ppos)
  {
-@@ -763,18 +840,30 @@ static const struct file_operations sel_transition_ops = {
+@@ -763,18 +841,30 @@ static const struct file_operations sel_transition_ops = {
   * Remaining nodes use transaction based IO methods like nfsd/nfsctl.c
   */
  static ssize_t sel_write_access(struct file *file, char *buf, size_t size);
@@ -5781,7 +5793,7 @@ index 13b485c..2b2acba 100644
  };
  
  static ssize_t selinux_transaction_write(struct file *file, const char __user *buf, size_t size, loff_t *pos)
-@@ -862,6 +951,66 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
+@@ -862,6 +952,66 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
  	return length;
  }
  
