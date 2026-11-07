@@ -16,6 +16,7 @@
 #                                      compile-time check requires the manually
 #                                      added ksu_handle_* symbols instead.
 #
+#   BAKASU_REF can override the pinned commit for a deliberate source update.
 #   hook_type:     manual (default) — source-hook integration: BakaSU main
 #                                    branch + the mandatory source patches
 #                                    (0001..0004, applied by apply-patches.sh
@@ -35,8 +36,7 @@
 # Steps:
 #   1. Kernel-side mandatory source patches (stat/exec/open/reboot) are applied
 #      by apply-patches.sh — caller runs it first for hook_type=manual only.
-#   2. Run the BakaSU kernel/setup.sh from the kernel root (main or
-#      auto-hook branch, checkout via the setup.sh positional arg).
+#   2. Check out the pinned BakaSU source and wire drivers/kernelsu from it.
 #   3. Emit the CONFIG_KSU fragment.
 #
 set -euo pipefail
@@ -52,27 +52,57 @@ FIX49="${5:-true}"   # auto 模式下修正 auto-hook 分支对 <5.0 内核的 k
 case "$MODE" in lsm|manual) ;; *) echo "ERROR: hook_extra_mode must be 'lsm' or 'manual' (got: $MODE)" >&2; exit 2;; esac
 case "$TYPE" in manual|auto|susfs) ;; *) echo "ERROR: hook_type must be 'manual', 'auto' or 'susfs' (got: $TYPE)" >&2; exit 2;; esac
 
-KSU_BRANCH="main"
-if [ "$TYPE" = "auto" ]; then
-  KSU_BRANCH="auto-hook"
-elif [ "$TYPE" = "susfs" ]; then
-  KSU_BRANCH="main"
-fi
+# Both the source and wiring are pinned. A moving branch makes the preinit
+# runner and Kconfig surface unrepeatable.
+KSU_MAIN_REF="516d3e87fbc986ccefdde2c2765f1700612441a9"
+KSU_AUTO_HOOK_REF="9d159b417210fdca88b4dbf4381fc1c618c102ba"
+KSU_REPO="https://github.com/Baka-SU/BakaSU.git"
+case "$TYPE" in
+  auto) KSU_REF="${BAKASU_REF:-$KSU_AUTO_HOOK_REF}" ;;
+  *)    KSU_REF="${BAKASU_REF:-$KSU_MAIN_REF}" ;;
+esac
 
-cd "$KROOT"
-
-# --- 1. BakaSU setup.sh (idempotent: skip if already wired) ---
-if [ -L drivers/kernelsu ] && [ -d KernelSU ]; then
-  echo "BakaSU already integrated (drivers/kernelsu symlink exists), skipping setup.sh"
+cd "$KROOT" || exit 1
+if [ -d common/drivers ]; then
+  DRIVER_DIR="common/drivers"
 else
-  echo "==> Running BakaSU setup.sh (branch=$KSU_BRANCH) ..."
-  curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/$KSU_BRANCH/kernel/setup.sh" | bash -s "$KSU_BRANCH"
+  DRIVER_DIR="drivers"
 fi
+[ -d "$DRIVER_DIR" ] || { echo "ERROR: drivers/ directory not found" >&2; exit 1; }
+
+# --- 1. BakaSU checkout + the two wiring lines setup.sh performs ---
+if [ ! -d KernelSU/.git ]; then
+  [ -e KernelSU ] && { echo "ERROR: KernelSU exists but is not a git checkout" >&2; exit 1; }
+  git clone --filter=blob:none --no-checkout "$KSU_REPO" KernelSU
+  git -C KernelSU fetch --depth=1 origin "$KSU_REF"
+  git -C KernelSU checkout -q --detach FETCH_HEAD
+else
+  actual_ref="$(git -C KernelSU rev-parse HEAD 2>/dev/null || true)"
+  want_ref="$(git -C KernelSU rev-parse "$KSU_REF^{commit}" 2>/dev/null || true)"
+  [ -n "$want_ref" ] || { echo "ERROR: cannot resolve BakaSU ref $KSU_REF" >&2; exit 1; }
+  [ "$actual_ref" = "$want_ref" ] || {
+    echo "ERROR: existing BakaSU checkout is not $KSU_REF (got ${actual_ref:-unknown}); use a fresh tree" >&2
+    exit 1
+  }
+fi
+
+actual_ref="$(git -C KernelSU rev-parse HEAD 2>/dev/null || true)"
+want_ref="$(git -C KernelSU rev-parse "$KSU_REF^{commit}" 2>/dev/null || true)"
+[ -n "$want_ref" ] && [ "$actual_ref" = "$want_ref" ] || {
+  echo "ERROR: BakaSU checkout is not the requested commit (wanted $KSU_REF, got ${actual_ref:-unknown})" >&2
+  exit 1
+}
+
+ln -sfn "$(realpath --relative-to="$DRIVER_DIR" "$KROOT/KernelSU/kernel")" "$DRIVER_DIR/kernelsu"
+grep -q 'obj-\$(CONFIG_KSU) += kernelsu/' "$DRIVER_DIR/Makefile" || \
+  printf '\nobj-$(CONFIG_KSU) += kernelsu/\n' >> "$DRIVER_DIR/Makefile"
+grep -q 'source "drivers/kernelsu/Kconfig"' "$DRIVER_DIR/Kconfig" || \
+  sed -i '/endmenu/i\source "drivers/kernelsu/Kconfig"' "$DRIVER_DIR/Kconfig"
 
 # sanity checks
-[ -L drivers/kernelsu ] || { echo "ERROR: drivers/kernelsu symlink missing after setup.sh" >&2; exit 1; }
-[ -f drivers/kernelsu/Kconfig ] || { echo "ERROR: drivers/kernelsu/Kconfig missing" >&2; exit 1; }
-grep -q "obj-\$(CONFIG_KSU) += kernelsu/" drivers/Makefile || { echo "ERROR: drivers/Makefile not wired" >&2; exit 1; }
+[ -L "$DRIVER_DIR/kernelsu" ] || { echo "ERROR: $DRIVER_DIR/kernelsu symlink missing" >&2; exit 1; }
+[ -f "$DRIVER_DIR/kernelsu/Kconfig" ] || { echo "ERROR: $DRIVER_DIR/kernelsu/Kconfig missing" >&2; exit 1; }
+grep -q 'obj-\$(CONFIG_KSU) += kernelsu/' "$DRIVER_DIR/Makefile" || { echo "ERROR: $DRIVER_DIR/Makefile not wired" >&2; exit 1; }
 
 # --- 1a. harden BakaSU's PID 1 preinit path ---
 # BakaSU builds the embedded PID 1 runner with $(CC) but relies on the kernel's

@@ -17,7 +17,13 @@ setuid 为 4.17- 形态，sys_read 为 4.19- 形态。
 
 ## 应用
 
+目录模式通过 helper 选择补丁组；`HOOK_EXTRA=lsm` 只应用必加组，
+`HOOK_EXTRA=manual` 再从第三参数取 0010-0012：
+
 ```bash
-bash scripts/apply-patches.sh <kernel-root> \
-  patches/bakasu/4.9 [patches/bakasu/4.9/<device>]
+HOOK_EXTRA=lsm bash scripts/apply-bakasu-manual-hooks.sh <kernel-root> \
+  patches/bakasu/4.9
+
+HOOK_EXTRA=manual bash scripts/apply-bakasu-manual-hooks.sh <kernel-root> \
+  patches/bakasu/4.9 patches/bakasu/4.9
 ```

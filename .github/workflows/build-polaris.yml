@@ -97,7 +97,7 @@ jobs:
         run: bash scripts/download-toolchain.sh clang-r450784d android13-release --gcc32
 
       - name: Clone kernel source (not part of this repo)
-        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
+        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" "$KERNEL_REPO" "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
@@ -148,12 +148,16 @@ jobs:
 
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
-          FRAGS=""
+          FRAGS=()
           if [ "$ROOT_MANAGER" = "bakasu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/bakasu.config.fragment"
+            FRAGS+=("$GITHUB_WORKSPACE/bakasu.config.fragment")
           fi
-          [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
-          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
+          if [ "$ENABLE_BBG" = "true" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
+          fi
+          if [ "$ENABLE_DROIDSPACE" = "true" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config")
+          fi
           BASE_DEFCONFIG="arch/arm64/configs/vendor/xiaomi/mi845_defconfig" \
           DEVICE_FRAGMENTS="arch/arm64/configs/vendor/xiaomi/polaris.config" \
           ROOT_MANAGER="$ROOT_MANAGER" \
@@ -163,7 +167,7 @@ jobs:
           HOOK_EXTRA="$HOOK_EXTRA" \
           HOOK_TYPE="$HOOK_TYPE" \
           CUSTOM_LOCALVERSION="$CUSTOM_LOCALVERSION" \
-          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
+          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" "${FRAGS[@]}"
 
       - name: Build kernel Image.gz-dtb
         run: bash scripts/build-kernel.sh polaris Image.gz-dtb

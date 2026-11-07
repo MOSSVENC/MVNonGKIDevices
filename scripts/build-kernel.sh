@@ -13,20 +13,24 @@
 # The build's summary goes to $GITHUB_STEP_SUMMARY; a failing build tail is
 # echoed there before the step fails.
 #
-set -o pipefail
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 dev="${1:?usage: build-kernel.sh <device-codename> <image-name>}"
 image="${2:?usage: build-kernel.sh <device-codename> <image-name>}"
 : "${KROOT:?KROOT is not set}"
 : "${RUNNER_TEMP:?RUNNER_TEMP is not set}"
 : "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is not set}"
+: "${CLANG_DIR:?CLANG_DIR is not set}"
 
 mkdir -p "$GITHUB_WORKSPACE/logs"
+SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
 # Unified toolchain: AOSP clang 14 + LD=ld.lld.
 export PATH="$CLANG_DIR:$PATH"
 export KBUILD_BUILD_HOST=build
 export KBUILD_BUILD_USER=kernel
-cd "$KROOT"
+cd "$KROOT" || exit 1
 # Absolute toolchain prefixes (JackA1ltman style): the 4.9 arm64 Makefile
 # requires CROSS_COMPILE_ARM32 for the compat vDSO and resolves
 # $(CROSS_COMPILE_ARM32)ld via which/absolute path; the AOSP GCC 4.9
@@ -38,10 +42,11 @@ rc=0
 # interleave with the parallel build.
 # uname -v timestamp: the build_time input when given, else the build-start
 # time in UTC.
-if [ -n "$CUSTOM_BUILD_TIME" ]; then
+if [ -n "${CUSTOM_BUILD_TIME:-}" ]; then
   export KBUILD_BUILD_TIMESTAMP="$CUSTOM_BUILD_TIME"
 else
-  export KBUILD_BUILD_TIMESTAMP="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+  build_timestamp="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')" || exit 1
+  export KBUILD_BUILD_TIMESTAMP="$build_timestamp"
 fi
 if grep -q '^CONFIG_MODULE_SIG=y' "$RUNNER_TEMP/out/.config" 2>/dev/null; then
   make -j1 O="$RUNNER_TEMP/out" ARCH=arm64 \
@@ -62,26 +67,18 @@ make -j"$(nproc)" O="$RUNNER_TEMP/out" ARCH=arm64 \
   LD=ld.lld LLVM=1 LLVM_IAS=1 \
   2>&1 || rc=$?
 
-# BakaSU embeds its PID 1 preinit runner into the kernel image.  That runner
-# must be native AArch64: if it is hosted x86_64, execve() returns ENOEXEC
-# before Android userspace starts.  Fail the build before packaging even when
-# the kernel compiles successfully.
-RUNNER="$RUNNER_TEMP/out/drivers/kernelsu/preinit/runner.elf"
-if [ "$rc" = 0 ] && [ -f "$RUNNER" ]; then
-  RUNNER_MACHINE="$(readelf -h "$RUNNER" 2>/dev/null | sed -n 's/^[[:space:]]*Machine:[[:space:]]*//p' | head -n1)"
-  if [ "$RUNNER_MACHINE" != "AArch64" ]; then
-    echo "ERROR: BakaSU preinit runner is not AArch64 (readelf: ${RUNNER_MACHINE:-unknown})" >&2
-    rc=1
-  else
-    echo "BakaSU preinit runner: AArch64"
-  fi
+# BakaSU embeds its PID 1 preinit runner into the kernel image. The shared
+# verifier rejects a host-architecture ELF when the integrated checkout has
+# preinit support.
+if [ "$rc" = 0 ]; then
+  bash "$SCRIPT_DIR/verify-preinit-runner.sh" "$KROOT" "$RUNNER_TEMP/out" || rc=$?
 fi
 
 cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config" 2>/dev/null || true
 cp -f "$RUNNER_TEMP/out/arch/arm64/boot/$image" "$RUNNER_TEMP/out/$image" 2>/dev/null || true
 [ -f "$RUNNER_TEMP/out/arch/arm64/boot/$image" ] || { echo "$image not produced"; rc=1; }
 if [ "$rc" != 0 ]; then
-  { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/$dev-full.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+  { echo "### build kernel FAILED (rc=$rc)"; tail -100 "$GITHUB_WORKSPACE/logs/$dev-full.log"; } >> "$SUMMARY" || true
   exit "$rc"
 fi
-{ echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/$dev-full.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+{ echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/$dev-full.log"; } >> "$SUMMARY" || true

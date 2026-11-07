@@ -16,10 +16,16 @@ KROOT="${1:?usage: apply-susfs-port.sh <kernel-root> <port-patch>}"
 P="${2:?usage: apply-susfs-port.sh <kernel-root> <port-patch>}"
 [ -f "$P" ] || { echo "no such port patch: $P" >&2; exit 1; }
 
-cd "$KROOT"
-git apply --check "$P" || { echo "port does not apply cleanly" >&2; exit 1; }
-git apply "$P"
-echo "SuSFS port applied:"
+cd "$KROOT" || exit 1
+if git apply --check -R "$P" >/dev/null 2>&1; then
+  echo "SuSFS port already applied: $P"
+elif git apply --check "$P" >/dev/null 2>&1; then
+  git apply "$P"
+  echo "SuSFS port applied:"
+else
+  echo "port does not apply cleanly" >&2
+  exit 1
+fi
 grep -c 'CONFIG_KSU_SUSFS' fs/susfs.c include/linux/susfs.h
 
 MISSING=""
@@ -42,10 +48,9 @@ done_line=$(grep -n 'exec_binprm(bprm)' fs/exec.c | head -1 | cut -d: -f1)
   echo "post-execve call not after the exec attempt (post=$post exec=$done_line)" >&2
   exit 1; }
 
-# The 4.9/4.14/4.19 exec paths do their own success cleanup.  The preinit
-# post-exec handler must therefore run before the failure branch and retry the
-# real init after ENOEXEC; the old port skipped cleanup and only ran after a
-# successful runner exec, so a non-native runner bricked PID 1.
+# The 4.9/4.14/4.19 exec paths perform their own success cleanup. The preinit
+# post-exec handler therefore runs before the failure branch and retries the
+# real init after ENOEXEC, while clearing the failed exec state first.
 grep -q 'The runner did not execute' fs/exec.c || \
     MISSING="$MISSING preinit ENOEXEC retry(fs/exec.c)"
 awk '
@@ -68,6 +73,14 @@ awk '
   END { exit !(saw && !bad) }
 ' fs/susfs.c || \
     MISSING="$MISSING priority-cred helpers not config-guarded(fs/susfs.c)"
+
+awk '
+  /tcontext=%s", "u:r:priv_app/ { line = NR; next }
+  line && NR == line + 1 && /if \(!rc\)/ { guard = NR }
+  guard && NR == guard + 1 && /kfree\(scontext\)/ { freed = 1 }
+  END { exit !(freed) }
+' security/selinux/avc.c || \
+    MISSING="$MISSING AVC spoof context not freed(security/selinux/avc.c)"
 
 if [ -n "$MISSING" ]; then
   echo "port left missing:$MISSING" >&2

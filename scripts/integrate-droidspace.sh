@@ -5,30 +5,37 @@
 # Usage: integrate-droidspace.sh <kernel-root> [port-patch-file]
 #
 # Steps:
-#   1. Apply the 4.9 cgroup prefix port
-#      (patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch,
-#      shared by all supported 4.9 devices) so runc/crun see `subsys.file`
-#      symlinks on noprefix (systemd-style) cgroup mounts. The port is only
-#      passed when the cgroup_port switch is on; a requested port that does
-#      not apply cleanly fails the step.
-#   2. Kernel config support is merged by merge-defconfig.sh from
-#      patches/droidspace/4.9/droidspace.config.
+#   1. Apply the requested tree-adapted cgroup prefix port so runc/crun see
+#      `subsys.file` symlinks on noprefix (systemd-style) cgroup mounts. The
+#      port is passed only when the cgroup_port switch is on; a requested port
+#      that is missing or does not apply cleanly fails the step.
+#   2. Kernel config support is merged by merge-defconfig.sh from the
+#      version-specific droidspace.config fragment.
 #
 set -euo pipefail
 
 KROOT="${1:?usage: integrate-droidspace.sh <kernel-root> [port-patch-file]}"
 PORT="${2:-}"
 
-cd "$KROOT"
+if [ -n "$PORT" ] && [ ! -f "$PORT" ]; then
+  echo "requested cgroup port does not exist: $PORT" >&2
+  exit 1
+fi
 
-if [ -n "$PORT" ] && [ -f "$PORT" ]; then
-  git apply --check "$PORT" || {
-    echo "!! cgroup prefix port requested but does not apply cleanly: $(basename "$PORT")" >&2
-    exit 1; }
-  echo "==> applying 4.9 cgroup prefix port: $(basename "$PORT")"
-  git apply "$PORT"
+cd "$KROOT" || exit 1
+
+if [ -n "$PORT" ]; then
+  if git apply --check -R "$PORT" >/dev/null 2>&1; then
+    echo "cgroup prefix port already applied: $(basename "$PORT")"
+  elif git apply --check "$PORT" >/dev/null 2>&1; then
+    echo "==> applying cgroup prefix port: $(basename "$PORT")"
+    git apply "$PORT"
+  else
+    echo "cgroup prefix port does not apply cleanly: $(basename "$PORT")" >&2
+    exit 1
+  fi
 else
-  echo "cgroup prefix port not requested — skipping"
+  echo "cgroup prefix port not requested"
 fi
 
 echo "integrate-droidspace.sh: done (config handled by merge-defconfig.sh)"

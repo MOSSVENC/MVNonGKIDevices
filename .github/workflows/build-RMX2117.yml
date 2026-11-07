@@ -56,7 +56,7 @@ jobs:
       KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || 'none' }}
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
@@ -94,7 +94,7 @@ jobs:
           done
           if [ ! -d "$RUNNER_TEMP/tc/clang/clang-r383902/bin" ]; then
             echo "clang-r383902 not found on android12/11 branches; fallback list:" >&2
-            ls "$RUNNER_TEMP/tc/clang" 2>/dev/null | head -20 || true
+            find "$RUNNER_TEMP/tc/clang" -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | head -20 || true
             exit 1
           fi
           CLANG_BIN="$RUNNER_TEMP/tc/clang/clang-r383902/bin"
@@ -113,7 +113,7 @@ jobs:
         # Source tree lives in a kernel-4.14/ directory: oplus power headers
         # (oplus_battery_mtk6853R.h) include tcpm.h through a ../../../../kernel-4.14/...
         # relative path that assumes the OPPO build layout.
-        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel-4.14" 30
+        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" "$KERNEL_REPO" "$KERNEL_REF" "$RUNNER_TEMP/kernel-4.14" 30
 
       # MODVERSIONS probes every object for exported symbols through
       # `$(LLVM_NM) … | grep -q __ksymtab` in scripts/Makefile.build. The
@@ -136,22 +136,26 @@ jobs:
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'manual'
         run: |
           cd "$KROOT"
-          # File-level list: shared shapes (stat/reboot) live in
-          # bakasu/4.9 as the single copy; MTK-local files in 4.14.
-          PATCHES="$GITHUB_WORKSPACE/patches/bakasu/4.9/0001-fs-stat-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0002-fs-exec-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0003-fs-open-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+          # File-level list: stat/exec/open are MTK-local; reboot is shared
+          # from bakasu/4.9 as the single copy.
+          PATCHES=(
+            "$GITHUB_WORKSPACE/patches/bakasu/4.14/0001-fs-stat-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/bakasu/4.14/0002-fs-exec-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/bakasu/4.14/0003-fs-open-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+          )
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0010-input-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0011-setuid-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.14/0012-sysread-manual-hook.patch"
+            PATCHES+=(
+              "$GITHUB_WORKSPACE/patches/bakasu/4.14/0010-input-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/bakasu/4.14/0011-setuid-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/bakasu/4.14/0012-sysread-manual-hook.patch"
+            )
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
           # NOTE: absolute patch paths; apply-patches.sh cd's into KROOT
-          bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" $PATCHES
+          bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" "${PATCHES[@]}"
           bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" manual
 
@@ -170,9 +174,8 @@ jobs:
       - name: Apply SuSFS 4.14 port (root_mode=bakasu-susfs)
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
         run: |
-          cd "$KROOT"
-          # BakaSU setup (main branch; wires drivers/kernelsu + Kconfig)
-          curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash -s main
+          bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" lsm susfs "$AUTO_FIX_49"
           bash "$GITHUB_WORKSPACE/scripts/apply-susfs-port.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
@@ -190,12 +193,9 @@ jobs:
         run: |
           # Official non-GKI patch 2/2 (cgroup prefix symlink) applies as-is
           # to this MTK tree; patch 1/2 (xt_qtaguid) is inert here because the
-          # tree has no qtaguid — skip it.
-          cd "$KROOT"
+          # tree has no qtaguid.
           P02="$GITHUB_WORKSPACE/patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
-          git apply --check "$P02" && git apply "$P02" || \
-            { echo "!! droidspace cgroup patch did not apply; continuing (non-fatal)"; }
-          echo "Droidspace 4.14 patches done (config merged below)"
+          bash "$GITHUB_WORKSPACE/scripts/integrate-droidspace.sh" "$KROOT" "$P02"
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
@@ -210,34 +210,15 @@ jobs:
           cd "$KROOT"
           export ARCH=arm64
           export PATH="$RUNNER_TEMP/tc/gcc64/bin:$RUNNER_TEMP/tc/clang/clang-r383902/bin:$PATH"
-          FRAGS=""
+          FRAGS=()
           if [ "$ROOT_MANAGER" = "bakasu" ]; then
-            if [ "$HOOK_TYPE" = "susfs" ]; then
-              cat > "$GITHUB_WORKSPACE/susfs.config.fragment" <<'FRAGEOF'
-          CONFIG_KSU=y
-          # CONFIG_KSU_DEBUG is not set
-          # CONFIG_KSU_TRACEPOINT_HOOK is not set
-          CONFIG_KSU_SUSFS=y
-          CONFIG_KSU_SUSFS_SUS_PATH=y
-          CONFIG_KSU_SUSFS_SUS_MOUNT=y
-          CONFIG_KSU_SUSFS_SUS_KSTAT=y
-          CONFIG_KSU_SUSFS_SPOOF_UNAME=y
-          CONFIG_KSU_SUSFS_ENABLE_LOG=y
-          CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
-          CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
-          CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
-          CONFIG_KSU_SUSFS_SUS_MAP=y
-          FRAGEOF
-              FRAGS="$GITHUB_WORKSPACE/susfs.config.fragment"
-            else
-              FRAGS="$GITHUB_WORKSPACE/bakasu.config.fragment"
-            fi
+            FRAGS+=("$GITHUB_WORKSPACE/bakasu.config.fragment")
           fi
           if [ "$ENABLE_BBG" = "true" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
+            FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
           fi
           if [ "$ENABLE_DROIDSPACE" = "true" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.14/droidspace.config"
+            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.14/droidspace.config")
           fi
           # Shared defconfig assembler: alldefconfig from baseline +
           # fragments, then asserts the enabled feature symbol chains.
@@ -253,7 +234,7 @@ jobs:
           HOOK_TYPE="$HOOK_TYPE" \
           HOOK_EXTRA="$HOOK_EXTRA" \
           CUSTOM_LOCALVERSION="$CUSTOM_LOCALVERSION" \
-          bash "$GITHUB_WORKSPACE/scripts/merge-defconfig.sh" "$KROOT" "$RUNNER_TEMP/out" $FRAGS
+          bash "$GITHUB_WORKSPACE/scripts/merge-defconfig.sh" "$KROOT" "$RUNNER_TEMP/out" "${FRAGS[@]}"
           cp -f "$RUNNER_TEMP/out/.config" "$GITHUB_WORKSPACE/logs/final.config"
 
       - name: Build kernel Image + dtbs
@@ -270,7 +251,8 @@ jobs:
           if [ -n "$CUSTOM_BUILD_TIME" ]; then
             export KBUILD_BUILD_TIMESTAMP="$CUSTOM_BUILD_TIME"
           else
-            export KBUILD_BUILD_TIMESTAMP="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+            build_timestamp="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+            export KBUILD_BUILD_TIMESTAMP="$build_timestamp"
           fi
           if grep -q '^CONFIG_MODULE_SIG=y' "$RUNNER_TEMP/out/.config" 2>/dev/null; then
             make -j1 O="$RUNNER_TEMP/out" ARCH=arm64 \
@@ -302,6 +284,9 @@ jobs:
             exit "$rc"
           fi
           { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/RMX2117-full.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+          if [ "$ROOT_MANAGER" = "bakasu" ]; then
+            bash "$GITHUB_WORKSPACE/scripts/verify-preinit-runner.sh" "$KROOT" "$RUNNER_TEMP/out"
+          fi
 
       - name: Package AnyKernel3 zip
         run: |

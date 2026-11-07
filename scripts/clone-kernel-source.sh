@@ -14,7 +14,7 @@
 # a transfer error is readable through the run summary even when the step
 # output is truncated.
 #
-set -o pipefail
+set -euo pipefail
 
 repo="${1:?usage: clone-kernel-source.sh <repo> <ref> <dest> [tail-lines]}"
 ref="${2:?usage: clone-kernel-source.sh <repo> <ref> <dest> [tail-lines]}"
@@ -26,6 +26,13 @@ git clone --depth=1 --filter=blob:none \
   --branch="$ref" \
   "$repo" \
   "$dest" 2>&1 | tee /tmp/clone.log
-echo "KROOT=$dest" >> "$GITHUB_ENV"
+[ -f "$dest/Makefile" ] || { echo "kernel clone did not produce $dest/Makefile" >&2; exit 1; }
+if [ -n "${GITHUB_ENV:-}" ]; then
+  echo "KROOT=$dest" >> "$GITHUB_ENV"
+else
+  echo "KROOT=$dest"
+fi
 head -6 "$dest/Makefile"
-{ echo "### kernel clone"; tail -"$tail_lines" /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  { echo "### kernel clone"; tail -n "$tail_lines" /tmp/clone.log; } >> "$GITHUB_STEP_SUMMARY" || true
+fi

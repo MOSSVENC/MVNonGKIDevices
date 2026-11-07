@@ -71,7 +71,7 @@ jobs:
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is polaris-specific
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
@@ -96,7 +96,7 @@ jobs:
         run: bash scripts/download-toolchain.sh clang-r450784d android13-release --gcc32
 
       - name: Clone kernel source (not part of this repo)
-        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
+        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" "$KERNEL_REPO" "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       # vince tree ships a LEGACY KernelSU (commit 258c663 "Add KernelSU with
       # ksu importer script" + eb0503d "Make ksu partially usable when
@@ -120,6 +120,7 @@ jobs:
           rm -rf drivers/kernelsu scripts/kernelsu.sh
           sed -i '/kernelsu/d' drivers/Makefile
           sed -i '\|source "drivers/kernelsu/Kconfig"|d' drivers/Kconfig
+          # shellcheck disable=SC2016
           sed -i '/KERNELSU=\$(srctree)\/KernelSU/s/^/# /' scripts/Kbuild.include
           # Sync the index: git apply (used by apply-patches.sh) requires
           # working-tree files to match the index, and the reverse patch
@@ -170,12 +171,16 @@ jobs:
 
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
-          FRAGS=""
+          FRAGS=()
           if [ "$ROOT_MANAGER" = "bakasu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/bakasu.config.fragment"
+            FRAGS+=("$GITHUB_WORKSPACE/bakasu.config.fragment")
           fi
-          [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
-          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
+          if [ "$ENABLE_BBG" = "true" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
+          fi
+          if [ "$ENABLE_DROIDSPACE" = "true" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config")
+          fi
           BASE_DEFCONFIG="arch/arm64/configs/vince-perf_defconfig" \
           DEVICE_FRAGMENTS="" \
           CLEAR_LOCALVERSION="false" \
@@ -186,7 +191,7 @@ jobs:
           HOOK_EXTRA="$HOOK_EXTRA" \
           HOOK_TYPE="$HOOK_TYPE" \
           CUSTOM_LOCALVERSION="$CUSTOM_LOCALVERSION" \
-          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
+          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" "${FRAGS[@]}"
 
       - name: Build kernel Image.gz-dtb
         run: bash scripts/build-kernel.sh vince Image.gz-dtb

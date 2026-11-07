@@ -43,6 +43,18 @@
 值集六设备一致，共 5 值。`root_mode` 值以 `bakasu-` 为前缀（workflow 接口名），
 管理器本体是 BakaSU。
 
+### 上游锁定
+
+CI 使用可复现的上游提交，不在每次构建时跟随移动分支：
+
+| 组件 | 固定提交 |
+|---|---|
+| BakaSU main（manual / susfs） | `516d3e87fbc9` |
+| BakaSU auto-hook | `9d159b417210` |
+| Baseband-guard | `028ff7fd509e` |
+
+`BAKASU_REF` / `BBG_REF` 可显式覆盖对应提交，用于验证上游更新；默认构建保持锁定。
+
 ## BakaSU manual hook 七类
 
 按 [bakasu.org manual-integrate](https://bakasu.org/zh-Hans/guide/manual-integrate.html)
@@ -63,7 +75,7 @@
 
 | 文件 | 4.9 | 4.14 | 4.19 |
 |---|---|---|---|
-| `0001-fs-stat` | 4.9 自有 | — | **4.19 自有** |
+| `0001-fs-stat` | 4.9 自有 | **4.14 自有** | **4.19 自有** |
 | `0002-fs-exec` | 共享 | 4.14 自有 | 取 4.9 |
 | `0003-fs-open` | 共享 | 4.14 自有 | **4.19 自有** |
 | `0004-kernel-reboot` | 共享 | — | 取 4.9 |
@@ -199,9 +211,9 @@ KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xia
 cd "$KROOT"
 
 # 1. BakaSU manual hook 源码补丁（root_mode=bakasu-auto / susfs 时跳过）
-#    参数是补丁目录：目录内 0001-0004 / 0010-0012 按序应用
-bash <repo>/scripts/apply-bakasu-manual-hooks.sh "$KROOT" \
-  <repo>/patches/bakasu/4.9 <repo>/patches/bakasu/4.9
+#    目录模式只应用必加组；HOOK_EXTRA=manual 时再由第三参数选 0010-0012
+HOOK_EXTRA=lsm bash <repo>/scripts/apply-bakasu-manual-hooks.sh \
+  "$KROOT" <repo>/patches/bakasu/4.9 <repo>/patches/bakasu/4.9
 
 # 2. 集成（manual 示例；auto / susfs 换 integrate-bakasu.sh 参数）
 bash <repo>/scripts/integrate-bakasu.sh "$KROOT" ./bakasu.config.fragment lsm manual true
@@ -231,7 +243,7 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 - Android/data 隔离仅 polaris；alioth（4.19 kona）无 sdcardfs
 - vince 树自带旧 KernelSU：集成前用
   `patches/bakasu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 剥离
-- Droidspace cgroup 移植补丁非致命：apply 失败自动跳过
-- BakaSU 管理器（Manager APK）版本需自行匹配；setup.sh 按 root_mode
-  分支拉取（manual=main、auto=auto-hook）
+- Droidspace cgroup 移植补丁在 `cgroup_port` 开启时缺失或 apply 失败即中止构建
+- BakaSU 管理器（Manager APK）版本需自行匹配；构建从固定提交 checkout
+  （manual/susfs=main、auto=auto-hook）并按当前仓库接线
 - 32 位兼容：`CONFIG_COMPAT=y`，fstat64/fstatat64 hook 在 `0001-fs-stat` 内

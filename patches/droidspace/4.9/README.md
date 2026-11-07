@@ -14,12 +14,13 @@ cgroup 源码修复。
 官方 non-GKI 补丁组的两件原件收录在 `official/`；`01` 面向 `net/netfilter/xt_qtaguid.c`
 （本树不带该文件），本 port 采用上表的 `0001` 形态。
 
-## 上游核对（快照 v6.5.5）
+## 符号核对
 
-片段现按上游 `Kernel-Configuration.md` 的 **Step 1 必选面（48 项）** 逐项落位
-（上游快照：`localworkspace/mirrors/Droidspaces-OSS` @`2280b59`，v6.5.5）；
-本树 Kconfig 不提供的三项（`FW_LOADER_COMPRESS`、`NETFILTER_XT_TARGET_MASQUERADE`、
-`NF_CONNTRACK_NETLINK`）在片段注释中列明对应的 4.9 名或缺失事实。
+片段覆盖非-GKI 容器启动所需的命名空间、cgroup、网络和设备节点核心面；
+4.9 树 Kconfig 不提供的 `FW_LOADER_COMPRESS`、
+`NETFILTER_XT_TARGET_MASQUERADE`、`NF_CONNTRACK_NETLINK` 在片段注释中列明
+对应的 4.9 名或缺失事实。当前上游新增的资源限制、IPv6 NAT 与 macvlan
+属于可选面，不默认打开。
 
 ## 集成
 
@@ -35,3 +36,12 @@ polaris（mix2s）编译面实测通过：`build-polaris`（`dc8e718`，`enable_
 命名空间 / cgroup / 设备节点断言组全过（`CONFIG_SYSVIPC` 至 `CONFIG_BRIDGE`，
 含 `CONFIG_ANDROID_PARANOID_NETWORK is not set`），并产出内核镜像与 AK3 包；
 运行面（容器启动、网络模式）待刷机实测。
+
+## 上游核对（2026-11-07）
+
+Droidspaces-OSS `main` / `dev` 当前快照为 `cdadb9eb5d0f`。non-GKI 的两个
+官方补丁与仓库 `official/` 副本逐字节一致（补丁哈希仍为
+`f71898942e0f` / `6d2c9dbe5aa3`）。上游
+`Kernel-Configuration.md` 新增了内存 swap、CFS bandwidth、CPU accounting、
+IPv6 NAT 与 macvlan 等可选面；本目录保持已验证的非-GKI 基础配置，不默认
+打开这些可选面。

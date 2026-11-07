@@ -45,6 +45,9 @@ echo "Kernel version: $V"
 # env (BASE_DEFCONFIG / DEVICE_FRAGMENTS="frag1 frag2"). Defaults keep the
 # original polaris behaviour.
 BASE="${BASE_DEFCONFIG:-arch/arm64/configs/vendor/xiaomi/mi845_defconfig}"
+if [ -z "${DEVICE_FRAGMENTS+x}" ]; then
+  DEVICE_FRAGMENTS="arch/arm64/configs/vendor/xiaomi/polaris.config"
+fi
 [ -f "$BASE" ] || { echo "ERROR: baseline defconfig not found: $BASE" >&2; exit 1; }
 
 mkdir -p "$OUT"
@@ -53,7 +56,7 @@ rm -f "$RAW"
 
 append_cfg() { # file
   local f="$1"
-  [ -f "$f" ] || { echo "WARN: config source not found, ignored: $f"; return; }
+  [ -f "$f" ] || { echo "ERROR: config source not found: $f" >&2; return 1; }
   echo "# ==== $f" >> "$RAW"
   # extract config lines (value forms: CONFIG_X=y / CONFIG_X="str" / "# CONFIG_X is not set")
   grep -E "^(# )?CONFIG_[A-Za-z0-9_]+[ =]" "$f" >> "$RAW" || true
@@ -61,9 +64,12 @@ append_cfg() { # file
 
 echo "==> 1/5 collecting config sources"
 append_cfg "$BASE"                       # baseline (device family base)
-for frag in ${DEVICE_FRAGMENTS:-arch/arm64/configs/vendor/xiaomi/polaris.config}; do
-  append_cfg "$frag"                     # device fragment(s)
-done
+if [ -n "${DEVICE_FRAGMENTS:-}" ]; then
+  read -r -a device_frags <<< "$DEVICE_FRAGMENTS"
+  for frag in "${device_frags[@]}"; do
+    append_cfg "$frag"                   # device fragment(s)
+  done
+fi
 for f in "$@"; do append_cfg "$f"; done  # feature fragments (later wins)
 
 # --- build-hardening override (always): this 4.9 tree predates GCC 10+ and

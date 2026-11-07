@@ -3,7 +3,8 @@
 BBG 是防格机/防砖的 Linux 安全模块，阻止恶意用户态写入关键分区
 （boot / recovery / modem 等）。上游：<https://github.com/vc-teahouse/Baseband-guard>
 
-4.9 由上游 `setup.sh` 一次完成集成（从内核根运行）：
+4.9 由上游 `setup.sh` 一次完成集成（从内核根运行）；提交固定为
+`028ff7fd509e2104596da7cc1ef8e6ce2a0c9082`，`BBG_REF` 可覆盖：
 
 1. 克隆仓库到 `Baseband-guard/`
 2. 符号链接 `security/baseband-guard`
@@ -18,9 +19,9 @@ BBG 是防格机/防砖的 Linux 安全模块，阻止恶意用户态写入关�
 
 ## 状态
 
-polaris（mix2s）编译面实测通过：`build-polaris`（`dc8e718`，`enable_bbg`）中上游
-`setup.sh` 完成 selinux 侧接线，`CONFIG_BBG=y` 合并断言通过，并产出内核镜像与
-AK3 包；运行面（拦写分区行为）待刷机实测。
+polaris（mix2s）全功能构建 `42253817435` 使用固定提交上的 BBG，`setup.sh`
+完成 4.9 selinux 侧接线，`CONFIG_BBG=y` 通过合并断言并编入
+`Image.gz-dtb`；运行面（拦写分区行为）待刷机实测。
 
 ## 为何不改 CONFIG_LSM
 

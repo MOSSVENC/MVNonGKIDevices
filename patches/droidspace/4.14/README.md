@@ -13,16 +13,25 @@
 
 ## 应用
 
-- 补丁：`git apply patches/droidspace/official/0002-*.patch`（构建时由
-  workflow 在 CI 内应用）
+- 补丁：`bash scripts/integrate-droidspace.sh <kernel-root>
+  patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch`
+  （构建时由 workflow 在 CI 内应用；缺失或 apply 失败即中止）
 - config：`merge-defconfig.sh` 以 fragment 合并
   （BASE_DEFCONFIG=k6853v1_64_6360_defconfig、ENABLE_DROIDSPACE=true），
   断言组校验命名空间 / cgroup / 设备节点符号
 
-## 上游核对（快照 v6.5.5）
+## 符号核对
 
-符号存在性逐一对照 MTK 4.14.186 树 Kconfig，片段按上游 Step 1 必选面（48 项）落位；
+符号存在性逐一对照 MTK 4.14.186 树 Kconfig，片段覆盖非-GKI 核心面；
 `CGROUP_NET_PRIO`（`net/Kconfig:257`）与 `BRIDGE_NETFILTER`（`net/Kconfig:180`）在本树存在，
 已随必选块显式置 `=y`。本树 Kconfig 不提供的四项（`ANDROID_PARANOID_NETWORK`、
 `FW_LOADER_COMPRESS`、`NETFILTER_XT_TARGET_MASQUERADE`、`NF_CONNTRACK_NETLINK`）在片段注释中列明。
-上游快照：`localworkspace/mirrors/Droidspaces-OSS` @`2280b59`（v6.5.5）。
+
+## 上游核对（2026-11-07）
+
+Droidspaces-OSS `main` / `dev` 当前快照为 `cdadb9eb5d0f`。non-GKI 的两个
+官方补丁与仓库 `official/` 副本逐字节一致（补丁哈希仍为
+`f71898942e0f` / `6d2c9dbe5aa3`）。上游
+`Kernel-Configuration.md` 新增了内存 swap、CFS bandwidth、CPU accounting、
+IPv6 NAT 与 macvlan 等可选面；本目录保持已验证的非-GKI 基础配置，不默认
+打开这些可选面。

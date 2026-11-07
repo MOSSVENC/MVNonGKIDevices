@@ -23,7 +23,7 @@ KROOT="${1:?usage: apply-patches.sh <kernel-root> <patch-dir-or-file>...}"
 shift
 [ $# -ge 1 ] || { echo "no patch dirs/files given" >&2; exit 2; }
 
-cd "$KROOT"
+cd "$KROOT" || exit 1
 
 apply_one() { # patch-file
   local patch="$1"
@@ -45,14 +45,22 @@ apply_one() { # patch-file
 for arg in "$@"; do
   if [ -d "$arg" ]; then
     # directory: apply every *.patch in deterministic order
-    for patch in $(ls "$arg"/*.patch 2>/dev/null | sort); do
+    shopt -s nullglob
+    patches=("$arg"/*.patch)
+    shopt -u nullglob
+    [ "${#patches[@]}" -gt 0 ] || {
+      echo "no *.patch files in directory: $arg" >&2
+      exit 1
+    }
+    for patch in "${patches[@]}"; do
       apply_one "$patch" || exit 1
     done
   elif [ -f "$arg" ]; then
     # single patch file
     apply_one "$arg" || exit 1
   else
-    echo "skip (missing): $arg"
+    echo "missing patch path: $arg" >&2
+    exit 1
   fi
 done
 

@@ -73,7 +73,7 @@ jobs:
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       ENABLE_BATTERY_5000: ${{ inputs.enable_battery_5000 }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is a 4.9 sdm845 feature
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
@@ -98,7 +98,7 @@ jobs:
         run: bash scripts/download-toolchain.sh clang-r450784d android13-release --gcc32
 
       - name: Clone kernel source (not part of this repo)
-        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
+        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" "$KERNEL_REPO" "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       # Opt-in (enable_battery_5000). arch/arm64/configs/vendor/xiaomi/alioth.config
       # sets CONFIG_BATT_VERIFY_BY_DS28E16, so the fuel gauge picks its profile
@@ -128,19 +128,23 @@ jobs:
           # in bakasu/4.9 as the single copy; 4.19-local files cover the
           # 4.19-shaped parts (faccessat wrapper, __sys setresuid, ksys_read
           # wrapper).
-          PATCHES="$GITHUB_WORKSPACE/patches/bakasu/4.19/0001-fs-stat-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0002-fs-exec-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.19/0003-fs-open-ksu-manual-hook.patch"
-          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+          PATCHES=(
+            "$GITHUB_WORKSPACE/patches/bakasu/4.19/0001-fs-stat-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/bakasu/4.9/0002-fs-exec-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/bakasu/4.19/0003-fs-open-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+          )
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.9/0010-input-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.19/0011-setuid-manual-hook.patch"
-            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/bakasu/4.19/0012-sysread-manual-hook.patch"
+            PATCHES+=(
+              "$GITHUB_WORKSPACE/patches/bakasu/4.9/0010-input-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/bakasu/4.19/0011-setuid-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/bakasu/4.19/0012-sysread-manual-hook.patch"
+            )
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
           fi
-          bash scripts/apply-patches.sh "$KROOT" $PATCHES
+          bash scripts/apply-patches.sh "$KROOT" "${PATCHES[@]}"
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'bakasu'
@@ -168,12 +172,9 @@ jobs:
         run: |
           # Official non-GKI patch 2/2 (cgroup prefix symlink) applies
           # as-is on the 4.19 kona tree; patch 1/2 (xt_qtaguid) is a
-          # no-op here because LOS sm8250 has no qtaguid — skip it.
-          cd "$KROOT"
+          # no-op here because LOS sm8250 has no qtaguid.
           P02="$GITHUB_WORKSPACE/patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
-          git apply --check "$P02" && git apply "$P02" || \
-            { echo "!! official cgroup patch did not apply; continuing (non-fatal)"; }
-          echo "Droidspace 4.19 patches done (config merged below)"
+          bash scripts/integrate-droidspace.sh "$KROOT" "$P02"
 
       # LOS lineage-23.2 backported scripts/as-version.sh (upstream
       # "kbuild: check the minimum assembler version in Kconfig") but its
@@ -201,12 +202,16 @@ jobs:
 
       - name: Assemble defconfig (baseline + feature fragments)
         run: |
-          FRAGS=""
+          FRAGS=()
           if [ "$ROOT_MANAGER" = "bakasu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/bakasu.config.fragment"
+            FRAGS+=("$GITHUB_WORKSPACE/bakasu.config.fragment")
           fi
-          [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
-          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.19/droidspace.config"
+          if [ "$ENABLE_BBG" = "true" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
+          fi
+          if [ "$ENABLE_DROIDSPACE" = "true" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.19/droidspace.config")
+          fi
           BASE_DEFCONFIG="arch/arm64/configs/vendor/kona-perf_defconfig" \
           DEVICE_FRAGMENTS="arch/arm64/configs/vendor/debugfs.config arch/arm64/configs/vendor/xiaomi/sm8250-common.config arch/arm64/configs/vendor/xiaomi/alioth.config" \
           ROOT_MANAGER="$ROOT_MANAGER" \
@@ -216,7 +221,7 @@ jobs:
           HOOK_EXTRA="$HOOK_EXTRA" \
           HOOK_TYPE="$HOOK_TYPE" \
           CUSTOM_LOCALVERSION="$CUSTOM_LOCALVERSION" \
-          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS
+          bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" "${FRAGS[@]}"
 
 
       - name: Build kernel Image and dtbo.img
@@ -240,7 +245,8 @@ jobs:
           if [ -n "$CUSTOM_BUILD_TIME" ]; then
             export KBUILD_BUILD_TIMESTAMP="$CUSTOM_BUILD_TIME"
           else
-            export KBUILD_BUILD_TIMESTAMP="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+            build_timestamp="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+            export KBUILD_BUILD_TIMESTAMP="$build_timestamp"
           fi
           if grep -q '^CONFIG_MODULE_SIG=y' "$RUNNER_TEMP/out/.config" 2>/dev/null; then
             make -j1 O="$RUNNER_TEMP/out" ARCH=arm64 \
@@ -279,6 +285,9 @@ jobs:
             exit "$rc"
           fi
           { echo "### build kernel OK"; tail -20 "$GITHUB_WORKSPACE/logs/alioth-full.log"; } >> "$GITHUB_STEP_SUMMARY" || true
+          if [ "$ROOT_MANAGER" = "bakasu" ]; then
+            bash "$GITHUB_WORKSPACE/scripts/verify-preinit-runner.sh" "$KROOT" "$RUNNER_TEMP/out"
+          fi
           # dtbo.img: mkdtboimg (AOSP libufdt) from ALL xiaomi sm8250
           # overlays, in the dts Makefile order. Verified against the
           # official LOS 23.2 dtbo.img (20260902): 12 entries, one per
@@ -288,25 +297,35 @@ jobs:
           # only the alioth overlay would not match the stock partition
           # content.
           DTBO_DIR="$RUNNER_TEMP/out/arch/arm64/boot/dts/vendor/qcom"
-          DTBO_LIST="alioth-sm8250-overlay.dtbo apollo-sm8250-overlay.dtbo cas-sm8250-overlay.dtbo cmi-sm8250-overlay.dtbo dagu-sm8250-overlay.dtbo enuma-sm8250-overlay.dtbo elish-sm8250-overlay.dtbo lmi-sm8250-overlay.dtbo munch-sm8250-overlay.dtbo psyche-sm8250-overlay.dtbo thyme-sm8250-overlay.dtbo umi-sm8250-overlay.dtbo"
-          missing=""
-          for f in $DTBO_LIST; do
-            [ -f "$DTBO_DIR/$f" ] || missing="$missing $f"
+          DTBO_FILES=(
+            alioth-sm8250-overlay.dtbo apollo-sm8250-overlay.dtbo
+            cas-sm8250-overlay.dtbo cmi-sm8250-overlay.dtbo
+            dagu-sm8250-overlay.dtbo enuma-sm8250-overlay.dtbo
+            elish-sm8250-overlay.dtbo lmi-sm8250-overlay.dtbo
+            munch-sm8250-overlay.dtbo psyche-sm8250-overlay.dtbo
+            thyme-sm8250-overlay.dtbo umi-sm8250-overlay.dtbo
+          )
+          DTBO_PATHS=()
+          missing=()
+          for f in "${DTBO_FILES[@]}"; do
+            if [ -f "$DTBO_DIR/$f" ]; then
+              DTBO_PATHS+=("$DTBO_DIR/$f")
+            else
+              missing+=("$f")
+            fi
           done
-          if [ -z "$missing" ]; then
-            curl -sL --max-time 60 \
-              "https://android.googlesource.com/platform/system/libufdt/+/refs/heads/main/utils/src/mkdtboimg.py?format=TEXT" \
-              -o "$RUNNER_TEMP/mkdtboimg.py.b64"
-            base64 -d "$RUNNER_TEMP/mkdtboimg.py.b64" > "$RUNNER_TEMP/mkdtboimg.py"
-            # shellcheck disable=SC2086
-            python3 "$RUNNER_TEMP/mkdtboimg.py" create "$RUNNER_TEMP/dtbo.img" \
-              --page_size=4096 \
-              $(for f in $DTBO_LIST; do echo "$DTBO_DIR/$f"; done) \
-              && echo "dtbo.img assembled ($(echo $DTBO_LIST | wc -w) overlays)" \
-              || echo "dtbo.img assembly failed (non-fatal)"
-          else
-            echo "missing overlays:$missing; dtbo.img not produced (non-fatal)"
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "missing dtbo overlays: ${missing[*]}" >&2
+            exit 1
           fi
+          curl -fsSL --max-time 60 \
+            "https://android.googlesource.com/platform/system/libufdt/+/refs/heads/main/utils/src/mkdtboimg.py?format=TEXT" \
+            -o "$RUNNER_TEMP/mkdtboimg.py.b64"
+          base64 -d "$RUNNER_TEMP/mkdtboimg.py.b64" > "$RUNNER_TEMP/mkdtboimg.py"
+          python3 "$RUNNER_TEMP/mkdtboimg.py" create "$RUNNER_TEMP/dtbo.img" \
+            --page_size=4096 "${DTBO_PATHS[@]}"
+          [ -f "$RUNNER_TEMP/dtbo.img" ] || { echo "dtbo.img not produced" >&2; exit 1; }
+          echo "dtbo.img assembled (${#DTBO_FILES[@]} overlays)"
 
       - name: Package AnyKernel3 zip
         run: |

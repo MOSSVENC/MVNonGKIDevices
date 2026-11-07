@@ -10,12 +10,12 @@
 # A tree with uncommitted changes makes the kernel version string carry
 # -dirty, so the patched tree is committed before the build starts.
 #
-set -uo pipefail
+set -euo pipefail
 
 kroot="${1:?usage: commit-kernel-tree.sh <kernel-root> <commit-message>}"
 msg="${2:?usage: commit-kernel-tree.sh <kernel-root> <commit-message>}"
 
-cd "$kroot"
+cd "$kroot" || exit 1
 git config user.email "action@localhost"
 git config user.name "kernel-builder"
 git add -A
