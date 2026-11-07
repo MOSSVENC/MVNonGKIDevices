@@ -247,3 +247,5 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 - BakaSU 管理器（Manager APK）版本需自行匹配；构建从固定提交 checkout
   （manual/susfs=main、auto=auto-hook）并按当前仓库接线
 - 32 位兼容：`CONFIG_COMPAT=y`，fstat64/fstatat64 hook 在 `0001-fs-stat` 内
+- SuSFS `priority_uid_filter` 的内核端口已随 port 保留；BakaSU `516d3e87` 未提供对应 Kconfig
+  和用户态命令，当前功能集不启用这一面

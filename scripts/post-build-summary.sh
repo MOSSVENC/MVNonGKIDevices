@@ -17,6 +17,7 @@ set -uo pipefail
 dev="${1:?usage: post-build-summary.sh <device> <artifact-list> [extra-line]}"
 artifacts="${2:?usage: post-build-summary.sh <device> <artifact-list>}"
 extra="${3:-}"
+SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
 
 {
   echo "## $dev build (${DEFCONFIG:-unknown}, ${HOOK_MODE:-none})"
@@ -24,4 +25,4 @@ extra="${3:-}"
   echo "- features: mode=${HOOK_MODE:-none} manager=${ROOT_MANAGER:-none} bbg=${ENABLE_BBG:-false} droidspace=${ENABLE_DROIDSPACE:-false}"
   echo "- artifacts: $artifacts"
   [ -n "$extra" ] && echo "$extra"
-} >> "$GITHUB_STEP_SUMMARY" || true
+} >> "$SUMMARY" || true

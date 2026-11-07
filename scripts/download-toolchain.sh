@@ -60,7 +60,7 @@ case "$clang_spec" in
       if [ -x "$cand/clang" ] && [ -x "$cand/ld.lld" ]; then CLANG_BIN="$cand"; break; fi
     done
     if [ -z "$CLANG_BIN" ]; then
-      found=$(find "$TC/llvm" -maxdepth 3 -type f -name clang -perm -u+x 2>/dev/null | head -1)
+      found=$(find "$TC/llvm" -maxdepth 3 -type f -name clang -perm -u+x -print -quit 2>/dev/null)
       [ -n "$found" ] && CLANG_BIN=$(dirname "$found")
     fi
     [ -n "$CLANG_BIN" ] || { echo "ERROR: clang not found in the extracted LLVM tree" >&2; exit 1; }

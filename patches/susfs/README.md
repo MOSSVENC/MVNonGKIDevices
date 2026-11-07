@@ -23,7 +23,7 @@ SuSFS 资产由三部分构成：
 | `4.9/daisy/susfs-port.patch` | daisy 4.9.337 | 31 文件 / 4797 新增行 | 同上；设备属性段为 `fs/proc/cmdline.c` 与 `ss/services.c`，编译面见 `build-daisy` |
 | `4.9/vince/susfs-port.patch` | vince 4.9.337 | 31 文件 / 4818 新增行 | 同上；`fs/proc/cmdline.c` 用 vince 变体，编译面见 `build-vince` |
 | `4.14/susfs-port.patch` | RMX2117 MTK 4.14.186 | 30 文件 / 4843 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-RMX2117` 的 susfs 模式 |
-| `4.19/susfs-port.patch` | alioth kona 4.19.325 | 30 文件 / 4815 新增行 | 同上，编译面见 `build-alioth` |
+| `4.19/susfs-port.patch` | alioth kona 4.19.325 | 30 文件 / 4817 新增行 | 同上，编译面见 `build-alioth` |
 
 `security/selinux` 的 sus context→sid / compute_av 面按树内形态落地：无
 `struct selinux_state` 的 4.9 树用全局 `policydb`/`sidtab`/`policy_rwlock`，带 state 的树
