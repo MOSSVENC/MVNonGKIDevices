@@ -22,16 +22,19 @@
 
 ## 符号核对
 
-符号存在性逐一对照 MTK 4.14.186 树 Kconfig，片段覆盖非-GKI 核心面；
-`CGROUP_NET_PRIO`（`net/Kconfig:257`）与 `BRIDGE_NETFILTER`（`net/Kconfig:180`）在本树存在，
-已随必选块显式置 `=y`。本树 Kconfig 不提供的四项（`ANDROID_PARANOID_NETWORK`、
-`FW_LOADER_COMPRESS`、`NETFILTER_XT_TARGET_MASQUERADE`、`NF_CONNTRACK_NETLINK`）在片段注释中列明。
+符号存在性逐一对照 MTK 4.14.186 树 Kconfig，片段覆盖非-GKI 核心面并含
+资源限额（`MEMCG_SWAP`、`CFS_BANDWIDTH`、`CGROUP_CPUACCT`）、IPv6 NAT 组
+（`IPV6`、`IPV6_MULTIPLE_TABLES`、`IP6_NF_*`、`NF_CONNTRACK_IPV6`、
+`NF_NAT_IPV6`）与 `MACVLAN`；`CGROUP_NET_PRIO`（`net/Kconfig:257`）与
+`BRIDGE_NETFILTER`（`net/Kconfig:180`）在本树存在，已随必选块显式置 `=y`。
+本树 Kconfig 不提供的四项（`ANDROID_PARANOID_NETWORK`、
+`FW_LOADER_COMPRESS`、`NETFILTER_XT_TARGET_MASQUERADE`、`NF_CONNTRACK_NETLINK`）
+在片段注释中列明。
 
 ## 上游核对（2026-11-07）
 
 Droidspaces-OSS `main` / `dev` 当前快照为 `cdadb9eb5d0f`。non-GKI 的两个
 官方补丁与仓库 `official/` 副本逐字节一致（补丁哈希仍为
-`f71898942e0f` / `6d2c9dbe5aa3`）。上游
-`Kernel-Configuration.md` 新增了内存 swap、CFS bandwidth、CPU accounting、
-IPv6 NAT 与 macvlan 等可选面；本目录保持已验证的非-GKI 基础配置，不默认
-打开这些可选面。
+`f71898942e0f` / `6d2c9dbe5aa3`）。上游 `Kernel-Configuration.md` 的必选块
+包含内存 swap、CFS bandwidth、CPU accounting、IPv6 NAT 与 macvlan；本目录
+片段按该清单落位。

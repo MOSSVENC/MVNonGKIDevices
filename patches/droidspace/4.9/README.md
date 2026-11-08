@@ -8,7 +8,7 @@ cgroup 源码修复。
 
 | 文件 | 作用 |
 |---|---|
-| `droidspace.config` | 内核 config 片段（由 `merge-defconfig.sh` 并入最终 `.config`），按官方 non-GKI 配置（Kernel-Configuration.md）的 4.9 符号名落位：`CONFIG_NF_CT_NETLINK`、`CONFIG_IP_NF_TARGET_MASQUERADE`（4.9 名）；`CONFIG_SECCOMP_FILTER` 在 4.9 是 `def_bool y`（依赖 `SECCOMP && NET`），随 `CONFIG_SECCOMP=y` 自动成立；关闭 `CONFIG_ANDROID_PARANOID_NETWORK` 使容器网络可用 |
+| `droidspace.config` | 内核 config 片段（由 `merge-defconfig.sh` 并入最终 `.config`），按官方 non-GKI 配置（Kernel-Configuration.md）的必选清单落位：含资源限额（`CONFIG_MEMCG_SWAP`、`CONFIG_CGROUP_CPUACCT`）、IPv6 NAT 组（`CONFIG_IPV6`、`CONFIG_IP6_NF_*`、`CONFIG_NF_CONNTRACK_IPV6`、`CONFIG_NF_NAT_IPV6`）与 `CONFIG_MACVLAN`；4.9 符号名为 `CONFIG_NF_CT_NETLINK`、`CONFIG_IP_NF_TARGET_MASQUERADE`；`CONFIG_SECCOMP_FILTER` 在 4.9 是 `def_bool y`（依赖 `SECCOMP && NET`），随 `CONFIG_SECCOMP=y` 自动成立；关闭 `CONFIG_ANDROID_PARANOID_NETWORK` 使容器网络可用 |
 | `0001-cgroup-noprefix-4.9-port.patch` | cgroup `subsys.file` kernfs 符号链接恢复（`noprefix` 挂载、systemd/runc 风格），移植到 4.9 布局（`kernel/cgroup.c`） |
 
 官方 non-GKI 补丁组的两件原件收录在 `official/`；`01` 面向 `net/netfilter/xt_qtaguid.c`
@@ -16,11 +16,12 @@ cgroup 源码修复。
 
 ## 符号核对
 
-片段覆盖非-GKI 容器启动所需的命名空间、cgroup、网络和设备节点核心面；
-4.9 树 Kconfig 不提供的 `FW_LOADER_COMPRESS`、
+片段覆盖非-GKI 容器启动所需的命名空间、cgroup、资源限额、IPv4/IPv6 NAT、
+macvlan 与设备节点核心面；4.9 树 Kconfig 不提供的 `FW_LOADER_COMPRESS`、
 `NETFILTER_XT_TARGET_MASQUERADE`、`NF_CONNTRACK_NETLINK` 在片段注释中列明
-对应的 4.9 名或缺失事实。当前上游新增的资源限制、IPv6 NAT 与 macvlan
-属于可选面，不默认打开。
+对应的 4.9 名或缺失事实。`CONFIG_CFS_BANDWIDTH` 在 sdm845 4.9 树受
+`!SCHED_WALT` 约束（defconfig 置 `SCHED_WALT=y`），vince 树的 defconfig
+自带该选项。
 
 ## 集成
 
@@ -41,7 +42,7 @@ polaris（mix2s）编译面实测通过：`build-polaris`（`dc8e718`，`enable_
 
 Droidspaces-OSS `main` / `dev` 当前快照为 `cdadb9eb5d0f`。non-GKI 的两个
 官方补丁与仓库 `official/` 副本逐字节一致（补丁哈希仍为
-`f71898942e0f` / `6d2c9dbe5aa3`）。上游
-`Kernel-Configuration.md` 新增了内存 swap、CFS bandwidth、CPU accounting、
-IPv6 NAT 与 macvlan 等可选面；本目录保持已验证的非-GKI 基础配置，不默认
-打开这些可选面。
+`f71898942e0f` / `6d2c9dbe5aa3`）。上游 `Kernel-Configuration.md` 的必选块
+包含内存 swap、CFS bandwidth、CPU accounting、IPv6 NAT 与 macvlan；本目录
+片段按该清单落位（4.9 树的 `CFS_BANDWIDTH` 受 `!SCHED_WALT` 约束，vince
+由 defconfig 提供）。
