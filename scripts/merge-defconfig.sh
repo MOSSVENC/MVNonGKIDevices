@@ -208,12 +208,19 @@ if [ "${ENABLE_DROIDSPACE:-true}" = "true" ]; then
            CONFIG_NF_CONNTRACK CONFIG_IP_NF_IPTABLES CONFIG_BRIDGE \
            CONFIG_IPV6 CONFIG_IPV6_MULTIPLE_TABLES CONFIG_IP6_NF_IPTABLES \
            CONFIG_IP6_NF_FILTER CONFIG_IP6_NF_MANGLE CONFIG_IP6_NF_NAT \
-           CONFIG_IP6_NF_TARGET_MASQUERADE CONFIG_NF_CT_NETLINK CONFIG_MACVLAN; do
+           CONFIG_IP6_NF_TARGET_MASQUERADE CONFIG_NF_CT_NETLINK CONFIG_MACVLAN \
+           CONFIG_CFS_BANDWIDTH; do
     assert_cfg "$s" || rc=1
   done
   case "$V" in
-    4.14|4.19) assert_cfg CONFIG_CFS_BANDWIDTH || rc=1 ;;
-    *) echo "   OK   CONFIG_CFS_BANDWIDTH (gated on !SCHED_WALT on the 4.9 sdm845 trees; vince defconfig pins it)" ;;
+    4.9)
+      if grep -qE '^CONFIG_SCHED_WALT=' "$CFG"; then
+        echo "   FAIL CONFIG_SCHED_WALT (the 4.9 droidspace fragment wants it off)" >&2
+        rc=1
+      else
+        echo "   OK   CONFIG_SCHED_WALT off"
+      fi ;;
+    *) : ;;
   esac
   if grep -qE "^# CONFIG_ANDROID_PARANOID_NETWORK is not set$" "$CFG"; then
     echo "   OK   CONFIG_ANDROID_PARANOID_NETWORK is not set"
