@@ -1,0 +1,23 @@
+sched: provide mark_reserved() in the !SCHED_WALT branch
+
+fair.c calls mark_reserved() from unguarded paths (load_balance and
+check_for_migration); the !SCHED_WALT branch of kernel/sched/sched.h
+declares is_reserved() and clear_reserved() only. Add the matching
+no-op stub so WALT-disabled 4.9 builds compile.
+
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index a9db959..023d692 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -2935,6 +2935,11 @@ static inline int is_reserved(int cpu)
+ 	return 0;
+ }
+ 
++static inline int mark_reserved(int cpu)
++{
++	return 0;
++}
++
+ static inline int got_boost_kick(void)
+ {
+ 	return 0;

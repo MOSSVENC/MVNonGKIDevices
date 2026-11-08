@@ -132,7 +132,8 @@ jobs:
           if [ "$CGROUP_PORT" = "true" ]; then
             PORT="$GITHUB_WORKSPACE/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
           fi
-          bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
+          bash scripts/integrate-droidspace.sh "$KROOT" "$PORT" \
+            "$GITHUB_WORKSPACE/patches/droidspace/4.9/0002-sched-walt-off-mark-reserved.patch"
 
       - name: Apply sdcardfs Android/data isolation patch
         if: env.ENABLE_DATA_ISOLATION == 'true'
