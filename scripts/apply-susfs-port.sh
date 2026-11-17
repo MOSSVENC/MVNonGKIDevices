@@ -77,7 +77,7 @@ awk '
 
 # The sus_path uid filter routes label writes through the susfs context mapping
 # on trees that carry selinux_state; the dispatchers must reach the hook table.
-if grep -q 'struct selinux_state selinux_state;' security/selinux/hooks.c; then
+if grep -q 'susfs_selinux_inode_setxattr' security/selinux/hooks.c; then
   grep -q 'handle_selinux_inode_setxattr' security/selinux/hooks.c || \
       MISSING="$MISSING sus-path setxattr routing(security/selinux/hooks.c)"
   grep -q 'handle_selinux_inode_post_setxattr' security/selinux/hooks.c || \
