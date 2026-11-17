@@ -23,8 +23,8 @@ if ! grep -q '^CONFIG_KSU=y$' "$cfg"; then
   exit 0
 fi
 
-# The auto-hook branch has no preinit source; it is not expected to produce
-# this runner. The main branch does have it, including the SuSFS build.
+# A KSU checkout without the preinit source (the Backslashxx fork carries its
+# own layout) has nothing to verify here.
 if [ ! -f "$kroot/KernelSU/kernel/preinit/preinit.c" ]; then
   echo "BakaSU preinit runner: not applicable (checkout has no preinit source)"
   exit 0

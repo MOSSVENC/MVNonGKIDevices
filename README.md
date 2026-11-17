@@ -20,7 +20,7 @@
 ## 构建输入
 
 所有设备共有：`kernel_ref`、`root_mode`、`localversion`、`build_time`、
-`enable_bbg`、`enable_droidspace`、`auto_fix_49`。其余按设备追加：
+`enable_bbg`、`enable_droidspace`。其余按设备追加：
 
 | 输入 | 出现于 | 说明 |
 |---|---|---|
@@ -36,12 +36,14 @@
 |---|---|---|
 | `bakasu-manual-lsm` | BakaSU main | 源码补丁 + 自动 hook（input 经内核 input_handler；setuid/initrc 经 LSM AUTO） |
 | `bakasu-manual-source` | BakaSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read） |
-| `bakasu-auto` | BakaSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁，构建侧开 `KALLSYMS_ALL`；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
 | `bakasu-susfs` | BakaSU main | SuSFS inline hook（应用各设备树适配补丁） |
+| `xxksu-syscall_table` | XXKSU（Backslashxx KernelSU fork） | `KSU_TAMPER_SYSCALL_TABLE` 引擎（改 syscall 表项，免源码补丁） |
+| `xxksu-branch_link` | XXKSU（Backslashxx KernelSU fork） | `KSU_HACK_ARM64_BRANCH_LINK` 引擎（改 `sys_call_table` 分支，免源码补丁） |
 | `none`（默认） | — | stock，无 root 集成 |
 
-值集六设备一致，共 5 值。`root_mode` 值以 `bakasu-` 为前缀（workflow 接口名），
-管理器本体是 BakaSU。
+值集六设备一致，共 6 值。前缀即管理器：`bakasu-` 走 BakaSU，`xxksu-` 走 Backslashxx fork；
+两个 fork 引擎在 Kconfig 层互斥（`KSU_HACK_ARM64_BRANCH_LINK` 依赖
+`!KSU_TAMPER_SYSCALL_TABLE`），一次构建只开一个，脚本按 `root_mode` 后缀只写一个。
 
 ### 上游锁定
 
@@ -50,10 +52,10 @@ CI 使用可复现的上游提交，不在每次构建时跟随移动分支：
 | 组件 | 固定提交 |
 |---|---|
 | BakaSU main（manual / susfs） | `7b65bde0710b` |
-| BakaSU auto-hook | `9d159b417210` |
+| XXKSU fork（syscall_table / branch_link） | `1b8ce9e15a94` |
 | Baseband-guard | `028ff7fd509e` |
 
-`BAKASU_REF` / `BBG_REF` 可显式覆盖对应提交，用于验证上游更新；默认构建保持锁定。
+`BAKASU_REF` / `XXKSU_REF` / `BBG_REF` 可显式覆盖对应提交，用于验证上游更新；默认构建保持锁定。
 
 ## BakaSU manual hook 七类
 
@@ -124,8 +126,10 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 | 自定义版本名 | `localversion` | 写进 `uname -r`（例如 `-MyKernel`；留空沿用 defconfig 值） |
 | 自定义构建时间 | `build_time` | 写进 `uname -v` 的日期段（UTC，例 `Tue, 08 Sep 2026 21:01:02 +0000`；留空用构建时刻的 UTC 值） |
 
-`auto_fix_49`：`bakasu-auto` 的 4.x kasan_reset_tag 门槛修正（auto-hook
-分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
+XXKSU 两个引擎都不加源码 hook 调用点：`syscall_table` 改系统调用表、`branch_link` 改写
+`sys_call_table` 的分支，sucompat 入口由 fork 自身解析。fragment 由
+`scripts/integrate-xxksu.sh` 生成（`CONFIG_KSU=y` + `CONFIG_KSU_LSM_SECURITY_HOOKS=y` +
+一个引擎），fork 的 `kernel/` 同时链到 `KernelSU/kernel` 与 `drivers/kernelsu`。
 
 susfs 应用路径（全部为树适配 port）：
 
@@ -210,13 +214,14 @@ localworkspace/        本机工作区（gitignored；布局见 localworkspace/R
 KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xiaomi_sdm845
 cd "$KROOT"
 
-# 1. BakaSU manual hook 源码补丁（root_mode=bakasu-auto / susfs 时跳过）
+# 1. BakaSU manual hook 源码补丁（root_mode=bakasu-susfs / xxksu-* 时跳过）
 #    目录模式只应用必加组；HOOK_EXTRA=manual 时再由第三参数选 0010-0012
 HOOK_EXTRA=lsm bash <repo>/scripts/apply-bakasu-manual-hooks.sh \
   "$KROOT" <repo>/patches/bakasu/4.9 <repo>/patches/bakasu/4.9
 
-# 2. 集成（manual 示例；auto / susfs 换 integrate-bakasu.sh 参数）
-bash <repo>/scripts/integrate-bakasu.sh "$KROOT" ./bakasu.config.fragment lsm manual true
+# 2. 集成（manual 示例；susfs 换 integrate-bakasu.sh 的 hook_type，xxksu-* 改走
+#    scripts/integrate-xxksu.sh 并按其 fragment 合并 defconfig）
+bash <repo>/scripts/integrate-bakasu.sh "$KROOT" ./bakasu.config.fragment lsm manual
 bash <repo>/scripts/integrate-bbg.sh "$KROOT" ./bbg.config.fragment
 PORT=<repo>/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch
 bash <repo>/scripts/integrate-droidspace.sh "$KROOT" "$PORT"
@@ -245,7 +250,7 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
   `patches/bakasu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 剥离
 - Droidspace cgroup 移植补丁在 `cgroup_port` 开启时缺失或 apply 失败即中止构建
 - BakaSU 管理器（Manager APK）版本需自行匹配；构建从固定提交 checkout
-  （manual/susfs=main、auto=auto-hook）并按当前仓库接线
+  （BakaSU 取 main、XXKSU 取 fork 固定提交）并按当前仓库接线
 - 32 位兼容：`CONFIG_COMPAT=y`，fstat64/fstatat64 hook 在 `0001-fs-stat` 内
 - SuSFS `priority_uid_filter` 的内核端口已随 port 保留；BakaSU `7b65bde0` 未提供对应 Kconfig
   和用户态命令，当前功能集不启用这一面

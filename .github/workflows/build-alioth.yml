@@ -24,8 +24,9 @@ on:
         options:
           - bakasu-manual-lsm
           - bakasu-manual-source
-          - bakasu-auto
           - bakasu-susfs
+          - xxksu-syscall_table
+          - xxksu-branch_link
           - none
         default: none
       localversion:
@@ -42,10 +43,6 @@ on:
         default: false
       enable_droidspace:
         description: enable Droidspaces/LXC kernel support (4.19)
-        type: boolean
-        default: false
-      auto_fix_49:
-        description: "4.x auto-hook kasan_reset_tag guard fix (bakasu-auto)"
         type: boolean
         default: false
       enable_battery_5000:
@@ -68,17 +65,16 @@ jobs:
       KERNEL_REPO: https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250.git
       DEFCONFIG: kona-perf_defconfig
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       ENABLE_BATTERY_5000: ${{ inputs.enable_battery_5000 }}
       ENABLE_DATA_ISOLATION: "false"   # sdcardfs data isolation is a 4.9 sdm845 feature
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
       TZ: UTC
-      AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
         uses: actions/checkout@v7
@@ -122,7 +118,7 @@ jobs:
           grep -n 'qcom,fv-max-uv' arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
 
       - name: Apply BakaSU manual-hook patches
-        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
+        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'susfs'
         run: |
           # File-level list: shared shapes (stat/exec/reboot/input) live
           # in bakasu/4.9 as the single copy; 4.19-local files cover the
@@ -150,7 +146,17 @@ jobs:
         if: env.ROOT_MANAGER == 'bakasu'
         run: |
           bash scripts/integrate-bakasu.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE"
+      # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
+      # The fork's hook engines (syscall_table / branch_link) resolve the
+      # sucompat call sites themselves: no source hook patches, no inline-hook
+      # generator. Layout mirrors the BakaSU wiring (KernelSU/kernel linked as
+      # drivers/kernelsu); the fork commit is pinned in the script.
+      - name: Integrate XXKSU kernel (Backslashxx fork)
+        if: env.ROOT_MANAGER == 'xxksu'
+        run: |
+          bash scripts/integrate-xxksu.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/xxksu.config.fragment"
 
       # SuSFS 4.19 kernel-side port from the test-tree 5.10->4.19 pipeline,
       - name: Apply SuSFS 4.19 port (root_mode=bakasu-susfs)
@@ -205,6 +211,8 @@ jobs:
           FRAGS=()
           if [ "$ROOT_MANAGER" = "bakasu" ]; then
             FRAGS+=("$GITHUB_WORKSPACE/bakasu.config.fragment")
+          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/xxksu.config.fragment")
           fi
           if [ "$ENABLE_BBG" = "true" ]; then
             FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")

@@ -172,9 +172,7 @@ if [ "${ROOT_MANAGER:-none}" = "bakasu" ]; then
     done
   else
     assert_cfg CONFIG_KSU_MANUAL_HOOK || rc=1
-    if [ "${HOOK_TYPE:-manual}" = "auto" ]; then
-      echo "   OK   hook_type=auto (no AUTO_* hook symbols on auto-hook branch)"
-    elif [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then
+    if [ "${HOOK_EXTRA:-lsm}" = "manual" ]; then
       for s in CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK \
                CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK \
                CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK; do
@@ -193,6 +191,24 @@ if [ "${ROOT_MANAGER:-none}" = "bakasu" ]; then
       done
     fi
   fi
+fi
+if [ "${ROOT_MANAGER:-none}" = "xxksu" ]; then
+  assert_cfg CONFIG_KSU || rc=1
+  assert_cfg CONFIG_KSU_LSM_SECURITY_HOOKS || rc=1
+  case "${HOOK_TYPE:-none}" in
+    syscall_table)
+      assert_cfg CONFIG_KSU_TAMPER_SYSCALL_TABLE || rc=1
+      grep -qE "^# CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set$" "$CFG" || {
+        echo "   FAIL CONFIG_KSU_HACK_ARM64_BRANCH_LINK (engines are exclusive)" >&2; rc=1; }
+      ;;
+    branch_link)
+      assert_cfg CONFIG_KSU_HACK_ARM64_BRANCH_LINK || rc=1
+      grep -qE "^# CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set$" "$CFG" || {
+        echo "   FAIL CONFIG_KSU_TAMPER_SYSCALL_TABLE (engines are exclusive)" >&2; rc=1; }
+      ;;
+    *)
+      echo "   FAIL hook_type=${HOOK_TYPE:-none} for root_manager=xxksu" >&2; rc=1;;
+  esac
 fi
 if [ "${ENABLE_BBG:-true}" = "true" ]; then
   assert_cfg CONFIG_BBG || rc=1

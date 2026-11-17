@@ -20,8 +20,9 @@ on:
         options:
           - bakasu-manual-lsm
           - bakasu-manual-source
-          - bakasu-auto
           - bakasu-susfs
+          - xxksu-syscall_table
+          - xxksu-branch_link
           - none
         default: none
       localversion:
@@ -40,10 +41,6 @@ on:
         description: enable Droidspaces/LXC kernel support (4.14 cgroup prefix patch + config)
         type: boolean
         default: false
-      auto_fix_49:
-        description: "4.x auto-hook kasan_reset_tag guard fix (bakasu-auto)"
-        type: boolean
-        default: false
 concurrency:
   group: rmx2117-kernel
   cancel-in-progress: true
@@ -54,14 +51,13 @@ jobs:
     timeout-minutes: 240
     env:
       KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'bakasu') && 'bakasu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'bakasu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
       TZ: UTC
-      AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       KERNEL_REPO: https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source.git
@@ -158,15 +154,17 @@ jobs:
           bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" "${PATCHES[@]}"
           bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/bakasu.config.fragment" "$HOOK_EXTRA" manual
-
-      # --- BakaSU auto hooks (hook_mode=auto) ---
-      # BakaSU auto-hook branch via integrate-bakasu.sh (no source
-      # patches; hook calls come from the runtime inline-hook engine).
-      - name: Integrate BakaSU (auto-hook branch)
-        if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'auto'
+      # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
+      # The fork's hook engines (syscall_table / branch_link) resolve the
+      # sucompat call sites themselves: no source hook patches, no inline-hook
+      # generator. Layout mirrors the BakaSU wiring (KernelSU/kernel linked as
+      # drivers/kernelsu); the fork commit is pinned in the script.
+      - name: Integrate XXKSU kernel (Backslashxx fork)
+        if: env.ROOT_MANAGER == 'xxksu'
         run: |
-          bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
-            "$GITHUB_WORKSPACE/bakasu.config.fragment" lsm auto "$AUTO_FIX_49"
+          bash scripts/integrate-xxksu.sh "$KROOT" \
+            "$GITHUB_WORKSPACE/xxksu.config.fragment"
+
       # --- SuSFS 4.14 (root_mode=bakasu-susfs) ---
       # Tree-adapted port patches/susfs/4.14/susfs-port.patch (git
       # apply-verified on MTK 4.14.186 snapshots) + BakaSU main; the
@@ -175,7 +173,7 @@ jobs:
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
         run: |
           bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
-            "$GITHUB_WORKSPACE/bakasu.config.fragment" lsm susfs "$AUTO_FIX_49"
+            "$GITHUB_WORKSPACE/bakasu.config.fragment" lsm susfs
           bash "$GITHUB_WORKSPACE/scripts/apply-susfs-port.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
@@ -213,6 +211,8 @@ jobs:
           FRAGS=()
           if [ "$ROOT_MANAGER" = "bakasu" ]; then
             FRAGS+=("$GITHUB_WORKSPACE/bakasu.config.fragment")
+          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
+            FRAGS+=("$GITHUB_WORKSPACE/xxksu.config.fragment")
           fi
           if [ "$ENABLE_BBG" = "true" ]; then
             FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
