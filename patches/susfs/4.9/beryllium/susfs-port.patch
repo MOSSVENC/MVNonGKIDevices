@@ -2626,10 +2626,10 @@ index 206b576ce..47fcb24ed 100644
  		return -ENOMEM;
 diff --git a/fs/susfs.c b/fs/susfs.c
 new file mode 100755
-index 000000000..b3c71b308
+index 000000000..5bbfbd248
 --- /dev/null
 +++ b/fs/susfs.c
-@@ -0,0 +1,2562 @@
+@@ -0,0 +1,2570 @@
 +#include <linux/version.h>
 +#include <linux/cred.h>
 +#include <linux/fs.h>
@@ -5192,6 +5192,14 @@ index 000000000..b3c71b308
 +/* No module exit is needed becuase it should never be a loadable kernel module */
 +//void __init susfs_exit(void)
 +
++
++#if defined(CONFIG_KSU_SUSFS_SUS_PATH) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
++/* Resolve /data for the readdir hook sites. */
++int susfs_get_data_path(struct path *path)
++{
++	return kern_path("/data", LOOKUP_FOLLOW, path);
++}
++#endif
 diff --git a/include/linux/susfs.h b/include/linux/susfs.h
 new file mode 100755
 index 000000000..a58550de9

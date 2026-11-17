@@ -1,5 +1,5 @@
 diff --git a/block/ioprio.c b/block/ioprio.c
-index f0ee9cc33..9c06630ad 100644
+index f0ee9cc..9c06630 100644
 --- a/block/ioprio.c
 +++ b/block/ioprio.c
 @@ -90,6 +90,10 @@ int ioprio_check_cap(int ioprio)
@@ -46,7 +46,7 @@ index f0ee9cc33..9c06630ad 100644
  			if (!user)
  				break;
 diff --git a/drivers/input/input.c b/drivers/input/input.c
-index 70ffffea3..7be7decec 100644
+index 70ffffe..7be7dec 100644
 --- a/drivers/input/input.c
 +++ b/drivers/input/input.c
 @@ -378,10 +378,20 @@ static int input_get_disposition(struct input_dev *dev,
@@ -71,7 +71,7 @@ index 70ffffea3..7be7decec 100644
  	if (disposition != INPUT_IGNORE_EVENT && type != EV_SYN)
  		add_input_randomness(type, code, value);
 diff --git a/fs/Makefile b/fs/Makefile
-index 766e45da7..22b9e529b 100644
+index 766e45d..22b9e52 100644
 --- a/fs/Makefile
 +++ b/fs/Makefile
 @@ -15,6 +15,8 @@ obj-y :=	open.o read_write.o file_table.o super.o \
@@ -84,7 +84,7 @@ index 766e45da7..22b9e529b 100644
  obj-y +=	buffer.o block_dev.o direct-io.o mpage.o
  else
 diff --git a/fs/exec.c b/fs/exec.c
-index eef84ebca..921cc5138 100644
+index eef84eb..921cc51 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -62,6 +62,9 @@
@@ -204,7 +204,7 @@ index eef84ebca..921cc5138 100644
  	current->fs->in_exec = 0;
  	current->in_execve = 0;
 diff --git a/fs/namei.c b/fs/namei.c
-index ea9e47217..78e2ff057 100644
+index ea9e472..78e2ff0 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -40,6 +40,9 @@
@@ -387,7 +387,7 @@ index ea9e47217..78e2ff057 100644
  	if (IS_ERR(dentry))
  		return dentry;
  	if (unlikely(!d_in_lookup(dentry))) {
-@@ -1756,6 +1844,12 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1756,6 +1844,12 @@ again:
  				if (!error) {
  					d_invalidate(dentry);
  					dput(dentry);
@@ -400,7 +400,7 @@ index ea9e47217..78e2ff057 100644
  					goto again;
  				}
  				dput(dentry);
-@@ -1770,6 +1864,19 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1770,6 +1864,19 @@ again:
  			dentry = old;
  		}
  	}
@@ -542,7 +542,7 @@ index ea9e47217..78e2ff057 100644
  	if (unlikely(error))
  		return error;
  	error = mnt_want_write(path.mnt);
-@@ -3642,24 +3817,53 @@ static int do_tmpfile(struct nameidata *nd, unsigned flags,
+@@ -3642,24 +3817,53 @@ out2:
  	mnt_drop_write(path.mnt);
  out:
  	path_put(&path);
@@ -675,7 +675,7 @@ index ea9e47217..78e2ff057 100644
  	do_delayed_call(&done);
  	return res;
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 4a69b9107..cb12d9c57 100644
+index 4a69b91..cb12d9c 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -27,10 +27,21 @@
@@ -998,7 +998,7 @@ index 4a69b9107..cb12d9c57 100644
 +}
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 diff --git a/fs/notify/fdinfo.c b/fs/notify/fdinfo.c
-index 74aeabbf0..97321608d 100644
+index 74aeabb..9732160 100644
 --- a/fs/notify/fdinfo.c
 +++ b/fs/notify/fdinfo.c
 @@ -13,6 +13,13 @@
@@ -1117,7 +1117,7 @@ index 74aeabbf0..97321608d 100644
  			   inode_mark->wd, inode->i_ino, inode->i_sb->s_dev,
  			   inotify_mark_user_mask(mark));
 diff --git a/fs/open.c b/fs/open.c
-index 13d70db56..0ac6f624c 100644
+index 13d70db..0ac6f62 100644
 --- a/fs/open.c
 +++ b/fs/open.c
 @@ -31,6 +31,9 @@
@@ -1179,7 +1179,7 @@ index 13d70db56..0ac6f624c 100644
  		goto out;
  
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 6c0b18ae3..b0d1669ce 100644
+index 6c0b18a..b0d1669 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -95,6 +95,9 @@
@@ -1192,7 +1192,7 @@ index 6c0b18ae3..b0d1669ce 100644
  #include <trace/events/oom.h>
  #include "internal.h"
  #include "fd.h"
-@@ -1885,6 +1888,10 @@ static const char *proc_pid_get_link(struct dentry *dentry,
+@@ -1885,6 +1888,10 @@ out:
  	return ERR_PTR(error);
  }
  
@@ -1233,7 +1233,7 @@ index 6c0b18ae3..b0d1669ce 100644
  				continue;
  
 diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
-index fa762c5fb..5c42eb61f 100644
+index fa762c5..5c42eb6 100644
 --- a/fs/proc/cmdline.c
 +++ b/fs/proc/cmdline.c
 @@ -4,8 +4,20 @@
@@ -1258,7 +1258,7 @@ index fa762c5fb..5c42eb61f 100644
  	seq_putc(m, '\n');
  	return 0;
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
-index 81882a132..64db51469 100644
+index 81882a1..64db514 100644
 --- a/fs/proc/fd.c
 +++ b/fs/proc/fd.c
 @@ -12,11 +12,22 @@
@@ -1353,7 +1353,7 @@ index 81882a132..64db51469 100644
  	if (seq_has_overflowed(m))
  		goto out;
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index 8a0bca1bc..83e1b47dd 100644
+index 8a0bca1..83e1b47 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -21,6 +21,9 @@
@@ -1477,7 +1477,7 @@ index 8a0bca1bc..83e1b47dd 100644
  		start_vaddr = end;
  
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-index 5b8d065fa..7ea872fa9 100644
+index 5b8d065..7ea872f 100644
 --- a/fs/proc_namespace.c
 +++ b/fs/proc_namespace.c
 @@ -12,12 +12,20 @@
@@ -1501,7 +1501,7 @@ index 5b8d065fa..7ea872fa9 100644
  static __poll_t mounts_poll(struct file *file, poll_table *wait)
  {
  	struct seq_file *m = file->private_data;
-@@ -239,6 +247,162 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
+@@ -239,6 +247,162 @@ out:
  	return err;
  }
  
@@ -1700,7 +1700,7 @@ index 5b8d065fa..7ea872fa9 100644
  }
  
 diff --git a/fs/read_write.c b/fs/read_write.c
-index ec2d20ddd..233c62dca 100644
+index ec2d20d..233c62d 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
 @@ -586,8 +586,16 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
@@ -1721,7 +1721,7 @@ index ec2d20ddd..233c62dca 100644
  }
  
 diff --git a/fs/readdir.c b/fs/readdir.c
-index 3c5ce8a0d..76b25d1c7 100644
+index 3c5ce8a..76b25d1 100644
 --- a/fs/readdir.c
 +++ b/fs/readdir.c
 @@ -21,6 +21,12 @@
@@ -2134,7 +2134,7 @@ index 3c5ce8a0d..76b25d1c7 100644
  }
  #endif
 diff --git a/fs/stat.c b/fs/stat.c
-index 376543199..bddedd926 100644
+index 3765431..bddedd9 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -20,6 +20,7 @@
@@ -2302,7 +2302,7 @@ index 376543199..bddedd926 100644
  }
  EXPORT_SYMBOL(vfs_statx);
 diff --git a/fs/statfs.c b/fs/statfs.c
-index 29786598c..cd84908b9 100644
+index 2978659..ad8ea76 100644
 --- a/fs/statfs.c
 +++ b/fs/statfs.c
 @@ -9,6 +9,10 @@
@@ -2316,10 +2316,23 @@ index 29786598c..cd84908b9 100644
  #include "internal.h"
  
  static int flags_by_mnt(int mnt_flags)
-@@ -67,13 +71,74 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
+@@ -67,13 +71,87 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
  	return retval;
  }
  
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++int statfs_by_dentry_wrapper(struct dentry *dentry, struct kstatfs *buf)
++{
++	return statfs_by_dentry(dentry, buf);
++}
++
++int calculate_f_flags_wrapper(struct vfsmount *mnt)
++{
++	return calculate_f_flags(mnt);
++}
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++
++
 +#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 +extern struct vfsmount *susfs_get_non_sus_vfsmnt_from_vfsmnt(struct vfsmount *vfsmnt);
 +#endif //#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
@@ -2392,7 +2405,7 @@ index 29786598c..cd84908b9 100644
  }
  EXPORT_SYMBOL(vfs_statfs);
 diff --git a/fs/super.c b/fs/super.c
-index 6bbd639eb..1615bffb8 100644
+index 6bbd639..1615bff 100644
 --- a/fs/super.c
 +++ b/fs/super.c
 @@ -37,10 +37,18 @@
@@ -2439,10 +2452,10 @@ index 6bbd639eb..1615bffb8 100644
  	 * Always return at least 1 from get_anon_bdev.
 diff --git a/fs/susfs.c b/fs/susfs.c
 new file mode 100644
-index 000000000..082271f7c
+index 0000000..fb5c0f7
 --- /dev/null
 +++ b/fs/susfs.c
-@@ -0,0 +1,2577 @@
+@@ -0,0 +1,2584 @@
 +#include <linux/version.h>
 +#include <linux/cred.h>
 +#include <linux/fs.h>
@@ -5020,9 +5033,16 @@ index 000000000..082271f7c
 +/* No module exit is needed becuase it should never be a loadable kernel module */
 +//void __init susfs_exit(void)
 +
++#if defined(CONFIG_KSU_SUSFS_SUS_PATH) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
++/* Resolve /data for the readdir hook sites. */
++int susfs_get_data_path(struct path *path)
++{
++	return kern_path("/data", LOOKUP_FOLLOW, path);
++}
++#endif
 diff --git a/include/linux/susfs.h b/include/linux/susfs.h
 new file mode 100644
-index 000000000..a58550de9
+index 0000000..a58550d
 --- /dev/null
 +++ b/include/linux/susfs.h
 @@ -0,0 +1,261 @@
@@ -5289,7 +5309,7 @@ index 000000000..a58550de9
 +#endif
 diff --git a/include/linux/susfs_def.h b/include/linux/susfs_def.h
 new file mode 100644
-index 000000000..a64d54a83
+index 0000000..a64d54a
 --- /dev/null
 +++ b/include/linux/susfs_def.h
 @@ -0,0 +1,188 @@
@@ -5482,7 +5502,7 @@ index 000000000..a64d54a83
 +
 +#endif // #ifndef KSU_SUSFS_DEF_H
 diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
-index dfbdb3f34..043a3cff8 100644
+index dfbdb3f..043a3cf 100644
 --- a/kernel/kallsyms.c
 +++ b/kernel/kallsyms.c
 @@ -24,6 +24,9 @@
@@ -5533,7 +5553,7 @@ index dfbdb3f34..043a3cff8 100644
  }
  
 diff --git a/kernel/reboot.c b/kernel/reboot.c
-index 19f89c074..240ff6b15 100644
+index 19f89c0..240ff6b 100644
 --- a/kernel/reboot.c
 +++ b/kernel/reboot.c
 @@ -305,12 +305,25 @@ DEFINE_MUTEX(system_transition_mutex);
@@ -5563,10 +5583,10 @@ index 19f89c074..240ff6b15 100644
  	/* We only trust the superuser with rebooting the system. */
  	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
 diff --git a/kernel/sys.c b/kernel/sys.c
-index a19ddda68..0057e7a70 100644
+index a19ddda..0057e7a 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -198,6 +198,10 @@ static int set_one_prio(struct task_struct *p, int niceval, int error)
+@@ -198,6 +198,10 @@ out:
  	return error;
  }
  
@@ -5599,7 +5619,7 @@ index a19ddda68..0057e7a70 100644
  			user = find_user(uid);
  			if (!user)
  				goto out_unlock;	/* No processes for this user */
-@@ -688,8 +700,18 @@ long __sys_setresuid(uid_t ruid, uid_t euid, uid_t suid)
+@@ -688,8 +700,18 @@ error:
  	return retval;
  }
  
@@ -5640,7 +5660,7 @@ index a19ddda68..0057e7a70 100644
  	if (copy_to_user(name, &tmp, sizeof(tmp)))
  		return -EFAULT;
 diff --git a/mm/memory.c b/mm/memory.c
-index a8cef6c9d..50673df42 100644
+index a8cef6c..50673df 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -80,6 +80,9 @@
@@ -5674,7 +5694,7 @@ index a8cef6c9d..50673df42 100644
  				gup_flags, &page, &vma, NULL);
  		if (ret <= 0) {
 diff --git a/security/selinux/avc.c b/security/selinux/avc.c
-index 74ab8890c..0ed02c33c 100644
+index 74ab889..0ed02c3 100644
 --- a/security/selinux/avc.c
 +++ b/security/selinux/avc.c
 @@ -164,6 +164,11 @@ static void avc_dump_av(struct audit_buffer *ab, u16 tclass, u32 av)
@@ -5731,7 +5751,7 @@ index 74ab8890c..0ed02c33c 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index d0d759f67..6f2627cc0 100644
+index d0d759f..6f2627c 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
 @@ -104,6 +104,15 @@
@@ -5948,7 +5968,7 @@ index d0d759f67..6f2627cc0 100644
  static int selinux_inode_getxattr(struct dentry *dentry, const char *name)
  {
  	const struct cred *cred = current_cred();
-@@ -6449,6 +6631,162 @@ static int selinux_setprocattr(const char *name, void *value, size_t size)
+@@ -6449,6 +6631,162 @@ abort_change:
  	return error;
  }
  
@@ -6135,7 +6155,7 @@ index d0d759f67..6f2627cc0 100644
  	LSM_HOOK_INIT(ismaclabel, selinux_ismaclabel),
  	LSM_HOOK_INIT(secctx_to_secid, selinux_secctx_to_secid),
 diff --git a/security/selinux/selinuxfs.c b/security/selinux/selinuxfs.c
-index d93fd1a98..b5cc8f37d 100644
+index d93fd1a..b5cc8f3 100644
 --- a/security/selinux/selinuxfs.c
 +++ b/security/selinux/selinuxfs.c
 @@ -42,6 +42,22 @@
@@ -6192,7 +6212,7 @@ index d93fd1a98..b5cc8f37d 100644
  
  static ssize_t sel_read_handle_status(struct file *filp, char __user *buf,
  				      size_t count, loff_t *ppos)
-@@ -636,6 +668,53 @@ static ssize_t sel_write_context(struct file *file, char *buf, size_t size)
+@@ -636,6 +668,53 @@ out:
  	return length;
  }
  
@@ -6273,7 +6293,7 @@ index d93fd1a98..b5cc8f37d 100644
  };
  
  static ssize_t selinux_transaction_write(struct file *file, const char __user *buf, size_t size, loff_t *pos)
-@@ -871,6 +962,65 @@ static ssize_t sel_write_access(struct file *file, char *buf, size_t size)
+@@ -871,6 +962,65 @@ out:
  	return length;
  }
  
@@ -6340,7 +6360,7 @@ index d93fd1a98..b5cc8f37d 100644
  {
  	struct selinux_fs_info *fsi = file_inode(file)->i_sb->s_fs_info;
 diff --git a/security/selinux/ss/services.c b/security/selinux/ss/services.c
-index 00338355e..577e988f2 100644
+index 0033835..577e988 100644
 --- a/security/selinux/ss/services.c
 +++ b/security/selinux/ss/services.c
 @@ -69,6 +69,14 @@
@@ -6620,7 +6640,7 @@ index 00338355e..577e988f2 100644
 +}
 +#endif // #ifdef CONFIG_KSU_SUSFS
 diff --git a/security/selinux/ss/status.c b/security/selinux/ss/status.c
-index a121de45a..175724782 100644
+index a121de4..1757247 100644
 --- a/security/selinux/ss/status.c
 +++ b/security/selinux/ss/status.c
 @@ -16,6 +16,10 @@

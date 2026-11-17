@@ -18,12 +18,12 @@ SuSFS 资产由三部分构成：
 
 | 路径 | 树 | 规模 | 校验 |
 |---|---|---|---|
-| `4.9/susfs-port.patch` | polaris 4.9.337 | 31 文件 / 4591 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-polaris` 的 susfs 模式 |
-| `4.9/beryllium/susfs-port.patch` | beryllium 4.9.337 | 31 文件 / 4630 新增行 | 同上；设备属性段为 `security/selinux/avc.c` 与 `ss/services.c`，编译面见 `build-beryllium` |
-| `4.9/daisy/susfs-port.patch` | daisy 4.9.337 | 31 文件 / 4591 新增行 | 同上；设备属性段为 `fs/proc/cmdline.c` 与 `ss/services.c`，编译面见 `build-daisy` |
-| `4.9/vince/susfs-port.patch` | vince 4.9.337 | 31 文件 / 4613 新增行 | 同上；`fs/proc/cmdline.c` 用 vince 变体，编译面见 `build-vince` |
-| `4.14/susfs-port.patch` | RMX2117 MTK 4.14.186 | 30 文件 / 4735 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-RMX2117` 的 susfs 模式 |
-| `4.19/susfs-port.patch` | alioth kona 4.19.325 | 30 文件 / 4728 新增行 | 同上，编译面见 `build-alioth` |
+| `4.9/susfs-port.patch` | polaris 4.9.337 | 31 文件 / 4598 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-polaris` 的 susfs 模式 |
+| `4.9/beryllium/susfs-port.patch` | beryllium 4.9.337 | 31 文件 / 4637 新增行 | 同上；设备属性段为 `security/selinux/avc.c` 与 `ss/services.c`，编译面见 `build-beryllium` |
+| `4.9/daisy/susfs-port.patch` | daisy 4.9.337 | 31 文件 / 4598 新增行 | 同上；设备属性段为 `fs/proc/cmdline.c` 与 `ss/services.c`，编译面见 `build-daisy` |
+| `4.9/vince/susfs-port.patch` | vince 4.9.337 | 31 文件 / 4620 新增行 | 同上；`fs/proc/cmdline.c` 用 vince 变体，编译面见 `build-vince` |
+| `4.14/susfs-port.patch` | RMX2117 MTK 4.14.186 | 30 文件 / 4752 新增行 | 严格 apply、parity OK、preflight 无静态检出；编译面见 `build-RMX2117` 的 susfs 模式 |
+| `4.19/susfs-port.patch` | alioth kona 4.19.325 | 30 文件 / 4745 新增行 | 同上，编译面见 `build-alioth` |
 
 `security/selinux` 的 sus context→sid / compute_av 面按树内形态落地：无
 `struct selinux_state` 的 4.9 树用全局 `policydb`/`sidtab`/`policy_rwlock`，带 state 的树
@@ -41,6 +41,8 @@ uid bitmap（`SUSFS_UID_FILTER_MIN_UID..MAX_UID`）、应用串解析与 `susfs_
 原始实现），4.9 树非 stateful、该两面以非 stateful 路径承载。应用安装在
 `/data/system/packages.list` 变更后由 BakaSU 的 throne 追踪路径触发重算
 （`patches/bakasu/0102-susfs-sus-path-uid-filter-renew.patch`）。
+
+4.x 的 readdir hook 站点经 `susfs_get_data_path()` 解析 `/data`，该 helper 由管线随核心文件落地（4.9 在 `translate.sh`、4.14/4.19 在 `susfs-core-vintage.py`）；`fs/statfs.c` 的 `statfs_by_dentry_wrapper` / `calculate_f_flags_wrapper` 由 `add-statfs-wrappers.py` 在锚定树上补齐并随 port 落地。
 
 `b0e47464` 新增的 `priority_uid_filter` 面按 4.9/4.14 形态携带（`block/ioprio.c`、
 `kernel/sys.c` 的守卫块；4.9 用 `vzalloc` 与偏移式 `kernel_read`）；该面的 Kconfig 与命令
