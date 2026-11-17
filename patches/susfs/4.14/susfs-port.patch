@@ -84,6 +84,7 @@ index 771eb612a..e0dd2b91d 100644
  obj-y +=	buffer.o block_dev.o direct-io.o mpage.o
  else
 diff --git a/fs/exec.c b/fs/exec.c
+index cce066961..2ba5a0149 100755
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -62,6 +62,9 @@
@@ -96,7 +97,7 @@ diff --git a/fs/exec.c b/fs/exec.c
  
  #include <linux/uaccess.h>
  #include <asm/mmu_context.h>
-@@ -1704,6 +1707,23 @@
+@@ -1704,6 +1707,23 @@ extern int oplus_exec_block(struct file *file);
  /*
   * sys_execve() executes a new program.
   */
@@ -120,7 +121,7 @@ diff --git a/fs/exec.c b/fs/exec.c
  static int do_execveat_common(int fd, struct filename *filename,
  			      struct user_arg_ptr argv,
  			      struct user_arg_ptr envp,
-@@ -1714,10 +1734,39 @@
+@@ -1714,10 +1734,39 @@ static int do_execveat_common(int fd, struct filename *filename,
  	struct file *file;
  	struct files_struct *displaced;
  	int retval;
@@ -160,7 +161,7 @@ diff --git a/fs/exec.c b/fs/exec.c
  	/*
  	 * We move the actual failure in case of RLIMIT_NPROC excess from
  	 * set*uid() to execve() because too many poorly written programs
-@@ -1820,9 +1869,41 @@
+@@ -1820,9 +1869,41 @@ static int do_execveat_common(int fd, struct filename *filename,
  		goto out;
  
  	retval = exec_binprm(bprm);
@@ -2367,7 +2368,7 @@ index 873785dae..8eb6a64e1 100644
  }
  EXPORT_SYMBOL(vfs_statx);
 diff --git a/fs/statfs.c b/fs/statfs.c
-index ca1084cbe..249b5b642 100644
+index ca1084cbe..ce8016dc7 100644
 --- a/fs/statfs.c
 +++ b/fs/statfs.c
 @@ -9,6 +9,10 @@
@@ -2381,7 +2382,7 @@ index ca1084cbe..249b5b642 100644
  #include "internal.h"
  
  static int flags_by_mnt(int mnt_flags)
-@@ -67,13 +71,111 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
+@@ -67,13 +71,74 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
  	return retval;
  }
  
@@ -2392,63 +2393,26 @@ index ca1084cbe..249b5b642 100644
 +#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 +extern bool susfs_is_inode_sus_kstat(struct inode *inode, bool *out_is_fuse);
 +extern int susfs_sus_kstat_spoof_vfs_statfs(struct inode *inode, struct kstatfs *buf, bool *is_fuse);
-+int statfs_by_dentry_wrapper(struct dentry *dentry, struct kstatfs *buf)
++
++static int susfs_statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf, bool *is_fuse)
 +{
-+	return statfs_by_dentry(dentry, buf);
-+}
-+
-+int calculate_f_flags_wrapper(struct vfsmount *mnt)
-+{
-+	return calculate_f_flags(mnt);
-+}
-+
-+
-+static int susfs_statfs_by_dentry(struct dentry *dentry, struct vfsmount *mnt, struct kstatfs *buf, bool *is_fuse)
-+
-+{
-+
 +	int retval;
 +
-+
 +	if (!dentry->d_sb->s_op->statfs)
-+
 +		return -ENOSYS;
 +
-+
 +	memset(buf, 0, sizeof(*buf));
-+
 +	retval = security_sb_statfs(dentry);
-+
 +	if (retval)
-+
 +		return retval;
-+
-+	if (!susfs_sus_kstat_spoof_vfs_statfs(d_backing_inode(dentry), buf, is_fuse)) {
-+
-+		if (buf->f_frsize == 0)
-+
-+			buf->f_frsize = buf->f_bsize;
-+
-+		return retval;
-+
-+	}
-+
++	if (susfs_sus_kstat_spoof_vfs_statfs(d_backing_inode(dentry), buf, is_fuse))
++		goto orig_flow;
 +	retval = dentry->d_sb->s_op->statfs(dentry, buf);
-+
-+	if (retval == 0) {
-+
-+		buf->f_flags = calculate_f_flags(mnt);
-+
-+		if (buf->f_frsize == 0)
-+
-+			buf->f_frsize = buf->f_bsize;
-+
-+	}
-+
++orig_flow:
++	if (retval == 0 && buf->f_frsize == 0)
++		buf->f_frsize = buf->f_bsize;
 +	return retval;
-+
 +}
-+
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 +
  int vfs_statfs(const struct path *path, struct kstatfs *buf)
@@ -2459,7 +2423,7 @@ index ca1084cbe..249b5b642 100644
 +		struct inode *inode = d_backing_inode(path->dentry);
 +		bool is_fuse = false;
 +		if (susfs_is_inode_sus_kstat(inode, &is_fuse)) {
-+			error = susfs_statfs_by_dentry(path->dentry, path->mnt, buf, &is_fuse);
++			error = susfs_statfs_by_dentry(path->dentry, buf, &is_fuse);
 +			goto bypass_orig_flow;
 +		}
 +	}
@@ -2541,10 +2505,10 @@ index ffb1310f7..bbeff96c7 100644
  		return -ENOMEM;
 diff --git a/fs/susfs.c b/fs/susfs.c
 new file mode 100644
-index 000000000..646d76825
+index 000000000..082271f7c
 --- /dev/null
 +++ b/fs/susfs.c
-@@ -0,0 +1,2177 @@
+@@ -0,0 +1,2577 @@
 +#include <linux/version.h>
 +#include <linux/cred.h>
 +#include <linux/fs.h>
@@ -2595,6 +2559,7 @@ index 000000000..646d76825
 +#define SUSFS_LOGE(fmt, ...) 
 +#endif
 +
++/* selinux hide */
 +static DEFINE_MUTEX(susfs_mutex_lock_sus_type);
 +static DEFINE_HASHTABLE(SUS_TYPE_HLIST, 10);
 +
@@ -2722,7 +2687,6 @@ index 000000000..646d76825
 +	}
 +}
 +
-+#ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER
 +/*
 + * Switches the selinux domain of the current process to the KernelSU one, so
 + * that the data paths of the apps can be accessed despite of the selinux
@@ -2771,7 +2735,6 @@ index 000000000..646d76825
 +
 +	commit_creds(orig_cred);
 +}
-+#endif // #ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER
 +
 +/* sus_path */
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
@@ -2907,68 +2870,474 @@ index 000000000..646d76825
 +	revert_creds(saved);
 +}
 +
-+static inline bool is_i_uid_not_allowed(uid_t i_uid) {
-+	return likely(current_uid().val != i_uid);
-+}
 +
-+/* - Please note that path inside /sdcard will be still visible to MediaProvider module,
-+ *   since the uid of path like /sdcard/TWRP will be the uid of your MediaProvider module.
-+ */
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-+bool susfs_is_inode_sus_path(struct mnt_idmap* idmap, struct inode *inode)
-+#else
-+bool susfs_is_inode_sus_path(struct inode *inode)
-+#endif
++bool susfs_is_uid_allowed_for_sus_path(uid_t uid);
++
++__attribute__((hot)) bool susfs_is_inode_sus_path(struct inode *inode)
 +{
++	uid_t uid = current_uid().val % 100000;
 +	struct fuse_inode *fi = NULL;
-+	if (!susfs_is_current_proc_umounted_app()) {
++
++	if (uid < 10000) {
 +		return false;
 +	}
++
 +	if (!inode->i_mapping) {
 +		SUSFS_LOGE("inode->i_mapping is NULL\n");
 +		return false;
 +	}
++
 +	if (inode->i_sb->s_magic == FUSE_SUPER_MAGIC) {
 +		fi = get_fuse_inode(inode);
 +		if (!fi || !fi->inode.i_mapping) {
 +			SUSFS_LOGE("fi || fi->inode.i_mapping is NULL\n");
 +			return false;
 +		}
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
++
 +		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state) &&
-+			is_i_uid_not_allowed(i_uid_into_vfsuid(idmap, &fi->inode).val)))
-+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
-+		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state) &&
-+			is_i_uid_not_allowed(i_uid_into_mnt(i_user_ns(&fi->inode), &fi->inode).val)))
-+#else
-+		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state) &&
-+			is_i_uid_not_allowed(fi->inode.i_uid.val)))
-+#endif
++			likely(!susfs_is_uid_allowed_for_sus_path(uid))))
 +		{
-+			SUSFS_LOGI("hiding path with ino '%lu'\n", inode->i_ino);
++			//SUSFS_LOGI("hiding path with ino '%lu'\n", inode->i_ino);
 +			return true;
 +		}
 +		return false;
 +	}
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
++
 +	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_state) &&
-+		is_i_uid_not_allowed(i_uid_into_vfsuid(idmap, inode).val)))
-+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
-+	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_state) &&
-+		is_i_uid_not_allowed(i_uid_into_mnt(i_user_ns(inode), inode).val)))
-+#else
-+	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_state) &&
-+		is_i_uid_not_allowed(inode->i_uid.val)))
-+#endif
++		likely(!susfs_is_uid_allowed_for_sus_path(uid))))
 +	{
-+		SUSFS_LOGI("hiding path with ino '%lu'\n", inode->i_ino);
++		//SUSFS_LOGI("hiding path with ino '%lu'\n", inode->i_ino);
 +		return true;
 +	}
++
 +	return false;
 +}
 +
-+int susfs_get_data_path(struct path *path) {
-+	return kern_path("/data", LOOKUP_FOLLOW, path);
++/*****************************************/
++/* sus_path uid filter (bitmap)          */
++/*****************************************/
++/* The uids of the apps that are denied to see the added sus paths.
++ * Other uids within the app uid range (10000 - 19999) are still able
++ * to see all added sus paths.
++ * Effective only on process with uid >= 10000 
++ */
++struct susfs_sus_path_uid_filter_bitmap {
++	struct rcu_head                 rcu;
++	unsigned long                   bits[SUSFS_UID_FILTER_BITMAP_LEN];
++};
++
++static struct susfs_sus_path_uid_filter_bitmap __rcu *sus_path_uid_filter_bitmap;
++static DEFINE_MUTEX(susfs_mutex_lock_sus_path_uid_filter);
++/*
++ * The app package names of the apps that are currently allowed to see
++ * the added sus paths. They are stored so that the uids of the apps can
++ * be resolved again whenever the apps are installed or uninstalled,
++ * because the uid of an app changes when the app is reinstalled.
++ * Protected by susfs_mutex_lock_sus_path_uid_filter.
++ */
++static char *susfs_sus_path_app_strings = NULL;
++/* Ensures that there is only one resolving thread running at the same time */
++static atomic_t susfs_sus_path_app_strings_running = ATOMIC_INIT(0);
++
++/*
++ * Checks whether the given string is a valid app package name.
++ * Returns true if it is a valid app package name.
++ */
++static bool susfs_is_valid_sus_path_app_name(const char *app_name) {
++	const char *p = app_name;
++	size_t len = strlen(app_name);
++
++	if (len == 0 || len > 255)
++		return false;
++
++	/* reject the relative paths to prevent any path traversal */
++	if (!strcmp(app_name, ".") || !strcmp(app_name, ".."))
++		return false;
++
++	for (; *p != '\0'; p++) {
++		if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') ||
++			(*p >= '0' && *p <= '9') || *p == '.' || *p == '_')
++			continue;
++		return false;
++	}
++
++	return true;
++}
++
++/*
++ * Resolves the uid of the given app package name from /data/system/packages.list.
++ * Returns 0 on success, a negative errno on failure.
++ */
++static int susfs_resolve_sus_path_app_uid(const char *app_name, uid_t *uid) {
++	struct file *fp;
++	char *buf = NULL;
++	char *line, *tmp, *p;
++	char *pkg_name, *uid_str;
++	loff_t pos = 0;
++	size_t size;
++	unsigned long val;
++	int ret = -ENOENT;
++
++	if (!app_name || !*app_name || !uid)
++		return -EINVAL;
++
++	if (!susfs_is_valid_sus_path_app_name(app_name))
++		return -EINVAL;
++
++	fp = filp_open("/data/system/packages.list", O_RDONLY | O_NOATIME, 0);
++	if (IS_ERR(fp)) {
++		ret = PTR_ERR(fp);
++		SUSFS_LOGE("failed to open /data/system/packages.list: %d\n", ret);
++		return ret;
++	}
++
++	size = i_size_read(file_inode(fp));
++	if (size <= 0 || size > (4 * 1024 * 1024)) {
++		filp_close(fp, NULL);
++		return -EFBIG;
++	}
++
++	buf = vmalloc(size + 1);
++	if (!buf) {
++		filp_close(fp, NULL);
++		return -ENOMEM;
++	}
++	buf[size] = '\0';
++
++	ret = kernel_read(fp, buf, size, &pos);
++	filp_close(fp, NULL);
++	if (ret != (int)size) {
++		vfree(buf);
++		return -EIO;
++	}
++
++	line = buf;
++	while (line && *line) {
++		p = strchr(line, '\n');
++		if (p) {
++			*p = '\0';
++			tmp = p + 1;
++		} else {
++			tmp = NULL;
++		}
++
++		/* skip empty lines */
++		if (*line == '\0' || *line == '\r') {
++			line = tmp;
++			continue;
++		}
++
++		/* packages.list format: <package> <uid> <gid> ... */
++		pkg_name = strsep(&line, " \t");
++		if (!pkg_name || *pkg_name == '\0') {
++			line = tmp;
++			continue;
++		}
++
++		uid_str = strsep(&line, " \t");
++		if (!uid_str || *uid_str == '\0') {
++			line = tmp;
++			continue;
++		}
++
++		if (!strcmp(pkg_name, app_name)) {
++			if (kstrtoul(uid_str, 10, &val)) {
++				vfree(buf);
++				return -EINVAL;
++			}
++
++			*uid = (uid_t)val % 100000;
++
++			vfree(buf);
++
++			if (*uid < SUSFS_UID_FILTER_MIN_UID ||
++				*uid > SUSFS_UID_FILTER_MAX_UID)
++				return -EINVAL;
++
++			return 0;
++		}
++
++		line = tmp;
++	}
++
++	vfree(buf);
++	return -ENOENT;
++}
++
++/*
++ * Parses the comma separated list of the app package names, resolves the uid
++ * of every app and maps the uids into the given bitmap.
++ *
++ * The spaces before and after the commas are ignored.
++ * The given string is modified while it is being parsed.
++ * If 'skip_failed' is true, the apps whose data path cannot be found are
++ * skipped (they are uninstalled already), otherwise an error is returned.
++ * Returns 0 on success, a negative errno on failure.
++ */
++static int susfs_parse_sus_path_app_names(char *app_str, unsigned long *bits, bool skip_failed) {
++	char *token = NULL;
++	char *saveptr = app_str;
++	uid_t uid = 0;
++	int ret;
++
++	while ((token = strsep(&saveptr, ",")) != NULL) {
++		token = strim(token);
++		if (*token == '\0') {
++			/* tolerate the empty items, e.g., "com.foo,,com.bar" */
++			continue;
++		}
++
++		if (!susfs_is_valid_sus_path_app_name(token)) {
++			SUSFS_LOGE("invalid app name '%s'\n", token);
++			return -EINVAL;
++		}
++
++		ret = susfs_resolve_sus_path_app_uid(token, &uid);
++		if (ret) {
++			if (skip_failed)
++				continue;
++			return ret;
++		}
++
++		if (uid < SUSFS_UID_FILTER_MIN_UID || uid > SUSFS_UID_FILTER_MAX_UID) {
++			SUSFS_LOGE("the uid %u of the app '%s' is out of the allowed range [%d, %d]\n",
++						uid, token, SUSFS_UID_FILTER_MIN_UID,
++						SUSFS_UID_FILTER_MAX_UID);
++			if (!skip_failed)
++				return -EINVAL;
++			continue;
++		}
++
++		set_bit(uid - SUSFS_UID_FILTER_MIN_UID, bits);
++		SUSFS_LOGI("app_name '%s', uid '%u' is now added to sus_path_uid_filter_bitmap\n", token, uid);
++	}
++
++	return 0;
++}
++
++void susfs_set_sus_path_uid_filter(void __user **user_info) {
++	struct st_susfs_sus_path_uid_filter *info = NULL;
++	struct susfs_sus_path_uid_filter_bitmap *new_bitmap = NULL;
++	struct susfs_sus_path_uid_filter_bitmap *old_bitmap = NULL;
++	char *new_app_strings = NULL;
++	struct cred *orig_cred = NULL;
++	size_t app_str_len = 0;
++	int err = 0;
++	static bool is_uid_filter_set_before = false;
++
++	info = kvmalloc(sizeof(*info), GFP_KERNEL | __GFP_ZERO);
++	if (!info) {
++		err = -ENOMEM;
++		goto out_copy_to_user;
++	}
++
++	if (copy_from_user(info, (struct st_susfs_sus_path_uid_filter __user*)*user_info, sizeof(*info))) {
++		err = -EFAULT;
++		goto out_copy_to_user;
++	}
++
++	/* the app names string must be null terminated within the buffer */
++	if (!memchr(info->app_strings, '\0', sizeof(info->app_strings))) {
++		SUSFS_LOGE("the app names string is not null terminated\n");
++		err = -EINVAL;
++		goto out_copy_to_user;
++	}
++
++	if (*info->app_strings == '\0') {
++		SUSFS_LOGE("the app names string cannot be empty\n");
++		err = -EINVAL;
++		goto out_copy_to_user;
++	}
++
++	app_str_len = strlen(info->app_strings);
++
++	/*
++	* The app names are stored as they are, so that the uids of the apps can
++	* be resolved again later on, when the apps are installed or uninstalled.
++	*/
++	new_app_strings = kvmalloc(app_str_len + 1, GFP_KERNEL | __GFP_ZERO);
++	if (!new_app_strings) {
++		err = -ENOMEM;
++		goto out_copy_to_user;
++	}
++	memcpy(new_app_strings, info->app_strings, app_str_len + 1);
++
++	new_bitmap = (struct susfs_sus_path_uid_filter_bitmap *)kzalloc(sizeof(*new_bitmap), GFP_KERNEL);
++	if (!new_bitmap) {
++		err = -ENOMEM;
++		goto out_free_new_app_strings;
++	}
++
++	/*
++	* The data paths of the apps cannot be accessed with the selinux
++	* restrictions of the calling process, hence the selinux domain is
++	* switched to the KernelSU one before the uids are resolved.
++	*/
++	orig_cred = susfs_switch_to_ksu_domain();
++	if (!orig_cred) {
++		err = -EINVAL;
++		goto out_free_new_bitmap;
++	}
++
++	if (is_uid_filter_set_before)
++		SUSFS_LOGI("renewing the sus path uid filter\n");
++	err = susfs_parse_sus_path_app_names(info->app_strings, new_bitmap->bits, true);
++
++	susfs_restore_creds(orig_cred);
++	orig_cred = NULL;
++
++	if (err)
++		goto out_free_new_bitmap;
++
++	/*
++	* Publish the new bitmap and drop the old one.
++	* The mutex serializes the writers, while the readers are protected
++	* by RCU, hence the readers always see a consistent bitmap and they
++	* never access a freed bitmap.
++	*/
++	mutex_lock(&susfs_mutex_lock_sus_path_uid_filter);
++	old_bitmap = rcu_dereference_protected(sus_path_uid_filter_bitmap, lockdep_is_held(&susfs_mutex_lock_sus_path_uid_filter));
++	rcu_assign_pointer(sus_path_uid_filter_bitmap, new_bitmap);
++	new_bitmap = NULL;
++	kvfree(susfs_sus_path_app_strings);
++	susfs_sus_path_app_strings = new_app_strings;
++	new_app_strings = NULL;
++	if (!is_uid_filter_set_before)
++		is_uid_filter_set_before = true;
++	mutex_unlock(&susfs_mutex_lock_sus_path_uid_filter);
++	synchronize_rcu();
++	kfree_rcu(old_bitmap, rcu);
++
++	SUSFS_LOGI("the sus path uid filter is set\n");
++	err = 0;
++
++out_free_new_bitmap:
++	if (new_bitmap)
++		kfree(new_bitmap);
++out_free_new_app_strings:
++	if (new_app_strings)
++		kvfree(new_app_strings);
++out_copy_to_user:
++	if (copy_to_user(&((struct st_susfs_sus_path_uid_filter __user*)*user_info)->err, &err, sizeof(err))) {
++		err = -EFAULT;
++	}
++	SUSFS_LOGI("CMD_SUSFS_SET_SUS_PATH_UID_FILTER -> ret: %d\n", err);
++	if (info)
++		kvfree(info);
++}
++
++/*
++ * The thread that resolves the uids of the stored app package names again,
++ * so that the filter stays up to date when the apps are installed or
++ * uninstalled, because the uid of an app changes when it is reinstalled.
++ */
++static int susfs_sus_path_app_strings_worker(void *data) {
++	struct susfs_sus_path_uid_filter_bitmap *new_bitmap = NULL;
++	struct susfs_sus_path_uid_filter_bitmap *old_bitmap = NULL;
++	struct cred *orig_cred = NULL;
++	char *app_strings = NULL;
++	size_t app_str_len = 0;
++	int ret = 0;
++
++	/*
++	* The data paths of the apps cannot be accessed with the selinux
++	* restrictions of the default domain of the thread, hence the selinux
++	* domain is switched to the KernelSU one.
++	*/
++	orig_cred = susfs_switch_to_ksu_domain();
++	if (!orig_cred)
++		goto out;
++
++	/* take a snapshot of the stored app package names */
++	mutex_lock(&susfs_mutex_lock_sus_path_uid_filter);
++	if (susfs_sus_path_app_strings) {
++		app_str_len = strlen(susfs_sus_path_app_strings);
++		app_strings = kvmalloc(app_str_len + 1, GFP_KERNEL | __GFP_ZERO);
++		if (app_strings)
++			memcpy(app_strings, susfs_sus_path_app_strings, app_str_len + 1);
++	}
++	mutex_unlock(&susfs_mutex_lock_sus_path_uid_filter);
++
++	if (!app_strings)
++		goto out_restore_creds;
++
++	new_bitmap = (struct susfs_sus_path_uid_filter_bitmap *)kzalloc(sizeof(*new_bitmap), GFP_KERNEL);
++	if (!new_bitmap)
++		goto out_restore_creds;
++
++	/* the apps that are uninstalled already are skipped */
++	ret = susfs_parse_sus_path_app_names(app_strings, new_bitmap->bits, true);
++	if (ret)
++		goto out_restore_creds;
++
++	/*
++	* The old bitmap is zeroed and the newly resolved uids are mapped into
++	* the new one, which is then published to the readers.
++	*/
++	mutex_lock(&susfs_mutex_lock_sus_path_uid_filter);
++	old_bitmap = rcu_dereference_protected(sus_path_uid_filter_bitmap, lockdep_is_held(&susfs_mutex_lock_sus_path_uid_filter));
++	rcu_assign_pointer(sus_path_uid_filter_bitmap, new_bitmap);
++	new_bitmap = NULL;
++	mutex_unlock(&susfs_mutex_lock_sus_path_uid_filter);
++	synchronize_rcu();
++	kfree_rcu(old_bitmap, rcu);
++
++	SUSFS_LOGI("the uids of the sus path uid filter are resolved again\n");
++
++out_restore_creds:
++	susfs_restore_creds(orig_cred);
++	orig_cred = NULL;
++out:
++	if (new_bitmap)
++		kfree(new_bitmap);
++	if (app_strings)
++		kvfree(app_strings);
++	atomic_set(&susfs_sus_path_app_strings_running, 0);
++
++	return ret;
++}
++
++/*
++ * Resolves the uids of the stored app package names again in a new thread,
++ * because the resolving of the uids requires the KernelSU selinux domain,
++ * which must not be applied to the calling process.
++ */
++void susfs_parse_sus_path_app_strings(void) {
++	/* do not spawn a new thread if there is already one running */
++	if (atomic_cmpxchg(&susfs_sus_path_app_strings_running, 0, 1))
++		return;
++
++	if (IS_ERR(kthread_run(susfs_sus_path_app_strings_worker, NULL, "susfs_spuid_appstr"))) {
++		atomic_set(&susfs_sus_path_app_strings_running, 0);
++		SUSFS_LOGE("failed to create the thread susfs_sus_path_app_strings\n");
++	}
++}
++
++/*
++ * Lockless lookup for the sus_path hiding path.
++ * Returns true if the uid is denied to see the added sus paths by the sus path uid filter.
++ */
++bool susfs_is_uid_allowed_for_sus_path(uid_t uid) {
++	struct susfs_sus_path_uid_filter_bitmap *bitmap;
++
++	if (uid >= 90000)
++		return true;
++
++	if (uid < SUSFS_UID_FILTER_MIN_UID ||
++		uid > SUSFS_UID_FILTER_MAX_UID)
++		return false;
++
++	rcu_read_lock();
++	bitmap = rcu_dereference(sus_path_uid_filter_bitmap);
++	if (likely(bitmap)) {
++		if (test_bit(uid - SUSFS_UID_FILTER_MIN_UID, bitmap->bits)) {
++			rcu_read_unlock();
++			return true;
++		}
++	}
++
++	rcu_read_unlock();
++	return false;
 +}
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +
@@ -3933,14 +4302,9 @@ index 000000000..646d76825
 + * to find out the existing uids. Only the uids within the app uid range
 + * (10000 - 19999) are supported.
 + */
-+#define SUSFS_PRIORITY_UID_FILTER_MIN_UID 10000
-+#define SUSFS_PRIORITY_UID_FILTER_MAX_UID 19999
-+#define SUSFS_PRIORITY_UID_FILTER_UID_NUM (SUSFS_PRIORITY_UID_FILTER_MAX_UID - SUSFS_PRIORITY_UID_FILTER_MIN_UID + 1)
-+#define SUSFS_PRIORITY_UID_FILTER_BITMAP_LEN BITS_TO_LONGS(SUSFS_PRIORITY_UID_FILTER_UID_NUM)
-+
 +struct susfs_priority_uid_filter_bitmap {
 +	struct rcu_head			rcu;
-+	unsigned long			bits[SUSFS_PRIORITY_UID_FILTER_BITMAP_LEN];
++	unsigned long			bits[SUSFS_UID_FILTER_BITMAP_LEN];
 +};
 +
 +static struct susfs_priority_uid_filter_bitmap __rcu *priority_uid_filter_bitmap;
@@ -4067,8 +4431,8 @@ index 000000000..646d76825
 +
 +			vfree(buf);
 +
-+			if (*uid < SUSFS_PRIORITY_UID_FILTER_MIN_UID ||
-+			    *uid > SUSFS_PRIORITY_UID_FILTER_MAX_UID)
++			if (*uid < SUSFS_UID_FILTER_MIN_UID ||
++			    *uid > SUSFS_UID_FILTER_MAX_UID)
 +				return -EINVAL;
 +
 +			return 0;
@@ -4116,16 +4480,16 @@ index 000000000..646d76825
 +			return ret;
 +		}
 +
-+		if (uid < SUSFS_PRIORITY_UID_FILTER_MIN_UID || uid > SUSFS_PRIORITY_UID_FILTER_MAX_UID) {
++		if (uid < SUSFS_UID_FILTER_MIN_UID || uid > SUSFS_UID_FILTER_MAX_UID) {
 +			SUSFS_LOGE("the uid %u of the app '%s' is out of the allowed range [%d, %d]\n",
-+					uid, token, SUSFS_PRIORITY_UID_FILTER_MIN_UID,
-+					SUSFS_PRIORITY_UID_FILTER_MAX_UID);
++					uid, token, SUSFS_UID_FILTER_MIN_UID,
++					SUSFS_UID_FILTER_MAX_UID);
 +			if (!skip_failed)
 +				return -EINVAL;
 +			continue;
 +		}
 +
-+		set_bit(uid - SUSFS_PRIORITY_UID_FILTER_MIN_UID, bits);
++		set_bit(uid - SUSFS_UID_FILTER_MIN_UID, bits);
 +		SUSFS_LOGI("app_name '%s', uid '%u' is now added to priority_uid_filter_bitmap\n", token, uid);
 +	}
 +
@@ -4339,14 +4703,14 @@ index 000000000..646d76825
 +
 +	uid_t app_id = uid % 100000;
 +
-+	if (app_id < SUSFS_PRIORITY_UID_FILTER_MIN_UID ||
-+		app_id > SUSFS_PRIORITY_UID_FILTER_MAX_UID)
++	if (app_id < SUSFS_UID_FILTER_MIN_UID ||
++		app_id > SUSFS_UID_FILTER_MAX_UID)
 +		return false;
 +
 +	/* no need rcu_read_lock() and rcu_read_unlock() here as caller already holds it */
 +	bitmap = rcu_dereference(priority_uid_filter_bitmap);
 +	if (likely(bitmap)) {
-+		if (test_bit(app_id - SUSFS_PRIORITY_UID_FILTER_MIN_UID, bitmap->bits)) {
++		if (test_bit(app_id - SUSFS_UID_FILTER_MIN_UID, bitmap->bits)) {
 +			//SUSFS_LOGI("uid '%u' is filtered\n", uid);
 +			return true;
 +		}
@@ -4724,10 +5088,10 @@ index 000000000..646d76825
 +
 diff --git a/include/linux/susfs.h b/include/linux/susfs.h
 new file mode 100644
-index 000000000..02038d5b2
+index 000000000..a58550de9
 --- /dev/null
 +++ b/include/linux/susfs.h
-@@ -0,0 +1,260 @@
+@@ -0,0 +1,261 @@
 +#ifndef KSU_SUSFS_H
 +#define KSU_SUSFS_H
 +
@@ -4739,18 +5103,12 @@ index 000000000..02038d5b2
 +#include <linux/susfs_def.h>
 +#include <linux/statfs.h>
 +
-+#define SUSFS_VERSION "v2.3.0"
++#define SUSFS_VERSION "v2.4.0"
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 +#define SUSFS_VARIANT "NON-GKI"
 +#else
 +#define SUSFS_VARIANT "GKI"
 +#endif
-+
-+/*********/
-+/* MACRO */
-+/*********/
-+#define getname_safe(name) (name == NULL ? ERR_PTR(-EINVAL) : getname(name))
-+#define putname_safe(name) (IS_ERR(name) ? NULL : putname(name))
 +
 +/********/
 +/* ENUM */
@@ -4779,6 +5137,12 @@ index 000000000..02038d5b2
 +	struct list_head                        list;
 +	struct st_susfs_sus_path                info;
 +	char                                    target_pathname[SUSFS_MAX_LEN_PATHNAME];
++};
++
++/* sus_path uid filter */
++struct st_susfs_sus_path_uid_filter {
++	char                                    app_strings[SUSFS_APP_STR_BUF_SIZE];
++	int                                     err;
 +};
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +
@@ -4893,7 +5257,6 @@ index 000000000..02038d5b2
 +
 +/* getpriority uid filter */
 +#ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER
-+#define SUSFS_APP_STR_BUF_SIZE 65535
 +struct st_susfs_priority_uid_filter {
 +	char                                    app_strings[SUSFS_APP_STR_BUF_SIZE];
 +	int                                     err;
@@ -4931,6 +5294,8 @@ index 000000000..02038d5b2
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +void susfs_add_sus_path(void __user **user_info);
 +void susfs_add_sus_path_loop(void __user **user_info);
++void susfs_set_sus_path_uid_filter(void __user **user_info);
++void susfs_parse_sus_path_app_strings(void);
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +
 +/* sus_mount */
@@ -4990,16 +5355,17 @@ index 000000000..02038d5b2
 +#endif
 diff --git a/include/linux/susfs_def.h b/include/linux/susfs_def.h
 new file mode 100644
-index 000000000..f75f9f7f6
+index 000000000..9b849b63f
 --- /dev/null
 +++ b/include/linux/susfs_def.h
-@@ -0,0 +1,182 @@
+@@ -0,0 +1,190 @@
 +#ifndef KSU_SUSFS_DEF_H
 +#define KSU_SUSFS_DEF_H
 +
 +#include <linux/bits.h>
-+#include <linux/bitmap.h>
 +#include <linux/version.h>
++#include <linux/bitops.h>
++#include <linux/bitmap.h>
 +#include <linux/string.h>
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
@@ -5015,6 +5381,7 @@ index 000000000..f75f9f7f6
 +#define CMD_SUSFS_SET_ANDROID_DATA_ROOT_PATH 0x55551 /* deprecated */
 +#define CMD_SUSFS_SET_SDCARD_ROOT_PATH 0x55552 /* deprecated */
 +#define CMD_SUSFS_ADD_SUS_PATH_LOOP 0x55553
++#define CMD_SUSFS_SET_SUS_PATH_UID_FILTER 0x55554
 +#define CMD_SUSFS_ADD_SUS_MOUNT 0x55560 /* deprecated */
 +#define CMD_SUSFS_HIDE_SUS_MNTS_FOR_NON_SU_PROCS 0x55561
 +#define CMD_SUSFS_UMOUNT_FOR_ZYGOTE_ISO_SERVICE 0x55562 /* deprecated */
@@ -5052,6 +5419,12 @@ index 000000000..f75f9f7f6
 +#ifndef FUSE_SUPER_MAGIC
 +#define FUSE_SUPER_MAGIC 0x65735546
 +#endif
++
++#define SUSFS_APP_STR_BUF_SIZE 65535
++#define SUSFS_UID_FILTER_MIN_UID 10000
++#define SUSFS_UID_FILTER_MAX_UID 19999
++#define SUSFS_UID_FILTER_UID_NUM (SUSFS_UID_FILTER_MAX_UID - SUSFS_UID_FILTER_MIN_UID + 1)
++#define SUSFS_UID_FILTER_BITMAP_LEN BITS_TO_LONGS(SUSFS_UID_FILTER_UID_NUM)
 +
 +/*
 + * mnt->mnt.mnt_flags => An 'int' primitive storing flag 'VFSMOUNT_MNT_FLAGS_'
@@ -5376,7 +5749,7 @@ index f2519aa28..4e712b0f0 100755
  				gup_flags, &page, &vma, NULL);
  		if (ret <= 0) {
 diff --git a/security/selinux/avc.c b/security/selinux/avc.c
-index 59fa20b53..31adb2b94 100644
+index 59fa20b53..da6d94cc1 100644
 --- a/security/selinux/avc.c
 +++ b/security/selinux/avc.c
 @@ -164,6 +164,11 @@ static void avc_dump_av(struct audit_buffer *ab, u16 tclass, u32 av)
@@ -5413,7 +5786,7 @@ index 59fa20b53..31adb2b94 100644
  	if (rc)
  		audit_log_format(ab, " tsid=%d", tsid);
  	else {
-@@ -194,6 +212,9 @@ static void avc_dump_query(struct audit_buffer *ab, struct selinux_state *state,
+@@ -194,6 +214,9 @@ static void avc_dump_query(struct audit_buffer *ab, struct selinux_state *state,
  		kfree(scontext);
  	}
  
@@ -5424,10 +5797,10 @@ index 59fa20b53..31adb2b94 100644
  	audit_log_format(ab, " tclass=%s", secclass_map[tclass-1].name);
  }
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index e98728a9c..715b0afe1 100644
+index e98728a9c..6f97a48eb 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
-@@ -99,6 +99,12 @@
+@@ -99,6 +99,15 @@
  #include "avc_ss.h"
  
  struct selinux_state selinux_state;
@@ -5436,11 +5809,14 @@ index e98728a9c..715b0afe1 100644
 +extern int susfs_security_context_to_sid(struct selinux_state *state,
 +			    const char *scontext, u32 scontext_len, u32 *sid,
 +			    gfp_t gfp);
++extern int susfs_security_context_to_sid_force(struct selinux_state *state,
++				  const char *scontext, u32 scontext_len,
++				  u32 *sid);
 +#endif // #ifdef CONFIG_KSU_SUSFS
  
  /* SECMARK reference count */
  static atomic_t selinux_secmark_refcount = ATOMIC_INIT(0);
-@@ -2429,17 +2435,38 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
+@@ -2429,17 +2438,38 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
  			    const struct task_security_struct *old_tsec,
  			    const struct task_security_struct *new_tsec)
  {
@@ -5479,7 +5855,147 @@ index e98728a9c..715b0afe1 100644
  	/*
  	 * If the policy enables the nnp_nosuid_transition policy capability,
  	 * then we permit transitions under NNP or nosuid if the
-@@ -6308,6 +6335,159 @@ static int selinux_setprocattr(const char *name, void *value, size_t size)
+@@ -3401,6 +3431,139 @@ static void selinux_inode_post_setxattr(struct dentry *dentry, const char *name,
+ 	return;
+ }
+ 
++#ifdef CONFIG_KSU_SUSFS
++static int susfs_selinux_inode_setxattr(struct dentry *dentry, const char *name,
++				  const void *value, size_t size, int flags)
++{
++	struct inode *inode = d_backing_inode(dentry);
++	struct inode_security_struct *isec;
++	struct superblock_security_struct *sbsec;
++	struct common_audit_data ad;
++	u32 newsid, sid = current_sid();
++	int rc = 0;
++
++	if (strcmp(name, XATTR_NAME_SELINUX))
++		return selinux_inode_setotherxattr(dentry, name);
++
++	sbsec = inode->i_sb->s_security;
++	if (!(sbsec->flags & SBLABEL_MNT))
++		return -EOPNOTSUPP;
++
++	if (!inode_owner_or_capable(inode))
++		return -EPERM;
++
++	ad.type = LSM_AUDIT_DATA_DENTRY;
++	ad.u.dentry = dentry;
++
++	isec = backing_inode_security(dentry);
++	rc = avc_has_perm(&selinux_state,
++			  sid, isec->sid, isec->sclass,
++			  FILE__RELABELFROM, &ad);
++	if (rc)
++		return rc;
++
++	rc = susfs_security_context_to_sid(&selinux_state, value, size, &newsid,
++				     GFP_KERNEL);
++	if (rc == -EINVAL) {
++		if (!has_cap_mac_admin(true)) {
++			struct audit_buffer *ab;
++			size_t audit_size;
++			const char *str;
++
++			/* We strip a nul only if it is at the end, otherwise the
++			 * context contains a nul and we should audit that */
++			if (value) {
++				str = value;
++				if (str[size - 1] == '\0')
++					audit_size = size - 1;
++				else
++					audit_size = size;
++			} else {
++				str = "";
++				audit_size = 0;
++			}
++			ab = audit_log_start(current->audit_context, GFP_ATOMIC, AUDIT_SELINUX_ERR);
++			audit_log_format(ab, "op=setxattr invalid_context=");
++			audit_log_n_untrustedstring(ab, value, audit_size);
++			audit_log_end(ab);
++
++			return rc;
++		}
++		rc = susfs_security_context_to_sid_force(&selinux_state, value,
++						   size, &newsid);
++	}
++	if (rc)
++		return rc;
++
++	rc = avc_has_perm(&selinux_state,
++			  sid, newsid, isec->sclass,
++			  FILE__RELABELTO, &ad);
++	if (rc)
++		return rc;
++
++	rc = security_validate_transition(&selinux_state, isec->sid, newsid,
++					  sid, isec->sclass);
++	if (rc)
++		return rc;
++
++	return avc_has_perm(&selinux_state,
++			    newsid,
++			    sbsec->sid,
++			    SECCLASS_FILESYSTEM,
++			    FILESYSTEM__ASSOCIATE,
++			    &ad);
++}
++static void susfs_selinux_inode_post_setxattr(struct dentry *dentry, const char *name,
++					const void *value, size_t size,
++					int flags)
++{
++	struct inode *inode = d_backing_inode(dentry);
++	struct inode_security_struct *isec;
++	u32 newsid;
++	int rc;
++
++	if (strcmp(name, XATTR_NAME_SELINUX)) {
++		/* Not an attribute we recognize, so nothing to do. */
++		return;
++	}
++
++	rc = susfs_security_context_to_sid_force(&selinux_state, value, size,
++					   &newsid);
++	if (rc) {
++		printk(KERN_ERR "SELinux:  unable to map context to SID"
++		       "for (%s, %lu), rc=%d\n",
++		       inode->i_sb->s_id, inode->i_ino, -rc);
++		return;
++	}
++
++	isec = backing_inode_security(dentry);
++	spin_lock(&isec->lock);
++	isec->sclass = inode_mode_to_security_class(inode->i_mode);
++	isec->sid = newsid;
++	isec->initialized = LABEL_INITIALIZED;
++	spin_unlock(&isec->lock);
++
++	return;
++}
++
++static int handle_selinux_inode_setxattr(struct dentry *dentry, const char *name,
++				  const void *value, size_t size, int flags)
++{
++	if (likely(current_uid().val >= 10000 && ksu_selinux_hide_running))
++		return susfs_selinux_inode_setxattr(dentry, name, value, size, flags);
++	return selinux_inode_setxattr(dentry, name, value, size, flags);
++}
++
++static void handle_selinux_inode_post_setxattr(struct dentry *dentry, const char *name,
++					const void *value, size_t size,
++					int flags)
++{
++	if (likely(current_uid().val >= 10000 && ksu_selinux_hide_running))
++		return susfs_selinux_inode_post_setxattr(dentry, name, value, size, flags);
++	return selinux_inode_post_setxattr(dentry, name, value, size, flags);
++}
++#endif // #ifdef CONFIG_KSU_SUSFS
++
+ static int selinux_inode_getxattr(struct dentry *dentry, const char *name)
+ {
+ 	const struct cred *cred = current_cred();
+@@ -6308,6 +6471,159 @@ static int selinux_setprocattr(const char *name, void *value, size_t size)
  	return error;
  }
  
@@ -5546,7 +6062,7 @@ index e98728a9c..715b0afe1 100644
 +
 +				return error;
 +			}
-+			error = security_context_to_sid_force(
++			error = susfs_security_context_to_sid_force(
 +						      &selinux_state,
 +						      value, size, &sid);
 +		}
@@ -5639,7 +6155,18 @@ index e98728a9c..715b0afe1 100644
  static int selinux_ismaclabel(const char *name)
  {
  	return (strcmp(name, XATTR_SELINUX_SUFFIX) == 0);
-@@ -6839,7 +7019,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
+@@ -6759,8 +7075,8 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
+ 	LSM_HOOK_INIT(inode_permission, selinux_inode_permission),
+ 	LSM_HOOK_INIT(inode_setattr, selinux_inode_setattr),
+ 	LSM_HOOK_INIT(inode_getattr, selinux_inode_getattr),
+-	LSM_HOOK_INIT(inode_setxattr, selinux_inode_setxattr),
+-	LSM_HOOK_INIT(inode_post_setxattr, selinux_inode_post_setxattr),
++	LSM_HOOK_INIT(inode_setxattr, handle_selinux_inode_setxattr),
++	LSM_HOOK_INIT(inode_post_setxattr, handle_selinux_inode_post_setxattr),
+ 	LSM_HOOK_INIT(inode_getxattr, selinux_inode_getxattr),
+ 	LSM_HOOK_INIT(inode_listxattr, selinux_inode_listxattr),
+ 	LSM_HOOK_INIT(inode_removexattr, selinux_inode_removexattr),
+@@ -6839,7 +7155,11 @@ static struct security_hook_list selinux_hooks[] __lsm_ro_after_init = {
  	LSM_HOOK_INIT(d_instantiate, selinux_d_instantiate),
  
  	LSM_HOOK_INIT(getprocattr, selinux_getprocattr),
@@ -5857,7 +6384,7 @@ index dba17ea51..9fd464be2 100644
  {
  	struct selinux_fs_info *fsi = file_inode(file)->i_sb->s_fs_info;
 diff --git a/security/selinux/ss/services.c b/security/selinux/ss/services.c
-index 289a9f567..e799100cc 100644
+index 289a9f567..b42abc26f 100644
 --- a/security/selinux/ss/services.c
 +++ b/security/selinux/ss/services.c
 @@ -70,6 +70,14 @@
@@ -5899,7 +6426,7 @@ index 289a9f567..e799100cc 100644
  	seqno = ++state->ss->latest_granting;
  	rc = 0;
  out:
-@@ -3743,3 +3761,220 @@ int security_read_policy(struct selinux_state *state,
+@@ -3743,3 +3761,236 @@ int security_read_policy(struct selinux_state *state,
  	return 0;
  
  }
@@ -6059,6 +6586,22 @@ index 289a9f567..e799100cc 100644
 +	return susfs_security_context_to_sid_core(state, scontext, scontext_len,
 +					    sid, SECSID_NULL, gfp, 0);
 +}
++int susfs_security_context_to_sid_default(struct selinux_state *state,
++				    const char *scontext, u32 scontext_len,
++				    u32 *sid, u32 def_sid, gfp_t gfp_flags)
++{
++	return susfs_security_context_to_sid_core(state, scontext, scontext_len,
++					    sid, def_sid, gfp_flags, 1);
++}
++
++int susfs_security_context_to_sid_force(struct selinux_state *state,
++				  const char *scontext, u32 scontext_len,
++				  u32 *sid)
++{
++	return susfs_security_context_to_sid_core(state, scontext, scontext_len,
++					    sid, SECSID_NULL, GFP_KERNEL, 1);
++}
++
 +
 +int susfs_security_context_str_to_sid(struct selinux_state *state,
 +				const char *scontext, u32 *sid, gfp_t gfp)

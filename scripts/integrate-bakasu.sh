@@ -54,7 +54,7 @@ case "$TYPE" in manual|auto|susfs) ;; *) echo "ERROR: hook_type must be 'manual'
 
 # Both the source and wiring are pinned. A moving branch makes the preinit
 # runner and Kconfig surface unrepeatable.
-KSU_MAIN_REF="516d3e87fbc986ccefdde2c2765f1700612441a9"
+KSU_MAIN_REF="7b65bde0710b5e7c6f755545cb15a4abd417f3a8"
 KSU_AUTO_HOOK_REF="9d159b417210fdca88b4dbf4381fc1c618c102ba"
 KSU_REPO="https://github.com/Baka-SU/BakaSU.git"
 case "$TYPE" in
@@ -135,6 +135,16 @@ apply_bakasu_patch "$PREINIT_MK" "KSU_RUNNER_TARGET_FLAGS" \
 apply_bakasu_patch "$PREINIT_C" "filename->name was allocated for INIT_PATH" \
   "$REPO_ROOT/patches/bakasu/0101-preinit-filename-bounds.patch" \
   "BakaSU preinit filename bounds fix"
+
+# --- 1a3. renew the susfs sus-path uid filter after package tracking ---
+# 4.x trees reach do_track_throne() through the manual-hook renameat path,
+# after /data/system/packages.list.tmp is swapped in; the uid bitmap that
+# decides which apps the sus-path feature hides for is rebuilt there.
+if [ "$TYPE" = "susfs" ]; then
+  apply_bakasu_patch "KernelSU/kernel/manager/throne_tracker.c" "susfs_parse_sus_path_app_strings" \
+    "$REPO_ROOT/patches/bakasu/0102-susfs-sus-path-uid-filter-renew.patch" \
+    "BakaSU sus path uid-filter renewal"
+fi
 
 # --- 1b. auto-hook <5.0 compatibility fix (opt-in, default on) ---
 # The auto-hook branch guards kasan_reset_tag() (added in v5.0) with

@@ -1,0 +1,22 @@
+diff --git a/kernel/manager/throne_tracker.c b/kernel/manager/throne_tracker.c
+--- a/kernel/manager/throne_tracker.c
++++ b/kernel/manager/throne_tracker.c
+@@ -11,6 +11,7 @@
+ #include <linux/stat.h>
+ #include <linux/namei.h>
+ #include <linux/kernel.h> // for container_of in UL
++#include <linux/susfs.h>
+ 
+ #include "policy/allowlist.h"
+ #include "manager/apk_sign.h"
+@@ -353,6 +354,10 @@ void do_track_throne(void *data)
+ prune:
+     // then prune the allowlist
+     ksu_prune_allowlist(is_uid_exist, &uid_list);
++#ifdef CONFIG_KSU_SUSFS_SUS_PATH
++    // Renew the sus path uid bitmap filter
++    susfs_parse_sus_path_app_strings();
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+ out:
+     // free uid_list
+     list_for_each_entry_safe (np, n, &uid_list, list) {
