@@ -66,13 +66,23 @@ grep -q 'return selinux_setprocattr' security/selinux/hooks.c || \
     MISSING="$MISSING selinux_setprocattr fallback(security/selinux/hooks.c)"
 
 awk '
-  /^#ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER$/ { guarded = 1; next }
-  /^#endif.*CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER/ { guarded = 0 }
-  /static struct cred \*susfs_switch_to_ksu_domain\(/ { if (!guarded) bad = 1; saw = 1 }
-  /static void susfs_restore_creds\(/ { if (!guarded) bad = 1; saw = 1 }
+  /^#if defined\(CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER\) \|\| defined\(CONFIG_KSU_SUSFS_SUS_PATH\)$/ { covered = 1 }
+  /^#ifdef CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER$/ { prio = 1 }
+  /^#endif.*CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER/ { prio = 0; covered = 0 }
+  /static struct cred \*susfs_switch_to_ksu_domain\(/ { saw = 1; if (prio && !covered) bad = 1 }
+  /static void susfs_restore_creds\(/ { saw = 1; if (prio && !covered) bad = 1 }
   END { exit !(saw && !bad) }
 ' fs/susfs.c || \
     MISSING="$MISSING priority-cred helpers not config-guarded(fs/susfs.c)"
+
+# The sus_path uid filter routes label writes through the susfs context mapping
+# on trees that carry selinux_state; the dispatchers must reach the hook table.
+if grep -q 'struct selinux_state selinux_state;' security/selinux/hooks.c; then
+  grep -q 'handle_selinux_inode_setxattr' security/selinux/hooks.c || \
+      MISSING="$MISSING sus-path setxattr routing(security/selinux/hooks.c)"
+  grep -q 'handle_selinux_inode_post_setxattr' security/selinux/hooks.c || \
+      MISSING="$MISSING sus-path post_setxattr routing(security/selinux/hooks.c)"
+fi
 
 awk '
   /tcontext=%s", "u:r:priv_app/ { line = NR; next }
