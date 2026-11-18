@@ -23,10 +23,10 @@ if ! grep -q '^CONFIG_KSU=y$' "$cfg"; then
   exit 0
 fi
 
-# A KSU checkout without the preinit source (the Backslashxx fork carries its
-# own layout) has nothing to verify here.
-if [ ! -f "$kroot/KernelSU/kernel/preinit/preinit.c" ]; then
-  echo "BakaSU preinit runner: not applicable (checkout has no preinit source)"
+# Only a checkout that builds the embedded runner has something to verify;
+# the Backslashxx fork ships no runner generator.
+if [ ! -f "$kroot/KernelSU/kernel/tools/code_generation/preinit_runner/preinit_runner.mk" ]; then
+  echo "BakaSU preinit runner: not applicable (checkout builds no embedded runner)"
   exit 0
 fi
 
