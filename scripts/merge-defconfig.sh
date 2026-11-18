@@ -198,13 +198,17 @@ if [ "${ROOT_MANAGER:-none}" = "xxksu" ]; then
   case "${HOOK_TYPE:-none}" in
     syscall_table)
       assert_cfg CONFIG_KSU_TAMPER_SYSCALL_TABLE || rc=1
-      grep -qE "^# CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set$" "$CFG" || {
-        echo "   FAIL CONFIG_KSU_HACK_ARM64_BRANCH_LINK (engines are exclusive)" >&2; rc=1; }
+      # the counterpart is invisible while its dependency is unmet, so a
+      # missing line is as valid as the "is not set" comment
+      if grep -qE "^CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y$" "$CFG"; then
+        echo "   FAIL CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y (engines are exclusive)" >&2; rc=1
+      fi
       ;;
     branch_link)
       assert_cfg CONFIG_KSU_HACK_ARM64_BRANCH_LINK || rc=1
-      grep -qE "^# CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set$" "$CFG" || {
-        echo "   FAIL CONFIG_KSU_TAMPER_SYSCALL_TABLE (engines are exclusive)" >&2; rc=1; }
+      if grep -qE "^CONFIG_KSU_TAMPER_SYSCALL_TABLE=y$" "$CFG"; then
+        echo "   FAIL CONFIG_KSU_TAMPER_SYSCALL_TABLE=y (engines are exclusive)" >&2; rc=1
+      fi
       ;;
     *)
       echo "   FAIL hook_type=${HOOK_TYPE:-none} for root_manager=xxksu" >&2; rc=1;;
