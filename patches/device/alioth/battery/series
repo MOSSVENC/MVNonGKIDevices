@@ -1,5 +1,0 @@
-# Alioth 5000mAh battery profiles
-# order = apply order (quilt series, paths relative to this directory)
-
-0001-battery-5000mah-profiles.patch
-0002-battery-ffc-ceilings.patch

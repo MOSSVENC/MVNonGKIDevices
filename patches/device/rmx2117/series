@@ -1,4 +1,0 @@
-# RMX2117 build-tree fix
-# order = apply order (quilt series, paths relative to this directory)
-
-0001-kbuild-ksymtab-probe-read-to-eof.patch

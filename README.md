@@ -14,8 +14,6 @@
 | Xiaomi POCO F1 | `beryllium` (sdm845) | 4.9.337 | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
 | Xiaomi Mi A2 Lite | `daisy` (msm8953) | 4.9.337 | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
 | Xiaomi Redmi 5 Plus | `vince` (msm8953) | 4.9.337 | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
-| Xiaomi Redmi K40 / POCO F3 / Mi 11X | `alioth` (sm8250) | 4.19.325 | [MOSSVENC/android_kernel_xiaomi_sm8250](https://github.com/MOSSVENC/android_kernel_xiaomi_sm8250) @ `lineage-23.2` | `build-alioth.yml` |
-| realme Q2 5G（国行） | `RMX2117` (mt6853) | 4.14.186 | [realme X7 系 AndroidS 综合源](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source)（9 机共用）@ `master` | `build-RMX2117.yml` |
 
 ## 构建输入
 
@@ -26,7 +24,6 @@
 |---|---|---|
 | `cgroup_port` | polaris / beryllium / daisy / vince | 4.9 cgroup noprefix compat 补丁（需同时开 droidspace） |
 | `enable_data_isolation` | polaris | sdcardfs per-uid `Android/data` 隔离 |
-| `enable_battery_5000` | alioth | 5000mAh 电芯参数与快充电压上限 |
 
 所有开关默认关闭，按构建需要手动选择。
 
@@ -73,22 +70,9 @@ CI 使用可复现的上游提交，不在每次构建时跟随移动分支：
 | setuid | kernel/sys.c | 可选 | LSM AUTO | `0011` 源码补丁 |
 | sys_read(initrc) | fs/read_write.c | 可选 | LSM AUTO | `0012` 源码补丁 |
 
-补丁按形态分目录存放，跨版本同形的单一真身存 `4.9/`，各版本只保留自己形态的件：
-
-| 文件 | 4.9 | 4.14 | 4.19 |
-|---|---|---|---|
-| `0001-fs-stat` | 4.9 自有 | **4.14 自有** | **4.19 自有** |
-| `0002-fs-exec` | 共享 | 4.14 自有 | 取 4.9 |
-| `0003-fs-open` | 共享 | 4.14 自有 | **4.19 自有** |
-| `0004-kernel-reboot` | 共享 | — | 取 4.9 |
-| `0010-input` | 共享 | 4.14 自有 | 取 4.9 |
-| `0011-setuid` | 共享 | 4.14 自有 | **4.19 自有** |
-| `0012-sysread` | 共享 | 4.14 自有 | **4.19 自有** |
-
-alioth（4.19）由 workflow 以文件级清单跨目录引用：共享形态取 `4.9/`，
-形态特有的取 `4.19/`。`fs/stat.c` 两版本差异在 include 形态
-（4.9 `<asm/uaccess.h>`、4.19 `<linux/uaccess.h>`）与 64 位 stat 入口位置，
-所以各自持有。
+源码 hook 补丁落在 `patches/root-manager/bakasu/manual/4.9/`（必加组 `0001`–`0004`、
+可选组 `0010`–`0012`），设备树对 `0004-kernel-reboot` 的变体放在
+`patches/root-manager/bakasu/device/<设备>/4.9/`，workflow 以文件级清单引用。
 
 input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
 `CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK=y`，由内核 input_handler 特性
@@ -98,8 +82,7 @@ input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
 
 | 设备 | 配方 |
 |---|---|
-| polaris / alioth / beryllium / daisy / vince | AOSP clang 14（clang-r450784d，android13-release）+ GCC 4.9 binutils，`LD=ld.lld LLVM=1 LLVM_IAS=1`，4.9 另需 `CROSS_COMPILE_ARM32` 绝对前缀（compat vDSO） |
-| RMX2117（4.14） | 官方 `build.config.mtk.aarch64` 配方：clang r383902 + GCC 4.9 的 `aarch64-linux-androidkernel-` 前缀，`LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy` |
+| polaris / beryllium / daisy / vince | AOSP clang 14（clang-r450784d，android13-release）+ GCC 4.9 binutils，`LD=ld.lld LLVM=1 LLVM_IAS=1`，4.9 另需 `CROSS_COMPILE_ARM32` 绝对前缀（compat vDSO） |
 
 ## 特性细节
 
@@ -122,7 +105,6 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 | BBG | `enable_bbg` | Baseband-guard 防格机 LSM（无本地补丁，官方 setup.sh） |
 | Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） |
 | Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） |
-| 5000mAh 电池 | `enable_battery_5000` | 电池参数卡（容量/JEITA/表征）与快充电压上限按 5000mAh 电芯（仅 alioth；电池认证行为不变） |
 | 自定义版本名 | `localversion` | 写进 `uname -r`（例如 `-MyKernel`；留空沿用 defconfig 值） |
 | 自定义构建时间 | `build_time` | 写进 `uname -v` 的日期段（UTC，例 `Tue, 08 Sep 2026 21:01:02 +0000`；留空用构建时刻的 UTC 值） |
 
@@ -136,9 +118,7 @@ susfs 应用路径（全部为树适配 port）：
 | 设备 | port |
 |---|---|
 | polaris | `patches/kernel/susfs/4.9/polaris/susfs-port.patch` |
-| alioth | `patches/kernel/susfs/4.19/susfs-port.patch` |
 | beryllium / daisy / vince | `patches/kernel/susfs/4.9/<设备>/susfs-port.patch` |
-| RMX2117 | `patches/kernel/susfs/4.14/susfs-port.patch` |
 
 ### 静态符号
 
@@ -167,20 +147,18 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 | 设备 | BASE_DEFCONFIG | DEVICE_FRAGMENTS |
 |---|---|---|
 | polaris | `vendor/xiaomi/mi845_defconfig` | `vendor/xiaomi/polaris.config` |
-| alioth | `vendor/kona-perf_defconfig` | `vendor/debugfs.config`、`vendor/xiaomi/sm8250-common.config`、`vendor/xiaomi/alioth.config` |
 | beryllium / daisy / vince | 自带自包含 defconfig | 见各自 workflow |
-| RMX2117 | `k6853v1_64_6360_defconfig` | 见 workflow |
 
 ## 目录结构
 
 ```
-patches/
-  droidspace/          official/ 官方 non-GKI 补丁 + 4.9/4.14/4.19 config
-  bakasu/            4.9/4.14/4.19 树适配补丁（文件级清单跨目录引用）
-  susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
-  bbg/                 集成说明（无本地补丁）
-  sdcardfs/            Android/data 隔离（仅 polaris）
-  alioth/              min-tool-version.sh（构建辅助）
+patches/               分类规则见 patches/README.md
+  root-manager/bakasu/ checkout/（checkout 级）+ manual/4.9/（源码 hook）
+                       + device/{daisy,vince}/4.9/（设备覆盖件）
+  kernel/susfs/4.9/    每设备一份 susfs-port.patch
+  kernel/droidspace/   4.9 树 port + config；upstream/ 为官方 non-GKI 补丁
+  kernel/sdcardfs/     Android/data 隔离（仅 polaris）
+  kernel/bbg/          集成说明（无本地补丁）
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
                        ak3-display 等）
 localworkspace/        本机工作区（gitignored；布局见 localworkspace/README.md、条目索引见 INDEX.md）
@@ -190,21 +168,6 @@ localworkspace/        本机工作区（gitignored；布局见 localworkspace/R
 上游素材镜像（susfs / bakasu）、旧 shipped 归档与维护工具（sync/parity/管线）
 均位于本地工作区（`localworkspace/`），不随仓库分发；官方补丁中 CI 直接应用的
 （droidspace）保留在 `official/`。
-
-## RMX2117（MTK 4.14）要点
-
-- 源树 clone 到 `kernel-4.14/` 目录（oplus 电源头文件经
-  `../../../../kernel-4.14/...` 相对路径引用，依赖该目录名）
-- defconfig `k6853v1_64_6360_defconfig`（ARCH_MTK_PROJECT / appended-dtb /
-  mt6360 PMIC 集）；合并强制 DEBUG_KERNEL / KALLSYMS(+ALL) 链
-- 产物：`Image` + `mt6853.dtb`（boot 内 base dtb）+ AK3 zip
-  （`Image.gz-dtb`：自编内核 + appended base dtb，与社区 Q2 构建同形态；
-  dtb 与官方 boot 内 dtb 逐字节一致）
-- boot 链：boot 内 base dtb + 独立 dtbo 分区（32 项目 overlay）；
-  dtbo 内容沿用 stock 固件（源树缺项目 cust/overlay 层）
-- 只刷 kernel 段（AK3/整 boot 重打包）、dtb/dtbo 保留的可用性为推断级，
-  待真机验证
-- 树内 Kconfig 带 CRLF 与老代码告警，warnings-only 编译
 
 ## 手动复现（polaris 示例）
 
@@ -245,7 +208,7 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 ## 边界
 
 - susfs：`bakasu-susfs`；各设备落位件由本地管线（`localworkspace/pipelines/`）维护
-- Android/data 隔离仅 polaris；alioth（4.19 kona）无 sdcardfs
+- Android/data 隔离仅 polaris
 - vince 树自带旧 KernelSU：集成前用
   `patches/root-manager/bakasu/device/vince/4.9/0000-remove-legacy-ksu-hooks.patch` 剥离
 - Droidspace cgroup 移植补丁在 `cgroup_port` 开启时缺失或 apply 失败即中止构建

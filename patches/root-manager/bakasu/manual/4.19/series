@@ -1,8 +1,0 @@
-# BakaSU manual hook patches for 4.19 trees (cross-version reuse is explicit in the workflows)
-# order = apply order (quilt series, paths relative to this directory)
-
-# mandatory group
-0001-fs-stat-ksu-manual-hook.patch
-0003-fs-open-ksu-manual-hook.patch
-0011-setuid-manual-hook.patch
-0012-sysread-manual-hook.patch

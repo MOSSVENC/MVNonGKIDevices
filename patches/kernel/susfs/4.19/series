@@ -1,4 +1,0 @@
-# SuSFS port for alioth 4.19
-# order = apply order (quilt series, paths relative to this directory)
-
-susfs-port.patch

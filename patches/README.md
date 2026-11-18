@@ -9,22 +9,17 @@ patches/
 ├── root-manager/                  # 1) root 管理器面（与内核功能解耦）
 │   └── bakasu/
 │       ├── checkout/              #    与目标内核版本无关的 checkout 级补丁（01xx）
-│       ├── manual/                #    源码 hook 补丁，按内核版本
-│       │   ├── 4.9/  4.14/  4.19/
+│       ├── manual/4.9/            #    源码 hook 补丁（按内核版本分目录）
 │       └── device/                #    设备覆盖件
 │           ├── daisy/4.9/   vince/4.9/
 ├── kernel/                        # 2) 内核功能面（按特性）
 │   ├── susfs/                     #    SuSFS port，按内核版本、再按设备
-│   │   ├── 4.9/{polaris,beryllium,daisy,vince}/susfs-port.patch
-│   │   └── 4.14|4.19/susfs-port.patch
+│   │   └── 4.9/{polaris,beryllium,daisy,vince}/susfs-port.patch
 │   ├── droidspace/                #    Droidspaces 面
-│   │   ├── 4.9|4.14|4.19/         #    树适配补丁 + config + README
+│   │   ├── 4.9/                   #    树适配补丁 + config + README
 │   │   └── upstream/              #    上游官方 non-GKI 补丁
 │   ├── sdcardfs/                  #    sdcardfs Android/data 隔离
 │   └── bbg/                       #    Baseband-guard（无本地补丁，CI 跑上游 setup.sh）
-└── device/                        # 3) 设备与构建专属
-    ├── alioth/{battery,tree-files}/
-    └── rmx2117/
 ```
 
 ## 选择规则
@@ -48,9 +43,7 @@ patches/
 
 ## 非补丁文件
 
-- `droidspace.*/droidspace.config`：内核 config 片段，由 `merge-defconfig.sh` 并入，不是补丁。
-- `device/alioth/tree-files/min-tool-version.sh`：目标树补件（LAS 树缺此脚本），由 workflow 拷入
-  树的 `scripts/`，不是补丁。
+- `kernel/droidspace/*/droidspace.config`：内核 config 片段，由 `merge-defconfig.sh` 并入，不是补丁。
 
 ## series 校验
 

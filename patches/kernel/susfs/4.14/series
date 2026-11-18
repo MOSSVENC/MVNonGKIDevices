@@ -1,4 +1,0 @@
-# SuSFS port for RMX2117 4.14
-# order = apply order (quilt series, paths relative to this directory)
-
-susfs-port.patch
