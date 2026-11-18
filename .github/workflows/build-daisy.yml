@@ -96,7 +96,7 @@ jobs:
 
       - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'susfs'
-        run: bash "$GITHUB_WORKSPACE/scripts/apply-bakasu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/bakasu/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/bakasu/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/bakasu/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/bakasu/4.9/daisy/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/bakasu/4.9/001[0-2]-*.patch"
+        run: bash "$GITHUB_WORKSPACE/scripts/apply-bakasu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/root-manager/bakasu/device/daisy/4.9/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/001[0-2]-*.patch"
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'bakasu'
@@ -117,7 +117,7 @@ jobs:
       # SuSFS kernel-side port from the test-tree daisy reference, applied
       - name: Apply SuSFS 4.9 port (root_mode=bakasu-susfs)
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
-        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.9/daisy/susfs-port.patch"
+        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/kernel/susfs/4.9/daisy/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -134,7 +134,7 @@ jobs:
         run: |
           PORT=""
           if [ "$CGROUP_PORT" = "true" ]; then
-            PORT="$GITHUB_WORKSPACE/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
+            PORT="$GITHUB_WORKSPACE/patches/kernel/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
@@ -156,7 +156,7 @@ jobs:
             FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
           fi
           if [ "$ENABLE_DROIDSPACE" = "true" ]; then
-            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config")
+            FRAGS+=("$GITHUB_WORKSPACE/patches/kernel/droidspace/4.9/droidspace.config")
           fi
           BASE_DEFCONFIG="arch/arm64/configs/msm8953-perf_defconfig" \
           DEVICE_FRAGMENTS="" \

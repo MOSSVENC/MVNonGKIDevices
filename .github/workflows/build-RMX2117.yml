@@ -120,12 +120,12 @@ jobs:
       - name: Apply kbuild ksymtab probe patch
         run: |
           cd "$KROOT"
-          P="$GITHUB_WORKSPACE/patches/rmx2117/0001-kbuild-ksymtab-probe-read-to-eof.patch"
+          P="$GITHUB_WORKSPACE/patches/device/rmx2117/0001-kbuild-ksymtab-probe-read-to-eof.patch"
           git apply --check "$P" || { echo "ksymtab probe patch does not apply cleanly"; exit 1; }
           git apply "$P"
 
       # --- BakaSU manual hooks (hook_mode=manual-lsm / manual-source) ---
-      # 4.14 tree-adapted manual-hook patches (patches/bakasu/4.14,
+      # 4.14 tree-adapted manual-hook patches (patches/root-manager/bakasu/manual/4.14,
       # 0010-0012 applied for manual-source) + BakaSU main + config
       # fragment via integrate-bakasu.sh.
       - name: Integrate BakaSU manual hooks (hook_mode=manual-lsm / manual-source)
@@ -135,17 +135,17 @@ jobs:
           # File-level list: stat/exec/open are MTK-local; reboot is shared
           # from bakasu/4.9 as the single copy.
           PATCHES=(
-            "$GITHUB_WORKSPACE/patches/bakasu/4.14/0001-fs-stat-ksu-manual-hook.patch"
-            "$GITHUB_WORKSPACE/patches/bakasu/4.14/0002-fs-exec-ksu-manual-hook.patch"
-            "$GITHUB_WORKSPACE/patches/bakasu/4.14/0003-fs-open-ksu-manual-hook.patch"
-            "$GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.14/0001-fs-stat-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.14/0002-fs-exec-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.14/0003-fs-open-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
           )
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
             PATCHES+=(
-              "$GITHUB_WORKSPACE/patches/bakasu/4.14/0010-input-manual-hook.patch"
-              "$GITHUB_WORKSPACE/patches/bakasu/4.14/0011-setuid-manual-hook.patch"
-              "$GITHUB_WORKSPACE/patches/bakasu/4.14/0012-sysread-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.14/0010-input-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.14/0011-setuid-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.14/0012-sysread-manual-hook.patch"
             )
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
@@ -166,7 +166,7 @@ jobs:
             "$GITHUB_WORKSPACE/xxksu.config.fragment"
 
       # --- SuSFS 4.14 (root_mode=bakasu-susfs) ---
-      # Tree-adapted port patches/susfs/4.14/susfs-port.patch (git
+      # Tree-adapted port patches/kernel/susfs/4.14/susfs-port.patch (git
       # apply-verified on MTK 4.14.186 snapshots) + BakaSU main; the
       # port carries the inline-hook call sites.
       - name: Apply SuSFS 4.14 port (root_mode=bakasu-susfs)
@@ -174,7 +174,7 @@ jobs:
         run: |
           bash "$GITHUB_WORKSPACE/scripts/integrate-bakasu.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/bakasu.config.fragment" lsm susfs
-          bash "$GITHUB_WORKSPACE/scripts/apply-susfs-port.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
+          bash "$GITHUB_WORKSPACE/scripts/apply-susfs-port.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/kernel/susfs/4.14/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -192,7 +192,7 @@ jobs:
           # Official non-GKI patch 2/2 (cgroup prefix symlink) applies as-is
           # to this MTK tree; patch 1/2 (xt_qtaguid) is inert here because the
           # tree has no qtaguid.
-          P02="$GITHUB_WORKSPACE/patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
+          P02="$GITHUB_WORKSPACE/patches/kernel/droidspace/upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
           bash "$GITHUB_WORKSPACE/scripts/integrate-droidspace.sh" "$KROOT" "$P02"
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
@@ -218,7 +218,7 @@ jobs:
             FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
           fi
           if [ "$ENABLE_DROIDSPACE" = "true" ]; then
-            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.14/droidspace.config")
+            FRAGS+=("$GITHUB_WORKSPACE/patches/kernel/droidspace/4.14/droidspace.config")
           fi
           # Shared defconfig assembler: alldefconfig from baseline +
           # fragments, then asserts the enabled feature symbol chains.

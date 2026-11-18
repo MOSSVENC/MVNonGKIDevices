@@ -1,0 +1,7 @@
+# Vince overrides on the 4.9 manual group
+# order = apply order (quilt series, paths relative to this directory)
+
+# strip the in-tree legacy KSU hooks
+0000-remove-legacy-ksu-hooks.patch
+# reboot hook variant
+0004-kernel-reboot-ksu-manual-hook.patch

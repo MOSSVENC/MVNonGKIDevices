@@ -7,7 +7,7 @@
 #   3. feature fragments (only the enabled ones; caller supplies paths):
 #        bakasu.config.fragment   (CONFIG_KSU / MANUAL_HOOK ...)
 #        bbg.config.fragment        (CONFIG_BBG ...)
-#        droidspace.config          (patches/droidspace/4.9/droidspace.config)
+#        droidspace.config          (patches/kernel/droidspace/4.9/droidspace.config)
 #
 # Usage:
 #   merge-defconfig.sh <kernel-root> <out-dir> <fragment1> [<fragment2> ...]
@@ -257,7 +257,7 @@ fi
 
 if [ "${ENABLE_DATA_ISOLATION:-true}" = "true" ]; then
   # The isolation semantics are enforced by the sdcardfs source patch
-  # (patches/sdcardfs), so only the filesystem itself must be present.
+  # (patches/kernel/sdcardfs), so only the filesystem itself must be present.
   assert_cfg CONFIG_SDCARD_FS || rc=1
 fi
 

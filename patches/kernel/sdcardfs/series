@@ -1,0 +1,4 @@
+# sdcardfs Android/data isolation
+# order = apply order (quilt series, paths relative to this directory)
+
+0001-sdcardfs-android-data-isolation.patch

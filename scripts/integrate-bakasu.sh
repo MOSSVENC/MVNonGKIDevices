@@ -10,7 +10,7 @@
 #                                      source patches are applied and the three
 #                                      CONFIG_KSU_MANUAL_HOOK_AUTO_* are =y.
 #                    manual            — the 3 optional hooks are applied as real
-#                                      source patches (patches/bakasu/4.9/
+#                                      source patches (patches/root-manager/bakasu/manual/4.9/
 #                                      0010..0012) and the three
 #                                      AUTO options are turned OFF so BakaSU's
 #                                      compile-time check requires the manually
@@ -119,10 +119,10 @@ apply_bakasu_patch() {
 PREINIT_MK="KernelSU/kernel/tools/code_generation/preinit_runner/preinit_runner.mk"
 PREINIT_C="KernelSU/kernel/preinit/preinit.c"
 apply_bakasu_patch "$PREINIT_MK" "KSU_RUNNER_TARGET_FLAGS" \
-  "$REPO_ROOT/patches/bakasu/0100-preinit-runner-target-arch.patch" \
+  "$REPO_ROOT/patches/root-manager/bakasu/checkout/0100-preinit-runner-target-arch.patch" \
   "BakaSU preinit runner target fix"
 apply_bakasu_patch "$PREINIT_C" "filename->name was allocated for INIT_PATH" \
-  "$REPO_ROOT/patches/bakasu/0101-preinit-filename-bounds.patch" \
+  "$REPO_ROOT/patches/root-manager/bakasu/checkout/0101-preinit-filename-bounds.patch" \
   "BakaSU preinit filename bounds fix"
 
 # --- 1a3. renew the susfs sus-path uid filter after package tracking ---
@@ -131,14 +131,14 @@ apply_bakasu_patch "$PREINIT_C" "filename->name was allocated for INIT_PATH" \
 # decides which apps the sus-path feature hides for is rebuilt there.
 if [ "$TYPE" = "susfs" ]; then
   apply_bakasu_patch "KernelSU/kernel/manager/throne_tracker.c" "susfs_parse_sus_path_app_strings" \
-    "$REPO_ROOT/patches/bakasu/0102-susfs-sus-path-uid-filter-renew.patch" \
+    "$REPO_ROOT/patches/root-manager/bakasu/checkout/0102-susfs-sus-path-uid-filter-renew.patch" \
     "BakaSU sus path uid-filter renewal"
 fi
 
 # --- 2. hook fragment ---
 if [ "$TYPE" = "susfs" ]; then
   # SuSFS inline hook: kernel-side susfs is applied by the caller
-  # (patches/susfs/), KernelSU-side Kconfig provides the KSU_SUSFS
+  # (patches/kernel/susfs/), KernelSU-side Kconfig provides the KSU_SUSFS
   # symbols; select the full feature set. KALLSYMS_ALL keeps the
   # static_export_check gate off: without it nine selinux symbols
   # (write_op, sel_mutex, selinux_ops, policy_rwlock, ...) must be
@@ -163,7 +163,7 @@ EOF
 elif [ "$MODE" = "manual" ]; then
   # Manual extra hooks: AUTO off -> BakaSU requires ksu_handle_setresuid /
   # ksu_handle_sys_read / ksu_handle_input_handle_event present in the source
-  # (they are added by patches/bakasu/4.9/0010..0012).
+  # (they are added by patches/root-manager/bakasu/manual/4.9/0010..0012).
   echo "==> hook_extra_mode=manual (source patches + AUTO off)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y

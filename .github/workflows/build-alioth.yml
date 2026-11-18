@@ -108,8 +108,8 @@ jobs:
         if: env.ENABLE_BATTERY_5000 == 'true'
         run: |
           cd "$KROOT"
-          for P in "$GITHUB_WORKSPACE/patches/alioth/0001-battery-5000mah-profiles.patch" \
-                   "$GITHUB_WORKSPACE/patches/alioth/0002-battery-ffc-ceilings.patch"; do
+          for P in "$GITHUB_WORKSPACE/patches/device/alioth/battery/0001-battery-5000mah-profiles.patch" \
+                   "$GITHUB_WORKSPACE/patches/device/alioth/battery/0002-battery-ffc-ceilings.patch"; do
             git apply --check "$P" || { echo "battery patch does not apply cleanly: $P"; exit 1; }
             git apply "$P"
           done
@@ -125,17 +125,17 @@ jobs:
           # 4.19-shaped parts (faccessat wrapper, __sys setresuid, ksys_read
           # wrapper).
           PATCHES=(
-            "$GITHUB_WORKSPACE/patches/bakasu/4.19/0001-fs-stat-ksu-manual-hook.patch"
-            "$GITHUB_WORKSPACE/patches/bakasu/4.9/0002-fs-exec-ksu-manual-hook.patch"
-            "$GITHUB_WORKSPACE/patches/bakasu/4.19/0003-fs-open-ksu-manual-hook.patch"
-            "$GITHUB_WORKSPACE/patches/bakasu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.19/0001-fs-stat-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/0002-fs-exec-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.19/0003-fs-open-ksu-manual-hook.patch"
+            "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
           )
           if [ "$HOOK_EXTRA" = "manual" ]; then
             echo "hook_extra=manual: also applying alt manual hooks (input/setuid/sys_read)"
             PATCHES+=(
-              "$GITHUB_WORKSPACE/patches/bakasu/4.9/0010-input-manual-hook.patch"
-              "$GITHUB_WORKSPACE/patches/bakasu/4.19/0011-setuid-manual-hook.patch"
-              "$GITHUB_WORKSPACE/patches/bakasu/4.19/0012-sysread-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9/0010-input-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.19/0011-setuid-manual-hook.patch"
+              "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.19/0012-sysread-manual-hook.patch"
             )
           else
             echo "hook_extra=lsm: alt hooks handled by LSM/input_handler AUTO machinery"
@@ -161,7 +161,7 @@ jobs:
       # SuSFS 4.19 kernel-side port from the test-tree 5.10->4.19 pipeline,
       - name: Apply SuSFS 4.19 port (root_mode=bakasu-susfs)
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
-        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.19/susfs-port.patch"
+        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/kernel/susfs/4.19/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -179,7 +179,7 @@ jobs:
           # Official non-GKI patch 2/2 (cgroup prefix symlink) applies
           # as-is on the 4.19 kona tree; patch 1/2 (xt_qtaguid) is a
           # no-op here because LOS sm8250 has no qtaguid.
-          P02="$GITHUB_WORKSPACE/patches/droidspace/official/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
+          P02="$GITHUB_WORKSPACE/patches/kernel/droidspace/upstream/0002-official-fix-restore-cgroup-file-prefix-handling.patch"
           bash scripts/integrate-droidspace.sh "$KROOT" "$P02"
 
       # LOS lineage-23.2 backported scripts/as-version.sh (upstream
@@ -195,7 +195,7 @@ jobs:
           if [ -f scripts/min-tool-version.sh ]; then
             echo "scripts/min-tool-version.sh already present"
           else
-            cp "$GITHUB_WORKSPACE/patches/alioth/min-tool-version.sh" scripts/
+            cp "$GITHUB_WORKSPACE/patches/device/alioth/tree-files/min-tool-version.sh" scripts/
             chmod +x scripts/min-tool-version.sh
             echo "restored scripts/min-tool-version.sh"
           fi
@@ -218,7 +218,7 @@ jobs:
             FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
           fi
           if [ "$ENABLE_DROIDSPACE" = "true" ]; then
-            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.19/droidspace.config")
+            FRAGS+=("$GITHUB_WORKSPACE/patches/kernel/droidspace/4.19/droidspace.config")
           fi
           BASE_DEFCONFIG="arch/arm64/configs/vendor/kona-perf_defconfig" \
           DEVICE_FRAGMENTS="arch/arm64/configs/vendor/debugfs.config arch/arm64/configs/vendor/xiaomi/sm8250-common.config arch/arm64/configs/vendor/xiaomi/alioth.config" \

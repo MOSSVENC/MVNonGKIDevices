@@ -1,0 +1,4 @@
+# Daisy override on the 4.9 manual group
+# order = apply order (quilt series, paths relative to this directory)
+
+0004-kernel-reboot-ksu-manual-hook.patch

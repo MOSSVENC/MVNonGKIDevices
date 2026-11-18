@@ -106,7 +106,7 @@ input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
 ### Android/data 隔离（sdcardfs per-uid，仅 polaris）
 
 顶层 mask 挡 readdir 枚举，但已知包路径的 stat/open 仍可探测其它应用的
-`Android/data/<pkg>`。补丁 `patches/sdcardfs/0001-sdcardfs-android-data-isolation.patch`
+`Android/data/<pkg>`。补丁 `patches/kernel/sdcardfs/0001-sdcardfs-android-data-isolation.patch`
 把 AOSP data-isolation 语义搬进 sdcardfs：
 
 - `uid < AID_APP_START` → 放行
@@ -135,10 +135,10 @@ susfs 应用路径（全部为树适配 port）：
 
 | 设备 | port |
 |---|---|
-| polaris | `patches/susfs/4.9/susfs-port.patch` |
-| alioth | `patches/susfs/4.19/susfs-port.patch` |
-| beryllium / daisy / vince | `patches/susfs/4.9/<设备>/susfs-port.patch` |
-| RMX2117 | `patches/susfs/4.14/susfs-port.patch` |
+| polaris | `patches/kernel/susfs/4.9/polaris/susfs-port.patch` |
+| alioth | `patches/kernel/susfs/4.19/susfs-port.patch` |
+| beryllium / daisy / vince | `patches/kernel/susfs/4.9/<设备>/susfs-port.patch` |
+| RMX2117 | `patches/kernel/susfs/4.14/susfs-port.patch` |
 
 ### 静态符号
 
@@ -217,17 +217,17 @@ cd "$KROOT"
 # 1. BakaSU manual hook 源码补丁（root_mode=bakasu-susfs / xxksu-* 时跳过）
 #    目录模式只应用必加组；HOOK_EXTRA=manual 时再由第三参数选 0010-0012
 HOOK_EXTRA=lsm bash <repo>/scripts/apply-bakasu-manual-hooks.sh \
-  "$KROOT" <repo>/patches/bakasu/4.9 <repo>/patches/bakasu/4.9
+  "$KROOT" <repo>/patches/root-manager/bakasu/manual/4.9 <repo>/patches/root-manager/bakasu/manual/4.9
 
 # 2. 集成（manual 示例；susfs 换 integrate-bakasu.sh 的 hook_type，xxksu-* 改走
 #    scripts/integrate-xxksu.sh 并按其 fragment 合并 defconfig）
 bash <repo>/scripts/integrate-bakasu.sh "$KROOT" ./bakasu.config.fragment lsm manual
 bash <repo>/scripts/integrate-bbg.sh "$KROOT" ./bbg.config.fragment
-PORT=<repo>/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch
+PORT=<repo>/patches/kernel/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch
 bash <repo>/scripts/integrate-droidspace.sh "$KROOT" "$PORT"
 
 # 3. 合并 defconfig
-FRAGS="./bakasu.config.fragment ./bbg.config.fragment <repo>/patches/droidspace/4.9/droidspace.config"
+FRAGS="./bakasu.config.fragment ./bbg.config.fragment <repo>/patches/kernel/droidspace/4.9/droidspace.config"
 BASE_DEFCONFIG=arch/arm64/configs/vendor/xiaomi/mi845_defconfig \
 DEVICE_FRAGMENTS="arch/arm64/configs/vendor/xiaomi/polaris.config" \
 ROOT_MANAGER=bakasu ENABLE_BBG=true ENABLE_DROIDSPACE=true \
@@ -247,7 +247,7 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 - susfs：`bakasu-susfs`；各设备落位件由本地管线（`localworkspace/pipelines/`）维护
 - Android/data 隔离仅 polaris；alioth（4.19 kona）无 sdcardfs
 - vince 树自带旧 KernelSU：集成前用
-  `patches/bakasu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 剥离
+  `patches/root-manager/bakasu/device/vince/4.9/0000-remove-legacy-ksu-hooks.patch` 剥离
 - Droidspace cgroup 移植补丁在 `cgroup_port` 开启时缺失或 apply 失败即中止构建
 - BakaSU 管理器（Manager APK）版本需自行匹配；构建从固定提交 checkout
   （BakaSU 取 main、XXKSU 取 fork 固定提交）并按当前仓库接线

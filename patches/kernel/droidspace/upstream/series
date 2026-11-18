@@ -1,0 +1,5 @@
+# Upstream non-GKI fixes carried verbatim
+# order = apply order (quilt series, paths relative to this directory)
+
+0001-official-fix-kernel-panic-in-xt_qtaguid.patch
+0002-official-fix-restore-cgroup-file-prefix-handling.patch

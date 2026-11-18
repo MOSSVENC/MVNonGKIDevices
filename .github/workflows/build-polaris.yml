@@ -97,7 +97,7 @@ jobs:
 
       - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE != 'susfs'
-        run: bash "$GITHUB_WORKSPACE/scripts/apply-bakasu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/bakasu/4.9" "$GITHUB_WORKSPACE/patches/bakasu/4.9"
+        run: bash "$GITHUB_WORKSPACE/scripts/apply-bakasu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9" "$GITHUB_WORKSPACE/patches/root-manager/bakasu/manual/4.9"
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'bakasu'
@@ -119,7 +119,7 @@ jobs:
       # kernel/sys.c etc.
       - name: Apply SuSFS 4.9 port (root_mode=bakasu-susfs)
         if: env.ROOT_MANAGER == 'bakasu' && env.HOOK_TYPE == 'susfs'
-        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
+        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/kernel/susfs/4.9/polaris/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -136,16 +136,16 @@ jobs:
         run: |
           PORT=""
           if [ "$CGROUP_PORT" = "true" ]; then
-            PORT="$GITHUB_WORKSPACE/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
+            PORT="$GITHUB_WORKSPACE/patches/kernel/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
           fi
           bash scripts/integrate-droidspace.sh "$KROOT" "$PORT" \
-            "$GITHUB_WORKSPACE/patches/droidspace/4.9/0002-sched-walt-off-mark-reserved.patch"
+            "$GITHUB_WORKSPACE/patches/kernel/droidspace/4.9/0002-sched-walt-off-mark-reserved.patch"
 
       - name: Apply sdcardfs Android/data isolation patch
         if: env.ENABLE_DATA_ISOLATION == 'true'
         run: |
           bash scripts/apply-patches.sh "$KROOT" \
-            "$GITHUB_WORKSPACE/patches/sdcardfs"
+            "$GITHUB_WORKSPACE/patches/kernel/sdcardfs"
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
@@ -165,7 +165,7 @@ jobs:
             FRAGS+=("$GITHUB_WORKSPACE/bbg.config.fragment")
           fi
           if [ "$ENABLE_DROIDSPACE" = "true" ]; then
-            FRAGS+=("$GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config")
+            FRAGS+=("$GITHUB_WORKSPACE/patches/kernel/droidspace/4.9/droidspace.config")
           fi
           BASE_DEFCONFIG="arch/arm64/configs/vendor/xiaomi/mi845_defconfig" \
           DEVICE_FRAGMENTS="arch/arm64/configs/vendor/xiaomi/polaris.config" \

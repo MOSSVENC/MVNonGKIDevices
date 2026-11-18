@@ -1,0 +1,9 @@
+# BakaSU checkout-level patches (apply after checkout, before the hook group)
+# order = apply order (quilt series, paths relative to this directory)
+
+# preinit runner target arch
+0100-preinit-runner-target-arch.patch
+# preinit filename bounds
+0101-preinit-filename-bounds.patch
+# sus path uid-filter renewal
+0102-susfs-sus-path-uid-filter-renew.patch
